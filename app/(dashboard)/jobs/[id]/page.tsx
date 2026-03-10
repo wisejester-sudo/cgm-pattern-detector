@@ -1,72 +1,130 @@
-"use client";
+"use client"
 
-import { use, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { use, useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { ArrowLeft, Phone, MapPin, Clock, Wrench, MessageSquare } from "lucide-react";
-import Link from "next/link";
-import type { JobStatus } from "@/components/job-card";
-
-const statusConfig: Record<
-  JobStatus,
-  { label: string; className: string }
-> = {
-  scheduled: {
-    label: "Scheduled",
-    className: "bg-status-scheduled text-foreground",
-  },
-  enroute: {
-    label: "En Route",
-    className: "bg-status-enroute text-primary-foreground",
-  },
-  working: {
-    label: "Working",
-    className: "bg-status-working text-foreground",
-  },
-  complete: {
-    label: "Complete",
-    className: "bg-status-complete text-primary-foreground",
-  },
-};
-
-// Mock data - in a real app, this would come from an API
-const mockJob = {
-  id: "1",
-  customerName: "Sarah Johnson",
-  phone: "(555) 123-4567",
-  address: "123 Oak Street, Springfield, IL 62701",
-  status: "scheduled" as JobStatus,
-  jobType: "Repair",
-  notes: "AC unit not cooling. Customer reports unusual noise when running.",
-  scheduledDate: "March 10, 2026",
-  scheduledTime: "9:00 AM - 11:00 AM",
-  assignedTech: "Mike Thompson",
-};
+} from "@/components/ui/select"
+import {
+  ArrowLeft,
+  Phone,
+  MapPin,
+  Clock,
+  Wrench,
+  MessageSquare,
+  User,
+  Camera,
+  Trash2,
+  X,
+} from "lucide-react"
+import Link from "next/link"
+import Image from "next/image"
+import { useStore, getTechnicianById, getPhotosByJobId, renderTemplate } from "@/lib/store"
+import type { JobStatus } from "@/lib/types"
+import { statusConfig } from "@/components/job-card"
+import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 
 export default function JobDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>
 }) {
-  const { id } = use(params);
-  const [status, setStatus] = useState<JobStatus>(mockJob.status);
-  const [smsSent, setSmsSent] = useState(false);
+  const { id } = use(params)
+  const {
+    jobs,
+    technicians,
+    photos,
+    templates,
+    settings,
+    updateJob,
+    updateJobStatus,
+    addPhoto,
+    deletePhoto,
+    addSmsLog,
+  } = useStore()
 
-  const handleSendSMS = () => {
-    setSmsSent(true);
-    setTimeout(() => setSmsSent(false), 2000);
-  };
+  const job = jobs.find((j) => j.id === id)
+  const [smsSending, setSmsSending] = useState(false)
+  const [smsSent, setSmsSent] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState(templates[0]?.id || "")
+  const [editingNotes, setEditingNotes] = useState(false)
+  const [notes, setNotes] = useState(job?.notes || "")
+
+  if (!job) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-muted-foreground mb-4">Job not found</p>
+        <Link href="/jobs">
+          <Button variant="outline">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Jobs
+          </Button>
+        </Link>
+      </div>
+    )
+  }
+
+  const technician = getTechnicianById(technicians, job.assigned_tech_id)
+  const jobPhotos = getPhotosByJobId(photos, job.id)
+  const scheduledDate = new Date(job.scheduled_time)
+
+  const handleStatusChange = (newStatus: JobStatus) => {
+    updateJobStatus(job.id, newStatus)
+  }
+
+  const handleTechChange = (techId: string) => {
+    updateJob(job.id, { assigned_tech_id: techId || null })
+  }
+
+  const handleSaveNotes = () => {
+    updateJob(job.id, { notes: notes || null })
+    setEditingNotes(false)
+  }
+
+  const handleSendSMS = async () => {
+    const template = templates.find((t) => t.id === selectedTemplate)
+    if (!template) return
+
+    setSmsSending(true)
+    const message = renderTemplate(template.template_body, job, technician, settings)
+
+    // Simulate sending SMS
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    addSmsLog({
+      job_id: job.id,
+      recipient_phone: job.customer_phone,
+      message_body: message,
+      status: "sent",
+    })
+
+    setSmsSending(false)
+    setSmsSent(true)
+    setTimeout(() => setSmsSent(false), 3000)
+  }
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const url = URL.createObjectURL(file)
+      addPhoto({
+        job_id: job.id,
+        photo_url: url,
+        caption: null,
+      })
+    }
+  }
 
   return (
-    <div className="flex flex-col gap-6 max-w-3xl">
+    <div className="flex flex-col gap-6 max-w-4xl">
       {/* Back button and header */}
       <div className="flex flex-col gap-4">
         <Link
@@ -80,12 +138,14 @@ export default function JobDetailPage({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-foreground">
-              {mockJob.customerName}
+              {job.customer_name}
             </h1>
             <p className="text-muted-foreground">Job #{id}</p>
           </div>
-          <Badge className={`${statusConfig[status].className} text-sm px-3 py-1`}>
-            {statusConfig[status].label}
+          <Badge
+            className={`${statusConfig[job.status].className} text-sm px-3 py-1`}
+          >
+            {statusConfig[job.status].label}
           </Badge>
         </div>
       </div>
@@ -104,7 +164,7 @@ export default function JobDetailPage({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Phone</p>
-                <p className="font-medium">{mockJob.phone}</p>
+                <p className="font-medium">{job.customer_phone}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -113,7 +173,7 @@ export default function JobDetailPage({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Address</p>
-                <p className="font-medium">{mockJob.address}</p>
+                <p className="font-medium">{job.customer_address}</p>
               </div>
             </div>
           </CardContent>
@@ -131,7 +191,7 @@ export default function JobDetailPage({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Job Type</p>
-                <p className="font-medium">{mockJob.jobType}</p>
+                <p className="font-medium">{job.job_type}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -141,7 +201,22 @@ export default function JobDetailPage({
               <div>
                 <p className="text-sm text-muted-foreground">Scheduled</p>
                 <p className="font-medium">
-                  {mockJob.scheduledDate}, {mockJob.scheduledTime}
+                  {scheduledDate.toLocaleDateString()} at{" "}
+                  {scheduledDate.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-muted">
+                <User className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Assigned Technician</p>
+                <p className="font-medium">
+                  {technician?.name || "Unassigned"}
                 </p>
               </div>
             </div>
@@ -150,11 +225,85 @@ export default function JobDetailPage({
 
         {/* Notes */}
         <Card className="md:col-span-2">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg">Notes</CardTitle>
+            {!editingNotes && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditingNotes(true)}
+              >
+                Edit
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">{mockJob.notes}</p>
+            {editingNotes ? (
+              <FieldGroup>
+                <Field>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={4}
+                    placeholder="Add notes about this job..."
+                  />
+                </Field>
+                <div className="flex gap-2">
+                  <Button onClick={handleSaveNotes}>Save Notes</Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setNotes(job.notes || "")
+                      setEditingNotes(false)
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </FieldGroup>
+            ) : (
+              <p className="text-muted-foreground">
+                {job.notes || "No notes added yet."}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Photos */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-lg">Job Photos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4">
+              {jobPhotos.map((photo) => (
+                <div key={photo.id} className="relative group">
+                  <Image
+                    src={photo.photo_url}
+                    alt="Job photo"
+                    width={150}
+                    height={150}
+                    className="rounded-lg object-cover w-[150px] h-[150px]"
+                  />
+                  <button
+                    onClick={() => deletePhoto(photo.id)}
+                    className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              <label className="flex flex-col items-center justify-center w-[150px] h-[150px] border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                <Camera className="h-8 w-8 text-muted-foreground mb-2" />
+                <span className="text-sm text-muted-foreground">Add Photo</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoUpload}
+                />
+              </label>
+            </div>
           </CardContent>
         </Card>
 
@@ -164,12 +313,13 @@ export default function JobDetailPage({
             <CardTitle className="text-lg">Actions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <label className="text-sm font-medium mb-2 block">
-                  Update Status
-                </label>
-                <Select value={status} onValueChange={(v) => setStatus(v as JobStatus)}>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <Field>
+                <FieldLabel>Update Status</FieldLabel>
+                <Select
+                  value={job.status}
+                  onValueChange={(v) => handleStatusChange(v as JobStatus)}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -181,17 +331,61 @@ export default function JobDetailPage({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="flex items-end">
-                <Button onClick={handleSendSMS} variant="outline">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  {smsSent ? "SMS Sent!" : "Send Status SMS"}
-                </Button>
-              </div>
+              </Field>
+
+              <Field>
+                <FieldLabel>Assign Technician</FieldLabel>
+                <Select
+                  value={job.assigned_tech_id || ""}
+                  onValueChange={handleTechChange}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select technician" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {technicians
+                      .filter((t) => t.is_active)
+                      .map((tech) => (
+                        <SelectItem key={tech.id} value={tech.id}>
+                          {tech.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field>
+                <FieldLabel>SMS Template</FieldLabel>
+                <Select
+                  value={selectedTemplate}
+                  onValueChange={setSelectedTemplate}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {templates.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+
+            <div className="mt-4">
+              <Button
+                onClick={handleSendSMS}
+                disabled={smsSending || !selectedTemplate}
+              >
+                <MessageSquare className="mr-2 h-4 w-4" />
+                {smsSending ? "Sending..." : smsSent ? "SMS Sent!" : "Send Status SMS"}
+              </Button>
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
-  );
+  )
 }

@@ -7,12 +7,14 @@ import {
   Briefcase,
   Settings,
   Zap,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/jobs", label: "Jobs", icon: Briefcase },
+  { href: "/technicians", label: "Technicians", icon: Users },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

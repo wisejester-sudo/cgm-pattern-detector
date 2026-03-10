@@ -1,84 +1,45 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { JobCard, type Job, type JobStatus } from "@/components/job-card";
-import { CreateJobModal } from "@/components/create-job-modal";
-
-const initialJobs: Job[] = [
-  {
-    id: "1",
-    customerName: "Sarah Johnson",
-    phone: "(555) 123-4567",
-    address: "123 Oak Street, Springfield, IL 62701",
-    status: "scheduled",
-    jobType: "Repair",
-  },
-  {
-    id: "2",
-    customerName: "Michael Chen",
-    phone: "(555) 234-5678",
-    address: "456 Maple Avenue, Springfield, IL 62702",
-    status: "enroute",
-    jobType: "Maintenance",
-  },
-  {
-    id: "3",
-    customerName: "Emily Rodriguez",
-    phone: "(555) 345-6789",
-    address: "789 Pine Road, Springfield, IL 62703",
-    status: "working",
-    jobType: "Installation",
-  },
-  {
-    id: "4",
-    customerName: "David Thompson",
-    phone: "(555) 456-7890",
-    address: "321 Cedar Lane, Springfield, IL 62704",
-    status: "complete",
-    jobType: "Repair",
-  },
-  {
-    id: "5",
-    customerName: "Lisa Anderson",
-    phone: "(555) 567-8901",
-    address: "654 Birch Court, Springfield, IL 62705",
-    status: "scheduled",
-    jobType: "Maintenance",
-  },
-  {
-    id: "6",
-    customerName: "James Wilson",
-    phone: "(555) 678-9012",
-    address: "987 Elm Drive, Springfield, IL 62706",
-    status: "enroute",
-    jobType: "Installation",
-  },
-];
+import { JobCard } from "@/components/job-card"
+import { CreateJobModal } from "@/components/create-job-modal"
+import { useStore, getTechnicianById } from "@/lib/store"
+import type { JobStatus } from "@/lib/types"
 
 export default function JobsPage() {
-  const [jobs, setJobs] = useState<Job[]>(initialJobs);
+  const { jobs, technicians, addJob, updateJobStatus } = useStore()
 
   const handleStatusChange = (jobId: string, newStatus: JobStatus) => {
-    setJobs((prev) =>
-      prev.map((job) =>
-        job.id === jobId ? { ...job, status: newStatus } : job
-      )
-    );
-  };
+    updateJobStatus(jobId, newStatus)
+  }
 
   const handleCreateJob = (jobData: {
-    customerName: string;
-    phone: string;
-    address: string;
-    jobType: string;
+    customer_name: string
+    customer_phone: string
+    customer_address: string
+    job_type: string
+    scheduled_time: string
+    notes: string | null
+    assigned_tech_id: string | null
   }) => {
-    const newJob: Job = {
-      id: Date.now().toString(),
+    addJob({
       ...jobData,
       status: "scheduled",
-    };
-    setJobs((prev) => [newJob, ...prev]);
-  };
+    })
+  }
+
+  // Sort jobs: active jobs first, then by scheduled time
+  const sortedJobs = [...jobs].sort((a, b) => {
+    const statusOrder: Record<JobStatus, number> = {
+      working: 0,
+      en_route: 1,
+      scheduled: 2,
+      complete: 3,
+    }
+    if (statusOrder[a.status] !== statusOrder[b.status]) {
+      return statusOrder[a.status] - statusOrder[b.status]
+    }
+    return new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime()
+  })
 
   return (
     <div className="flex flex-col gap-6">
@@ -90,19 +51,29 @@ export default function JobsPage() {
             Manage and track all your service jobs
           </p>
         </div>
-        <CreateJobModal onCreateJob={handleCreateJob} />
+        <CreateJobModal technicians={technicians} onCreateJob={handleCreateJob} />
       </div>
 
       {/* Job Cards Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {jobs.map((job) => (
+        {sortedJobs.map((job) => (
           <JobCard
             key={job.id}
             job={job}
+            technician={getTechnicianById(technicians, job.assigned_tech_id)}
             onStatusChange={handleStatusChange}
           />
         ))}
       </div>
+
+      {jobs.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <p className="text-muted-foreground mb-2">No jobs yet</p>
+          <p className="text-sm text-muted-foreground">
+            Create your first job to get started
+          </p>
+        </div>
+      )}
     </div>
-  );
+  )
 }
