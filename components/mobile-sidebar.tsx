@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Briefcase,
@@ -9,6 +9,9 @@ import {
   Menu,
   Zap,
   Users,
+  BarChart3,
+  User,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,17 +22,37 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useState } from "react";
+import { useStore } from "@/lib/store";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/jobs", label: "Jobs", icon: Briefcase },
   { href: "/technicians", label: "Technicians", icon: Users },
+  { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function MobileSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const { currentAdmin, logoutAdmin } = useStore();
+
+  const handleLogout = () => {
+    logoutAdmin();
+    setOpen(false);
+    router.push("/login");
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -76,6 +99,39 @@ export function MobileSidebar() {
             })}
           </ul>
         </nav>
+
+        {/* User Section */}
+        {currentAdmin && (
+          <div className="px-3 py-4 border-t border-sidebar-border">
+            <div className="flex items-center gap-3 px-3 py-2 mb-2">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={currentAdmin.avatar_url || undefined} />
+                <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
+                  {getInitials(currentAdmin.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">{currentAdmin.name}</p>
+                <p className="text-xs text-sidebar-muted truncate">Admin</p>
+              </div>
+            </div>
+            <Link
+              href="/profile"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+            >
+              <User className="w-5 h-5" />
+              Profile & Settings
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-destructive hover:bg-sidebar-accent transition-colors w-full"
+            >
+              <LogOut className="w-5 h-5" />
+              Log out
+            </button>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

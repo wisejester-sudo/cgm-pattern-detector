@@ -11,11 +11,12 @@ import {
   Phone,
   MapPin,
   Clock,
-  Wrench,
   Camera,
   Navigation,
-  MessageSquare,
   X,
+  Truck,
+  Wrench,
+  CheckCircle,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -24,28 +25,39 @@ import {
   getTechnicianById,
   getPhotosByJobId,
   renderTemplate,
+  maskPhoneNumber,
 } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 
-const statusConfig: Record<JobStatus, { label: string; className: string; nextStatus?: JobStatus; nextLabel?: string }> = {
+// Simplified status config with clear technician-friendly labels
+const statusConfig: Record<JobStatus, { 
+  label: string
+  className: string
+  nextStatus?: JobStatus
+  nextLabel?: string
+  nextIcon?: React.ComponentType<{ className?: string }>
+}> = {
   scheduled: {
     label: "Scheduled",
     className: "bg-status-scheduled text-foreground",
     nextStatus: "en_route",
-    nextLabel: "Start Route",
+    nextLabel: "I'm on my way",
+    nextIcon: Truck,
   },
   en_route: {
     label: "En Route",
     className: "bg-status-enroute text-primary-foreground",
     nextStatus: "working",
-    nextLabel: "Arrive & Start Work",
+    nextLabel: "I've arrived",
+    nextIcon: Wrench,
   },
   working: {
     label: "Working",
     className: "bg-status-working text-foreground",
     nextStatus: "complete",
-    nextLabel: "Complete Job",
+    nextLabel: "Job complete",
+    nextIcon: CheckCircle,
   },
   complete: {
     label: "Complete",
@@ -218,13 +230,14 @@ export default function TechJobDetailPage({
                 </p>
               </div>
             </div>
+            {/* Phone - masked for technician view */}
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-muted shrink-0">
                 <Phone className="h-4 w-4 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Phone</p>
-                <p className="font-medium">{job.customer_phone}</p>
+                <p className="text-sm text-muted-foreground">Phone (for navigation only)</p>
+                <p className="font-medium text-muted-foreground">{maskPhoneNumber(job.customer_phone)}</p>
               </div>
             </div>
           </CardContent>
@@ -297,16 +310,26 @@ export default function TechJobDetailPage({
         </Card>
       </main>
 
-      {/* Bottom Action Bar */}
+      {/* Bottom Action Bar - Simplified status buttons for technicians */}
       {status.nextStatus && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
           <Button
-            className="w-full h-12 text-lg"
+            className="w-full h-14 text-lg"
             onClick={handleStatusAdvance}
             disabled={smsSending}
           >
-            {smsSending ? "Sending notification..." : status.nextLabel}
+            {smsSending ? (
+              "Sending notification..."
+            ) : (
+              <>
+                {status.nextIcon && <status.nextIcon className="h-5 w-5 mr-2" />}
+                {status.nextLabel}
+              </>
+            )}
           </Button>
+          <p className="text-xs text-center text-muted-foreground mt-2">
+            Customer will be notified automatically
+          </p>
         </div>
       )}
     </div>
