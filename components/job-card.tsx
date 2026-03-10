@@ -1,37 +1,24 @@
-"use client";
+"use client"
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Phone, MapPin, ChevronDown } from "lucide-react";
-import Link from "next/link";
+} from "@/components/ui/dropdown-menu"
+import { Phone, MapPin, ChevronDown, Clock, User } from "lucide-react"
+import Link from "next/link"
+import type { Job, JobStatus, Technician } from "@/lib/types"
 
-export type JobStatus = "scheduled" | "enroute" | "working" | "complete";
-
-export interface Job {
-  id: string;
-  customerName: string;
-  phone: string;
-  address: string;
-  status: JobStatus;
-  jobType: string;
-}
-
-const statusConfig: Record<
-  JobStatus,
-  { label: string; className: string }
-> = {
+const statusConfig: Record<JobStatus, { label: string; className: string }> = {
   scheduled: {
     label: "Scheduled",
     className: "bg-status-scheduled text-foreground",
   },
-  enroute: {
+  en_route: {
     label: "En Route",
     className: "bg-status-enroute text-primary-foreground",
   },
@@ -43,15 +30,17 @@ const statusConfig: Record<
     label: "Complete",
     className: "bg-status-complete text-primary-foreground",
   },
-};
-
-interface JobCardProps {
-  job: Job;
-  onStatusChange?: (jobId: string, newStatus: JobStatus) => void;
 }
 
-export function JobCard({ job, onStatusChange }: JobCardProps) {
-  const status = statusConfig[job.status];
+interface JobCardProps {
+  job: Job
+  technician?: Technician | null
+  onStatusChange?: (jobId: string, newStatus: JobStatus) => void
+}
+
+export function JobCard({ job, technician, onStatusChange }: JobCardProps) {
+  const status = statusConfig[job.status]
+  const scheduledDate = new Date(job.scheduled_time)
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -60,8 +49,8 @@ export function JobCard({ job, onStatusChange }: JobCardProps) {
           {/* Header with name and status */}
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h3 className="font-semibold text-foreground">{job.customerName}</h3>
-              <p className="text-sm text-muted-foreground">{job.jobType}</p>
+              <h3 className="font-semibold text-foreground">{job.customer_name}</h3>
+              <p className="text-sm text-muted-foreground">{job.job_type}</p>
             </div>
             <Badge className={status.className}>{status.label}</Badge>
           </div>
@@ -70,12 +59,25 @@ export function JobCard({ job, onStatusChange }: JobCardProps) {
           <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4" />
-              <span>{job.phone}</span>
+              <span>{job.customer_phone}</span>
             </div>
             <div className="flex items-start gap-2">
               <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
-              <span className="line-clamp-2">{job.address}</span>
+              <span className="line-clamp-2">{job.customer_address}</span>
             </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>
+                {scheduledDate.toLocaleDateString()} at{" "}
+                {scheduledDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </div>
+            {technician && (
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                <span>{technician.name}</span>
+              </div>
+            )}
           </div>
 
           {/* Actions */}
@@ -88,7 +90,7 @@ export function JobCard({ job, onStatusChange }: JobCardProps) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary" size="sm">
-                  Update Status
+                  Status
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -103,11 +105,11 @@ export function JobCard({ job, onStatusChange }: JobCardProps) {
                       className={`mr-2 h-2 w-2 rounded-full ${
                         statusKey === "scheduled"
                           ? "bg-status-scheduled"
-                          : statusKey === "enroute"
-                          ? "bg-status-enroute"
-                          : statusKey === "working"
-                          ? "bg-status-working"
-                          : "bg-status-complete"
+                          : statusKey === "en_route"
+                            ? "bg-status-enroute"
+                            : statusKey === "working"
+                              ? "bg-status-working"
+                              : "bg-status-complete"
                       }`}
                     />
                     {statusConfig[statusKey].label}
@@ -119,5 +121,7 @@ export function JobCard({ job, onStatusChange }: JobCardProps) {
         </div>
       </CardContent>
     </Card>
-  );
+  )
 }
+
+export { statusConfig }

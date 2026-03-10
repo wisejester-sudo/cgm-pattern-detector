@@ -1,7 +1,7 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -10,54 +10,86 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { FieldGroup, Field, FieldLabel } from "@/components/ui/field";
-import { Plus } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
+} from "@/components/ui/select"
+import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
+import { Plus } from "lucide-react"
+import { Spinner } from "@/components/ui/spinner"
+import type { Technician } from "@/lib/types"
 
 interface CreateJobModalProps {
+  technicians: Technician[]
   onCreateJob: (job: {
-    customerName: string;
-    phone: string;
-    address: string;
-    jobType: string;
-  }) => void;
+    customer_name: string
+    customer_phone: string
+    customer_address: string
+    job_type: string
+    scheduled_time: string
+    notes: string | null
+    assigned_tech_id: string | null
+  }) => void
 }
 
-export function CreateJobModal({ onCreateJob }: CreateJobModalProps) {
-  const [open, setOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+export function CreateJobModal({ technicians, onCreateJob }: CreateJobModalProps) {
+  const [open, setOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
-    customerName: "",
-    phone: "",
-    address: "",
-    jobType: "",
-  });
+    customer_name: "",
+    customer_phone: "",
+    customer_address: "",
+    job_type: "",
+    scheduled_date: "",
+    scheduled_time: "",
+    notes: "",
+    assigned_tech_id: "",
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    
-    onCreateJob(formData);
-    setFormData({ customerName: "", phone: "", address: "", jobType: "" });
-    setIsLoading(false);
-    setOpen(false);
-  };
+    e.preventDefault()
+    setIsLoading(true)
+
+    // Combine date and time
+    const scheduledDateTime = formData.scheduled_date && formData.scheduled_time
+      ? new Date(`${formData.scheduled_date}T${formData.scheduled_time}`).toISOString()
+      : new Date().toISOString()
+
+    onCreateJob({
+      customer_name: formData.customer_name,
+      customer_phone: formData.customer_phone,
+      customer_address: formData.customer_address,
+      job_type: formData.job_type,
+      scheduled_time: scheduledDateTime,
+      notes: formData.notes || null,
+      assigned_tech_id: formData.assigned_tech_id || null,
+    })
+
+    setFormData({
+      customer_name: "",
+      customer_phone: "",
+      customer_address: "",
+      job_type: "",
+      scheduled_date: "",
+      scheduled_time: "",
+      notes: "",
+      assigned_tech_id: "",
+    })
+    setIsLoading(false)
+    setOpen(false)
+  }
 
   const isValid =
-    formData.customerName && formData.phone && formData.address && formData.jobType;
+    formData.customer_name &&
+    formData.customer_phone &&
+    formData.customer_address &&
+    formData.job_type
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -67,7 +99,7 @@ export function CreateJobModal({ onCreateJob }: CreateJobModalProps) {
           Create Job
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Create New Job</DialogTitle>
           <DialogDescription>
@@ -77,57 +109,118 @@ export function CreateJobModal({ onCreateJob }: CreateJobModalProps) {
         <form onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="customerName">Customer Name</FieldLabel>
+              <FieldLabel htmlFor="customer_name">Customer Name</FieldLabel>
               <Input
-                id="customerName"
+                id="customer_name"
                 placeholder="Enter customer name"
-                value={formData.customerName}
+                value={formData.customer_name}
                 onChange={(e) =>
-                  setFormData({ ...formData, customerName: e.target.value })
+                  setFormData({ ...formData, customer_name: e.target.value })
                 }
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="phone">Phone Number</FieldLabel>
+              <FieldLabel htmlFor="customer_phone">Phone Number</FieldLabel>
               <Input
-                id="phone"
+                id="customer_phone"
                 type="tel"
                 placeholder="(555) 123-4567"
-                value={formData.phone}
+                value={formData.customer_phone}
                 onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
+                  setFormData({ ...formData, customer_phone: e.target.value })
                 }
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="address">Address</FieldLabel>
+              <FieldLabel htmlFor="customer_address">Address</FieldLabel>
               <Textarea
-                id="address"
+                id="customer_address"
                 placeholder="Enter full address"
-                value={formData.address}
+                value={formData.customer_address}
                 onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
+                  setFormData({ ...formData, customer_address: e.target.value })
                 }
                 rows={2}
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="jobType">Job Type</FieldLabel>
+              <FieldLabel htmlFor="job_type">Job Type</FieldLabel>
               <Select
-                value={formData.jobType}
+                value={formData.job_type}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, jobType: value })
+                  setFormData({ ...formData, job_type: value })
                 }
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select job type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Repair">Repair</SelectItem>
-                  <SelectItem value="Maintenance">Maintenance</SelectItem>
-                  <SelectItem value="Installation">Installation</SelectItem>
+                  <SelectItem value="AC Repair">AC Repair</SelectItem>
+                  <SelectItem value="AC Installation">AC Installation</SelectItem>
+                  <SelectItem value="Furnace Repair">Furnace Repair</SelectItem>
+                  <SelectItem value="Furnace Maintenance">Furnace Maintenance</SelectItem>
+                  <SelectItem value="Duct Cleaning">Duct Cleaning</SelectItem>
+                  <SelectItem value="System Inspection">System Inspection</SelectItem>
                 </SelectContent>
               </Select>
+            </Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field>
+                <FieldLabel htmlFor="scheduled_date">Date</FieldLabel>
+                <Input
+                  id="scheduled_date"
+                  type="date"
+                  value={formData.scheduled_date}
+                  onChange={(e) =>
+                    setFormData({ ...formData, scheduled_date: e.target.value })
+                  }
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="scheduled_time">Time</FieldLabel>
+                <Input
+                  id="scheduled_time"
+                  type="time"
+                  value={formData.scheduled_time}
+                  onChange={(e) =>
+                    setFormData({ ...formData, scheduled_time: e.target.value })
+                  }
+                />
+              </Field>
+            </div>
+            <Field>
+              <FieldLabel htmlFor="assigned_tech_id">Assign Technician</FieldLabel>
+              <Select
+                value={formData.assigned_tech_id}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, assigned_tech_id: value })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select technician (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {technicians
+                    .filter((t) => t.is_active)
+                    .map((tech) => (
+                      <SelectItem key={tech.id} value={tech.id}>
+                        {tech.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="notes">Notes (optional)</FieldLabel>
+              <Textarea
+                id="notes"
+                placeholder="Any additional notes..."
+                value={formData.notes}
+                onChange={(e) =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
+                rows={2}
+              />
             </Field>
           </FieldGroup>
           <DialogFooter className="mt-6">
@@ -146,5 +239,5 @@ export function CreateJobModal({ onCreateJob }: CreateJobModalProps) {
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
