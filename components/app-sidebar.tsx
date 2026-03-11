@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react"
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -13,8 +14,9 @@ import {
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useStore } from "@/lib/store";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { createClient } from "@/lib/supabase/client"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,26 +26,39 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/jobs", label: "Jobs", icon: Briefcase },
-  { href: "/technicians", label: "Technicians", icon: Users },
-  { href: "/reports", label: "Reports", icon: BarChart3 },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/jobs", label: "Jobs", icon: Briefcase },
+  { href: "/dashboard/technicians", label: "Technicians", icon: Users },
+  { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { currentAdmin, logoutAdmin } = useStore();
+  const supabase = createClient()
+  const [user, setUser] = useState<SupabaseUser | null>(null)
 
-  const handleLogout = () => {
-    logoutAdmin();
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      setUser(user)
+    }
+
+    getUser()
+  }, [supabase])
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
     router.push("/login");
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
+  const getInitials = (email: string) => {
+    return email
+      .split("@")[0]
+      .split(".")
       .map((n) => n[0])
       .join("")
       .toUpperCase()
@@ -65,7 +80,7 @@ export function AppSidebar() {
         <ul className="flex flex-col gap-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href || 
-              (item.href !== "/" && pathname.startsWith(item.href));
+              (item.href !== "/dashboard" && pathname.startsWith(item.href));
             return (
               <li key={item.href}>
                 <Link
@@ -87,26 +102,25 @@ export function AppSidebar() {
       </nav>
 
       {/* User Section */}
-      {currentAdmin && (
+      {user && (
         <div className="px-3 py-4 border-t border-sidebar-border">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:bg-sidebar-accent transition-colors">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={currentAdmin.avatar_url || undefined} />
                   <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
-                    {getInitials(currentAdmin.name)}
+                    {getInitials(user.email || "")}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 text-left min-w-0">
-                  <p className="font-medium truncate">{currentAdmin.name}</p>
+                  <p className="font-medium truncate text-xs">{user.email}</p>
                   <p className="text-xs text-sidebar-muted truncate">Admin</p>
                 </div>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem asChild>
-                <Link href="/profile" className="flex items-center">
+                <Link href="/dashboard/profile" className="flex items-center">
                   <User className="h-4 w-4 mr-2" />
                   Profile & Settings
                 </Link>

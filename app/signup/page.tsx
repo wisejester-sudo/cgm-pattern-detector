@@ -2,314 +2,294 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { createClient } from "@/lib/supabase/client"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Zap, Eye, EyeOff, Check } from "lucide-react"
-import type { SubscriptionPlan } from "@/lib/types"
+import Link from "next/link"
+import { Zap, AlertCircle, CheckCircle } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-const plans: { id: SubscriptionPlan; name: string; price: number; features: string[] }[] = [
-  {
-    id: "starter",
-    name: "Starter",
-    price: 39,
-    features: [
-      "Up to 3 technicians",
-      "100 SMS/month",
-      "Job tracking",
-      "Customer notifications",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: 79,
-    features: [
-      "Unlimited technicians",
-      "500 SMS/month",
-      "Priority support",
-      "Custom branding",
-      "Advanced reports",
-    ],
-  },
-]
+type SignupStep = "account" | "company" | "success"
 
 export default function SignupPage() {
   const router = useRouter()
-  const [step, setStep] = useState(1)
-  const [isLoading, setIsLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  
-  // Form state
-  const [companyName, setCompanyName] = useState("")
-  const [adminName, setAdminName] = useState("")
+  const supabase = createClient()
+
+  const [step, setStep] = useState<SignupStep>("account")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Account form
   const [email, setEmail] = useState("")
-  const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>("starter")
-  
-  // Validation
-  const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const validateStep1 = () => {
-    const newErrors: Record<string, string> = {}
-    if (!companyName.trim()) newErrors.companyName = "Company name is required"
-    if (!adminName.trim()) newErrors.adminName = "Your name is required"
-    if (!email.trim()) newErrors.email = "Email is required"
-    if (!email.includes("@")) newErrors.email = "Please enter a valid email"
-    if (!phone.trim()) newErrors.phone = "Phone number is required"
-    if (!password) newErrors.password = "Password is required"
-    if (password.length < 8) newErrors.password = "Password must be at least 8 characters"
-    if (password !== confirmPassword) newErrors.confirmPassword = "Passwords do not match"
-    
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+  // Company form
+  const [companyName, setCompanyName] = useState("")
+  const [companyPhone, setCompanyPhone] = useState("")
+  const [companyAddress, setCompanyAddress] = useState("")
+
+  const handleAccountSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+
+    // Validation
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters")
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords don't match")
+      return
+    }
+
+    setStep("company")
   }
 
-  const handleStep1Submit = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (validateStep1()) {
-      setStep(2)
+    setLoading(true)
+    setError(null)
+
+    try {
+      // 1. Create auth user with metadata
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+          data: {
+            role: "admin",
+            company_name: companyName,
+          },
+        },
+      })
+
+      if (authError) throw authError
+
+      if (authData.user) {
+        // 2. Create company record (mock - in real app would create in database)
+        // For now, just show success and redirect
+        setStep("success")
+
+        // Redirect after 2 seconds
+        setTimeout(() => {
+          router.push("/dashboard")
+          router.refresh()
+        }, 2000)
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to create account")
+      setLoading(false)
     }
   }
 
-  const handleFinalSubmit = async () => {
-    setIsLoading(true)
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    
-    // In a real app, this would create the company and admin account
-    // For now, redirect to login
-    router.push("/login?registered=true")
+  if (step === "success") {
+    return (
+      <div className="min-h-screen bg-sidebar flex flex-col items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 flex items-center justify-center w-12 h-12 rounded-full bg-status-complete/10">
+              <CheckCircle className="h-7 w-7 text-status-complete" />
+            </div>
+            <CardTitle className="text-2xl">Welcome to Dispatchly!</CardTitle>
+            <CardDescription>
+              Your account has been created successfully
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <div className="bg-muted p-4 rounded-lg">
+              <p className="text-sm text-muted-foreground mb-2">Company:</p>
+              <p className="font-medium">{companyName}</p>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Redirecting to your dashboard...
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen bg-sidebar flex flex-col items-center justify-center p-4">
-      <Card className="w-full max-w-lg">
+      <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex items-center justify-center w-12 h-12 rounded-lg bg-primary">
             <Zap className="h-7 w-7 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl">Create Your Account</CardTitle>
+          <CardTitle className="text-2xl">Create Dispatchly Account</CardTitle>
           <CardDescription>
-            {step === 1
-              ? "Start managing your field service business in minutes"
-              : "Choose the plan that fits your business"}
+            Set up your HVAC business in minutes
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Step indicator */}
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-            }`}>
-              {step > 1 ? <Check className="h-4 w-4" /> : "1"}
-            </div>
-            <div className={`w-16 h-1 rounded ${step >= 2 ? "bg-primary" : "bg-muted"}`} />
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              step >= 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-            }`}>
-              2
-            </div>
-          </div>
+          <Tabs value={step} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="account" disabled={step === "company"}>
+                Account
+              </TabsTrigger>
+              <TabsTrigger value="company" disabled={step === "account"}>
+                Company
+              </TabsTrigger>
+            </TabsList>
 
-          {step === 1 ? (
-            <form onSubmit={handleStep1Submit}>
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="companyName">Company Name</FieldLabel>
-                  <Input
-                    id="companyName"
-                    placeholder="Acme HVAC Services"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                  />
-                  {errors.companyName && (
-                    <p className="text-sm text-destructive mt-1">{errors.companyName}</p>
-                  )}
-                </Field>
-                
-                <Field>
-                  <FieldLabel htmlFor="adminName">Your Name</FieldLabel>
-                  <Input
-                    id="adminName"
-                    placeholder="John Smith"
-                    value={adminName}
-                    onChange={(e) => setAdminName(e.target.value)}
-                  />
-                  {errors.adminName && (
-                    <p className="text-sm text-destructive mt-1">{errors.adminName}</p>
-                  )}
-                </Field>
+            {/* Account Step */}
+            <TabsContent value="account">
+              {error && (
+                <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                  <p className="text-sm text-destructive">{error}</p>
+                </div>
+              )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <form onSubmit={handleAccountSubmit}>
+                <FieldGroup>
                   <Field>
-                    <FieldLabel htmlFor="email">Email</FieldLabel>
+                    <FieldLabel htmlFor="email">Email Address</FieldLabel>
                     <Input
                       id="email"
                       type="email"
                       placeholder="you@company.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value)
+                        setError(null)
+                      }}
+                      required
                     />
-                    {errors.email && (
-                      <p className="text-sm text-destructive mt-1">{errors.email}</p>
-                    )}
                   </Field>
-                  
+
                   <Field>
-                    <FieldLabel htmlFor="phone">Phone</FieldLabel>
+                    <FieldLabel htmlFor="password">Password</FieldLabel>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Min 8 characters"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value)
+                        setError(null)
+                      }}
+                      required
+                    />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="confirm">Confirm Password</FieldLabel>
+                    <Input
+                      id="confirm"
+                      type="password"
+                      placeholder="Confirm password"
+                      value={confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value)
+                        setError(null)
+                      }}
+                      required
+                    />
+                  </Field>
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={!email || !password || !confirmPassword}
+                  >
+                    Continue
+                  </Button>
+                </FieldGroup>
+              </form>
+            </TabsContent>
+
+            {/* Company Step */}
+            <TabsContent value="company">
+              {error && (
+                <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                  <p className="text-sm text-destructive">{error}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleSignup}>
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="company">Company Name</FieldLabel>
+                    <Input
+                      id="company"
+                      placeholder="Your HVAC Company"
+                      value={companyName}
+                      onChange={(e) => {
+                        setCompanyName(e.target.value)
+                        setError(null)
+                      }}
+                      required
+                    />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="phone">Company Phone</FieldLabel>
                     <Input
                       id="phone"
                       type="tel"
                       placeholder="(555) 123-4567"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      value={companyPhone}
+                      onChange={(e) => {
+                        setCompanyPhone(e.target.value)
+                        setError(null)
+                      }}
+                      required
                     />
-                    {errors.phone && (
-                      <p className="text-sm text-destructive mt-1">{errors.phone}</p>
-                    )}
                   </Field>
-                </div>
 
-                <Field>
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <div className="relative">
+                  <Field>
+                    <FieldLabel htmlFor="address">Service Address (Optional)</FieldLabel>
                     <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="At least 8 characters"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pr-10"
+                      id="address"
+                      placeholder="123 Main St, City, State ZIP"
+                      value={companyAddress}
+                      onChange={(e) => {
+                        setCompanyAddress(e.target.value)
+                        setError(null)
+                      }}
                     />
-                    <button
+                  </Field>
+
+                  <div className="flex gap-3">
+                    <Button
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setStep("account")}
+                      disabled={loading}
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
+                      Back
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1"
+                      disabled={!companyName || !companyPhone || loading}
+                    >
+                      {loading ? "Creating Account..." : "Create Account"}
+                    </Button>
                   </div>
-                  {errors.password && (
-                    <p className="text-sm text-destructive mt-1">{errors.password}</p>
-                  )}
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="confirmPassword">Confirm Password</FieldLabel>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Confirm your password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                  {errors.confirmPassword && (
-                    <p className="text-sm text-destructive mt-1">{errors.confirmPassword}</p>
-                  )}
-                </Field>
-
-                <Button type="submit" className="w-full">
-                  Continue to Plan Selection
-                </Button>
-              </FieldGroup>
-            </form>
-          ) : (
-            <div className="space-y-6">
-              <RadioGroup
-                value={selectedPlan}
-                onValueChange={(value) => setSelectedPlan(value as SubscriptionPlan)}
-              >
-                <div className="grid gap-4">
-                  {plans.map((plan) => (
-                    <label
-                      key={plan.id}
-                      className={`flex cursor-pointer rounded-lg border p-4 transition-colors ${
-                        selectedPlan === plan.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:bg-muted/50"
-                      }`}
-                    >
-                      <RadioGroupItem value={plan.id} className="sr-only" />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-semibold">{plan.name}</h3>
-                          <span className="text-lg font-bold">
-                            ${plan.price}
-                            <span className="text-sm font-normal text-muted-foreground">/mo</span>
-                          </span>
-                        </div>
-                        <ul className="space-y-1">
-                          {plan.features.map((feature) => (
-                            <li
-                              key={feature}
-                              className="text-sm text-muted-foreground flex items-center gap-2"
-                            >
-                              <Check className="h-3 w-3 text-primary" />
-                              {feature}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </RadioGroup>
-
-              <div className="rounded-lg bg-muted p-4">
-                <p className="text-sm text-muted-foreground">
-                  <strong className="text-foreground">14-day free trial</strong> - No credit card required. 
-                  You can upgrade or cancel anytime.
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setStep(1)}
-                >
-                  Back
-                </Button>
-                <Button
-                  type="button"
-                  className="flex-1"
-                  onClick={handleFinalSubmit}
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Creating account..." : "Start Free Trial"}
-                </Button>
-              </div>
-            </div>
-          )}
+                </FieldGroup>
+              </form>
+            </TabsContent>
+          </Tabs>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Already have an account?{" "}
               <Link href="/login" className="text-primary hover:underline font-medium">
-                Sign in
+                Log in
               </Link>
             </p>
           </div>
         </CardContent>
       </Card>
-
-      <p className="mt-6 text-sm text-sidebar-muted text-center max-w-md">
-        By creating an account, you agree to our Terms of Service and Privacy Policy.
-      </p>
     </div>
   )
 }
