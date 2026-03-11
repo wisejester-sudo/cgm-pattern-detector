@@ -107,3 +107,29 @@ export interface NotificationPreferences {
   quiet_hours_start: string | null // e.g., "22:00"
   quiet_hours_end: string | null // e.g., "07:00"
 }
+
+export interface JobUpdate {
+  id: string
+  job_id: string
+  status: JobStatus
+  notes: string | null
+  photos: string[] // Array of photo URLs
+  created_at: string
+  created_by_tech_id: string | null
+}
+
+export interface MagicToken {
+  id: string
+  token: string
+  technician_id: string
+  expires_at: string
+  created_at: string
+}
+
+export interface PublicJobToken {
+  id: string
+  token: string
+  job_id: string
+  expires_at: string
+  created_at: string
+}
