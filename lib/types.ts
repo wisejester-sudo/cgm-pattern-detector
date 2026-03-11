@@ -1,5 +1,32 @@
 export type JobStatus = 'scheduled' | 'en_route' | 'working' | 'complete'
 
+export type UserRole = 'admin' | 'technician'
+
+export type SubscriptionPlan = 'starter' | 'pro'
+
+export interface User {
+  id: string
+  name: string
+  email: string
+  phone: string
+  role: UserRole
+  is_active: boolean
+  created_at: string
+  last_login: string | null
+  avatar_url?: string | null
+}
+
+export interface Admin extends User {
+  role: 'admin'
+  password_hash?: string // In real app, handled by backend
+}
+
+export interface Technician extends User {
+  role: 'technician'
+  pin: string
+  assigned_jobs: string[]
+}
+
 export interface Job {
   id: string
   customer_name: string
@@ -12,16 +39,6 @@ export interface Job {
   assigned_tech_id: string | null
   created_at: string
   updated_at: string
-}
-
-export interface Technician {
-  id: string
-  name: string
-  email: string
-  phone: string
-  pin: string
-  is_active: boolean
-  created_at: string
 }
 
 export interface JobPhoto {
@@ -55,4 +72,38 @@ export interface CompanySettings {
   company_phone: string
   default_sms_template_id: string | null
   updated_at: string
+  // Branding
+  logo_url?: string | null
+  primary_color?: string
+  tagline?: string | null
+  business_hours?: string | null
+  service_area?: string | null
+}
+
+export interface Subscription {
+  id: string
+  plan: SubscriptionPlan
+  status: 'active' | 'cancelled' | 'past_due'
+  current_period_start: string
+  current_period_end: string
+  sms_used_this_month: number
+  sms_limit: number
+}
+
+export interface Invoice {
+  id: string
+  amount: number
+  status: 'paid' | 'pending' | 'failed'
+  created_at: string
+  description: string
+}
+
+export interface NotificationPreferences {
+  email_new_job: boolean
+  email_status_updates: boolean
+  email_customer_replies: boolean
+  email_daily_summary: boolean
+  sms_enabled: boolean
+  quiet_hours_start: string | null // e.g., "22:00"
+  quiet_hours_end: string | null // e.g., "07:00"
 }

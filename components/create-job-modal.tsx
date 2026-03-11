@@ -23,11 +23,16 @@ import {
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import { Plus } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
+import { useStore } from "@/lib/store"
 import type { Technician } from "@/lib/types"
 
 interface CreateJobModalProps {
-  technicians: Technician[]
-  onCreateJob: (job: {
+  // Support both controlled and uncontrolled modes
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  // Optional - will use store if not provided
+  technicians?: Technician[]
+  onCreateJob?: (job: {
     customer_name: string
     customer_phone: string
     customer_address: string
@@ -38,8 +43,24 @@ interface CreateJobModalProps {
   }) => void
 }
 
-export function CreateJobModal({ technicians, onCreateJob }: CreateJobModalProps) {
-  const [open, setOpen] = useState(false)
+export function CreateJobModal({ 
+  open: controlledOpen, 
+  onOpenChange,
+  technicians: propTechnicians, 
+  onCreateJob 
+}: CreateJobModalProps) {
+  // Use store for technicians and addJob if not provided as props
+  const { technicians: storeTechnicians, addJob } = useStore()
+  const technicians = propTechnicians ?? storeTechnicians ?? []
+  
+  // Support both controlled and uncontrolled open state
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+  const setOpen = (value: boolean) => {
+    if (onOpenChange) onOpenChange(value)
+    if (!isControlled) setInternalOpen(value)
+  }
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     customer_name: "",
@@ -61,7 +82,7 @@ export function CreateJobModal({ technicians, onCreateJob }: CreateJobModalProps
       ? new Date(`${formData.scheduled_date}T${formData.scheduled_time}`).toISOString()
       : new Date().toISOString()
 
-    onCreateJob({
+    const jobData = {
       customer_name: formData.customer_name,
       customer_phone: formData.customer_phone,
       customer_address: formData.customer_address,
@@ -69,7 +90,15 @@ export function CreateJobModal({ technicians, onCreateJob }: CreateJobModalProps
       scheduled_time: scheduledDateTime,
       notes: formData.notes || null,
       assigned_tech_id: formData.assigned_tech_id || null,
-    })
+      status: "scheduled" as const,
+    }
+
+    // Use provided callback or fall back to store's addJob
+    if (onCreateJob) {
+      onCreateJob(jobData)
+    } else {
+      addJob(jobData)
+    }
 
     setFormData({
       customer_name: "",
@@ -200,13 +229,19 @@ export function CreateJobModal({ technicians, onCreateJob }: CreateJobModalProps
                   <SelectValue placeholder="Select technician (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  {technicians
-                    .filter((t) => t.is_active)
-                    .map((tech) => (
-                      <SelectItem key={tech.id} value={tech.id}>
-                        {tech.name}
-                      </SelectItem>
-                    ))}
+                  {technicians.length > 0 ? (
+                    technicians
+                      .filter((t) => t.is_active)
+                      .map((tech) => (
+                        <SelectItem key={tech.id} value={tech.id}>
+                          {tech.name}
+                        </SelectItem>
+                      ))
+                  ) : (
+                    <SelectItem value="" disabled>
+                      No technicians available
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </Field>

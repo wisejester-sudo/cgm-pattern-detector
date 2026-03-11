@@ -4,11 +4,11 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { LogOut, Phone, MapPin, Clock, ChevronRight } from "lucide-react"
+import { LogOut, MapPin, Clock, ChevronRight, Calendar } from "lucide-react"
 import Link from "next/link"
-import { useStore, getTechnicianById } from "@/lib/store"
+import { useStore, getTechnicianById, maskPhoneNumber } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 
 const statusConfig: Record<JobStatus, { label: string; className: string }> = {
   scheduled: {
@@ -41,24 +41,33 @@ export default function TechJobsPage() {
     }
   }, [currentTechId, router])
 
-  if (!technician) {
-    return null
-  }
+  // Only show jobs assigned to this technician - DATA ISOLATION
+  const myJobs = useMemo(() => {
+    if (!currentTechId) return []
+    return jobs
+      .filter((j) => j.assigned_tech_id === currentTechId)
+      .sort((a, b) => {
+        const statusOrder: Record<JobStatus, number> = {
+          working: 0,
+          en_route: 1,
+          scheduled: 2,
+          complete: 3,
+        }
+        if (statusOrder[a.status] !== statusOrder[b.status]) {
+          return statusOrder[a.status] - statusOrder[b.status]
+        }
+        return new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime()
+      })
+  }, [jobs, currentTechId])
 
-  const myJobs = jobs
-    .filter((j) => j.assigned_tech_id === currentTechId)
-    .sort((a, b) => {
-      const statusOrder: Record<JobStatus, number> = {
-        working: 0,
-        en_route: 1,
-        scheduled: 2,
-        complete: 3,
-      }
-      if (statusOrder[a.status] !== statusOrder[b.status]) {
-        return statusOrder[a.status] - statusOrder[b.status]
-      }
-      return new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime()
-    })
+  // Today's jobs
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const todaysJobs = myJobs.filter((job) => {
+    const jobDate = new Date(job.scheduled_time)
+    jobDate.setHours(0, 0, 0, 0)
+    return jobDate.getTime() === today.getTime()
+  })
 
   const activeJobs = myJobs.filter((j) => j.status !== "complete")
   const completedJobs = myJobs.filter((j) => j.status === "complete")
@@ -66,6 +75,10 @@ export default function TechJobsPage() {
   const handleLogout = () => {
     logoutTechnician()
     router.push("/tech")
+  }
+
+  if (!technician) {
+    return null
   }
 
   return (
@@ -76,7 +89,7 @@ export default function TechJobsPage() {
           <div>
             <h1 className="font-semibold">Hi, {technician.name}</h1>
             <p className="text-sm text-sidebar-muted">
-              {activeJobs.length} active job{activeJobs.length !== 1 ? "s" : ""}
+              {activeJobs.length} active job{activeJobs.length !== 1 ? "s" : ""} today
             </p>
           </div>
           <Button
@@ -91,13 +104,31 @@ export default function TechJobsPage() {
         </div>
       </header>
 
+      {/* Quick Stats */}
+      <div className="p-4 bg-muted/50 border-b">
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div>
+            <p className="text-2xl font-bold">{todaysJobs.length}</p>
+            <p className="text-xs text-muted-foreground">Today</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold">{activeJobs.length}</p>
+            <p className="text-xs text-muted-foreground">Active</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold">{completedJobs.length}</p>
+            <p className="text-xs text-muted-foreground">Done</p>
+          </div>
+        </div>
+      </div>
+
       {/* Jobs List */}
       <main className="p-4 space-y-6">
         {/* Active Jobs */}
         {activeJobs.length > 0 && (
           <section>
             <h2 className="text-sm font-medium text-muted-foreground mb-3">
-              Active Jobs
+              Your Active Jobs
             </h2>
             <div className="space-y-3">
               {activeJobs.map((job) => {
@@ -152,7 +183,7 @@ export default function TechJobsPage() {
         {completedJobs.length > 0 && (
           <section>
             <h2 className="text-sm font-medium text-muted-foreground mb-3">
-              Completed Today
+              Completed
             </h2>
             <div className="space-y-3">
               {completedJobs.slice(0, 5).map((job) => (
@@ -180,7 +211,8 @@ export default function TechJobsPage() {
 
         {myJobs.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-muted-foreground mb-2">No jobs assigned</p>
+            <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground mb-2">No jobs assigned to you</p>
             <p className="text-sm text-muted-foreground">
               Check back later for new assignments
             </p>
