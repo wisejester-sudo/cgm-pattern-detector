@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,7 +14,6 @@ type SignupStep = "account" | "company" | "success"
 
 export default function SignupPage() {
   const router = useRouter()
-  const supabase = createClient()
 
   const [step, setStep] = useState<SignupStep>("account")
   const [loading, setLoading] = useState(false)
@@ -54,37 +52,15 @@ export default function SignupPage() {
     setLoading(true)
     setError(null)
 
-    try {
-      // 1. Create auth user with metadata
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
-          data: {
-            role: "admin",
-            company_name: companyName,
-          },
-        },
-      })
-
-      if (authError) throw authError
-
-      if (authData.user) {
-        // 2. Create company record (mock - in real app would create in database)
-        // For now, just show success and redirect
-        setStep("success")
-
-        // Redirect after 2 seconds
-        setTimeout(() => {
-          router.push("/dashboard")
-          router.refresh()
-        }, 2000)
-      }
-    } catch (err: any) {
-      setError(err.message || "Failed to create account")
-      setLoading(false)
-    }
+    // Demo mode - simulate success
+    setTimeout(() => {
+      setStep("success")
+      
+      // Redirect after 2 seconds
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 2000)
+    }, 500)
   }
 
   if (step === "success") {

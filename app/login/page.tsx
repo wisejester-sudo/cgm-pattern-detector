@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,7 +11,6 @@ import { Zap, Eye, EyeOff, AlertCircle } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
-  const supabase = createClient()
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -25,24 +23,10 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (authError) throw authError
-
-      // Wait a moment for session to be set
-      setTimeout(() => {
-        router.push("/dashboard")
-        router.refresh()
-      }, 500)
-    } catch (err: any) {
-      setError(err.message || "Invalid email or password")
-    } finally {
-      setLoading(false)
-    }
+    // Demo mode - accept any credentials
+    setTimeout(() => {
+      router.push("/dashboard")
+    }, 500)
   }
 
   return (
@@ -145,7 +129,7 @@ export default function LoginPage() {
 
       <div className="mt-6 text-center space-y-2">
         <p className="text-sm text-sidebar-muted">
-          Sign in with your Supabase account
+          Demo mode - enter any credentials to continue
         </p>
         <Link
           href="/tech"

@@ -1,70 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
 import { AppSidebar } from "@/components/app-sidebar"
 import { TopBar } from "@/components/top-bar"
-
-// Check if Supabase is configured
-const isSupabaseConfigured = () => {
-  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-}
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const router = useRouter()
-  const supabase = createClient()
-  const [isLoading, setIsLoading] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      // If Supabase is not configured, allow access in demo mode
-      if (!isSupabaseConfigured()) {
-        setIsAuthenticated(true)
-        setIsLoading(false)
-        return
-      }
-
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-
-        if (!session) {
-          router.push("/login")
-        } else {
-          setIsAuthenticated(true)
-        }
-      } catch (error) {
-        // If there's an error, allow demo mode
-        setIsAuthenticated(true)
-      }
-      setIsLoading(false)
-    }
-
-    checkAuth()
-  }, [supabase, router])
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!isAuthenticated) {
-    return null
-  }
-
   return (
     <div className="flex min-h-screen bg-background">
       <AppSidebar />
