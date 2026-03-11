@@ -6,6 +6,11 @@ import { createClient } from "@/lib/supabase/client"
 import { AppSidebar } from "@/components/app-sidebar"
 import { TopBar } from "@/components/top-bar"
 
+// Check if Supabase is configured
+const isSupabaseConfigured = () => {
+  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -18,13 +23,25 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const checkAuth = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      // If Supabase is not configured, allow access in demo mode
+      if (!isSupabaseConfigured()) {
+        setIsAuthenticated(true)
+        setIsLoading(false)
+        return
+      }
 
-      if (!session) {
-        router.push("/login")
-      } else {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+
+        if (!session) {
+          router.push("/login")
+        } else {
+          setIsAuthenticated(true)
+        }
+      } catch (error) {
+        // If there's an error, allow demo mode
         setIsAuthenticated(true)
       }
       setIsLoading(false)
