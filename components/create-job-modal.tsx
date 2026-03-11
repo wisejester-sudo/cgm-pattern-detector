@@ -128,137 +128,151 @@ export function CreateJobModal({
           Create Job
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
+      <DialogContent className="w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Create New Job</DialogTitle>
           <DialogDescription>
             Enter the customer and job details to create a new job.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="customer_name">Customer Name</FieldLabel>
-              <Input
-                id="customer_name"
-                placeholder="Enter customer name"
-                value={formData.customer_name}
-                onChange={(e) =>
-                  setFormData({ ...formData, customer_name: e.target.value })
-                }
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="customer_phone">Phone Number</FieldLabel>
-              <Input
-                id="customer_phone"
-                type="tel"
-                placeholder="(555) 123-4567"
-                value={formData.customer_phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, customer_phone: e.target.value })
-                }
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="customer_address">Address</FieldLabel>
-              <Textarea
-                id="customer_address"
-                placeholder="Enter full address"
-                value={formData.customer_address}
-                onChange={(e) =>
-                  setFormData({ ...formData, customer_address: e.target.value })
-                }
-                rows={2}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="job_type">Job Type</FieldLabel>
-              <Select
-                value={formData.job_type}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, job_type: value })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select job type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="AC Repair">AC Repair</SelectItem>
-                  <SelectItem value="AC Installation">AC Installation</SelectItem>
-                  <SelectItem value="Furnace Repair">Furnace Repair</SelectItem>
-                  <SelectItem value="Furnace Maintenance">Furnace Maintenance</SelectItem>
-                  <SelectItem value="Duct Cleaning">Duct Cleaning</SelectItem>
-                  <SelectItem value="System Inspection">System Inspection</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-            <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto pr-1">
+            <FieldGroup>
+              {/* Customer Info */}
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground pt-1">Customer</p>
+              <div className="grid grid-cols-2 gap-4">
+                <Field>
+                  <FieldLabel htmlFor="customer_name">Customer Name</FieldLabel>
+                  <Input
+                    id="customer_name"
+                    placeholder="Enter customer name"
+                    value={formData.customer_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, customer_name: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="customer_phone">Phone Number</FieldLabel>
+                  <Input
+                    id="customer_phone"
+                    type="tel"
+                    placeholder="(555) 123-4567"
+                    value={formData.customer_phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, customer_phone: e.target.value })
+                    }
+                  />
+                </Field>
+              </div>
               <Field>
-                <FieldLabel htmlFor="scheduled_date">Date</FieldLabel>
-                <Input
-                  id="scheduled_date"
-                  type="date"
-                  value={formData.scheduled_date}
+                <FieldLabel htmlFor="customer_address">Address</FieldLabel>
+                <Textarea
+                  id="customer_address"
+                  placeholder="Enter full address"
+                  value={formData.customer_address}
                   onChange={(e) =>
-                    setFormData({ ...formData, scheduled_date: e.target.value })
+                    setFormData({ ...formData, customer_address: e.target.value })
                   }
+                  rows={2}
                 />
               </Field>
-              <Field>
-                <FieldLabel htmlFor="scheduled_time">Time</FieldLabel>
-                <Input
-                  id="scheduled_time"
-                  type="time"
-                  value={formData.scheduled_time}
-                  onChange={(e) =>
-                    setFormData({ ...formData, scheduled_time: e.target.value })
-                  }
-                />
-              </Field>
-            </div>
-            <Field>
-              <FieldLabel htmlFor="assigned_tech_id">Assign Technician</FieldLabel>
-              <Select
-                value={formData.assigned_tech_id}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, assigned_tech_id: value })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select technician (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {technicians.length > 0 ? (
-                    technicians
-                      .filter((t) => t.is_active)
-                      .map((tech) => (
-                        <SelectItem key={tech.id} value={tech.id}>
-                          {tech.name}
+
+              {/* Job Details */}
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground pt-2">Job Details</p>
+              <div className="grid grid-cols-2 gap-4">
+                <Field>
+                  <FieldLabel htmlFor="job_type">Job Type</FieldLabel>
+                  <Select
+                    value={formData.job_type}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, job_type: value })
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select job type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AC Repair">AC Repair</SelectItem>
+                      <SelectItem value="AC Installation">AC Installation</SelectItem>
+                      <SelectItem value="Furnace Repair">Furnace Repair</SelectItem>
+                      <SelectItem value="Furnace Maintenance">Furnace Maintenance</SelectItem>
+                      <SelectItem value="Duct Cleaning">Duct Cleaning</SelectItem>
+                      <SelectItem value="System Inspection">System Inspection</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="assigned_tech_id">Assign Technician</FieldLabel>
+                  <Select
+                    value={formData.assigned_tech_id}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, assigned_tech_id: value })
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select technician (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {technicians.length > 0 ? (
+                        technicians
+                          .filter((t) => t.is_active)
+                          .map((tech) => (
+                            <SelectItem key={tech.id} value={tech.id}>
+                              {tech.name}
+                            </SelectItem>
+                          ))
+                      ) : (
+                        <SelectItem value="none" disabled>
+                          No technicians available
                         </SelectItem>
-                      ))
-                  ) : (
-                    <SelectItem value="" disabled>
-                      No technicians available
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="notes">Notes (optional)</FieldLabel>
-              <Textarea
-                id="notes"
-                placeholder="Any additional notes..."
-                value={formData.notes}
-                onChange={(e) =>
-                  setFormData({ ...formData, notes: e.target.value })
-                }
-                rows={2}
-              />
-            </Field>
-          </FieldGroup>
-          <DialogFooter className="mt-6">
+                      )}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Field>
+                  <FieldLabel htmlFor="scheduled_date">Date</FieldLabel>
+                  <Input
+                    id="scheduled_date"
+                    type="date"
+                    value={formData.scheduled_date}
+                    onChange={(e) =>
+                      setFormData({ ...formData, scheduled_date: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="scheduled_time">Time</FieldLabel>
+                  <Input
+                    id="scheduled_time"
+                    type="time"
+                    value={formData.scheduled_time}
+                    onChange={(e) =>
+                      setFormData({ ...formData, scheduled_time: e.target.value })
+                    }
+                  />
+                </Field>
+              </div>
+
+              {/* Notes */}
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground pt-2">Additional Info</p>
+              <Field>
+                <FieldLabel htmlFor="notes">Notes (optional)</FieldLabel>
+                <Textarea
+                  id="notes"
+                  placeholder="Any additional notes..."
+                  value={formData.notes}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notes: e.target.value })
+                  }
+                  rows={3}
+                />
+              </Field>
+            </FieldGroup>
+          </div>
+          <DialogFooter className="shrink-0 pt-4 border-t border-border mt-4">
             <Button
               type="button"
               variant="outline"
