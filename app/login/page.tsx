@@ -2,48 +2,31 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
-import { Zap, Eye, EyeOff } from "lucide-react"
-import { useStore } from "@/lib/store"
+import Link from "next/link"
+import { Zap, Eye, EyeOff, AlertCircle } from "lucide-react"
 
-export default function AdminLoginPage() {
+export default function LoginPage() {
   const router = useRouter()
-  const { loginAdmin } = useStore()
+
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
-    setIsLoading(true)
+    setLoading(true)
+    setError(null)
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    const admin = loginAdmin(email, password)
-
-    if (admin) {
+    // Demo mode - accept any credentials
+    setTimeout(() => {
       router.push("/")
-    } else {
-      setError("Invalid email or password. Please try again.")
-    }
-
-    setIsLoading(false)
+    }, 500)
   }
 
   return (
@@ -59,7 +42,14 @@ export default function AdminLoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin}>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="email">Email Address</FieldLabel>
@@ -70,8 +60,9 @@ export default function AdminLoginPage() {
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value)
-                    setError("")
+                    setError(null)
                   }}
+                  disabled={loading}
                   autoComplete="email"
                   required
                 />
@@ -94,8 +85,9 @@ export default function AdminLoginPage() {
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value)
-                      setError("")
+                      setError(null)
                     }}
+                    disabled={loading}
                     autoComplete="current-password"
                     required
                     className="pr-10"
@@ -113,31 +105,13 @@ export default function AdminLoginPage() {
                   </button>
                 </div>
               </Field>
-              
-              {error && (
-                <p className="text-sm text-destructive">{error}</p>
-              )}
-
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="remember"
-                  checked={rememberMe}
-                  onCheckedChange={(checked) => setRememberMe(checked === true)}
-                />
-                <label
-                  htmlFor="remember"
-                  className="text-sm text-muted-foreground cursor-pointer"
-                >
-                  Remember me for 30 days
-                </label>
-              </div>
 
               <Button
                 type="submit"
                 className="w-full"
-                disabled={!email || !password || isLoading}
+                disabled={!email || !password || loading}
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {loading ? "Signing in..." : "Sign In"}
               </Button>
             </FieldGroup>
           </form>
@@ -155,7 +129,7 @@ export default function AdminLoginPage() {
 
       <div className="mt-6 text-center space-y-2">
         <p className="text-sm text-sidebar-muted">
-          Demo credentials: harry@coolairhvac.com / demo123
+          Demo mode - enter any credentials to continue
         </p>
         <Link
           href="/tech"
