@@ -132,7 +132,7 @@ export default function DashboardPage() {
                   const tech = getTechnicianById(technicians, job.assigned_tech_id)
                   const scheduledTime = new Date(job.scheduled_time)
                   return (
-                    <Link key={job.id} href={`/dashboard/jobs/${job.id}`}>
+                    <Link key={job.id} href={`/jobs/${job.id}`}>
                       <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -154,7 +154,7 @@ export default function DashboardPage() {
                   )
                 })}
                 {todaysJobs.length > 5 && (
-                  <Link href="/dashboard/jobs" className="block text-center text-sm text-primary hover:underline py-2">
+                  <Link href="/jobs" className="block text-center text-sm text-primary hover:underline py-2">
                     View all {todaysJobs.length} jobs
                   </Link>
                 )}
@@ -245,13 +245,13 @@ export default function DashboardPage() {
               <Plus className="mr-2 h-4 w-4" />
               Create Job
             </Button>
-            <Link href="/dashboard/technicians">
+            <Link href="/technicians">
               <Button variant="outline">
                 <Users className="mr-2 h-4 w-4" />
                 Add Technician
               </Button>
             </Link>
-            <Link href="/dashboard/reports">
+            <Link href="/reports">
               <Button variant="outline">
                 <BarChart3 className="mr-2 h-4 w-4" />
                 View Reports

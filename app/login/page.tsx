@@ -25,7 +25,7 @@ export default function LoginPage() {
 
     // Demo mode - accept any credentials
     setTimeout(() => {
-      router.push("/dashboard")
+      router.push("/")
     }, 500)
   }
 
