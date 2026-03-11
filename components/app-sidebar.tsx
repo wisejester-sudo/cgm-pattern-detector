@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client"
-import type { User as SupabaseUser } from "@supabase/supabase-js"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -37,7 +36,7 @@ export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient()
-  const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [user, setUser] = useState<{ email?: string | null } | null>(null)
 
   useEffect(() => {
     const getUser = async () => {

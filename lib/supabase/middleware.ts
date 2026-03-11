@@ -1,30 +1,22 @@
-import { createServerClient } from "@supabase/ssr"
+// Mock Supabase middleware client for demo mode
+// To enable real Supabase auth, add the integration via v0 settings
+
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export function createMiddlewareClient(request: NextRequest) {
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options)
-          })
-        },
-      },
-    }
-  )
+  // Mock supabase client for demo mode
+  const supabase = {
+    auth: {
+      getSession: async () => ({ data: { session: null }, error: null }),
+    },
+  }
 
   return { supabase, response }
 }
