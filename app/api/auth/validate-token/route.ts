@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { createHash } from "crypto"
 
 // POST /api/auth/validate-token - Validate magic link token
 export async function POST(request: NextRequest) {
@@ -25,20 +24,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Hash the token for lookup
-    const tokenHash = createHash("sha256").update(token).digest("hex")
-
-    // Find the token
-    const { data: magicToken, error: tokenError } = await supabase
-      .from("magic_tokens")
-      .select(`
-        *,
-        technician:technicians(id, name, email, phone, is_active)
-      `)
-      .eq("token_hash", tokenHash)
+    // Look up technician by magic link token
+    const { data: technician, error: tokenError } = await supabase
+      .from("technicians")
+      .select("*")
+      .eq("magic_link_token", token)
       .single()
 
-    if (tokenError || !magicToken) {
+    if (tokenError || !technician) {
       return NextResponse.json(
         { valid: false, error: "Invalid token" },
         { status: 401 }
@@ -46,49 +39,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Check expiration
-    if (new Date(magicToken.expires_at) < new Date()) {
-      // Delete expired token
-      await supabase
-        .from("magic_tokens")
-        .delete()
-        .eq("id", magicToken.id)
-
+    if (technician.magic_link_expires_at && new Date(technician.magic_link_expires_at) < new Date()) {
       return NextResponse.json(
         { valid: false, error: "Token has expired" },
         { status: 401 }
       )
     }
 
-    // Check if technician is still active
-    if (!magicToken.technician?.is_active) {
-      return NextResponse.json(
-        { valid: false, error: "Technician is no longer active" },
-        { status: 401 }
-      )
-    }
-
-    // Extend token expiration (auto-refresh on use)
-    const newExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
-    await supabase
-      .from("magic_tokens")
-      .update({ expires_at: newExpiresAt.toISOString() })
-      .eq("id", magicToken.id)
-
-    // Update technician last login
-    await supabase
-      .from("technicians")
-      .update({ last_login: new Date().toISOString() })
-      .eq("id", magicToken.technician_id)
-
     return NextResponse.json({
       valid: true,
+      name: technician.name,
       technician: {
-        id: magicToken.technician.id,
-        name: magicToken.technician.name,
-        email: magicToken.technician.email,
-        phone: magicToken.technician.phone,
+        id: technician.id,
+        name: technician.name,
+        email: technician.email,
+        phone: technician.phone,
       },
-      expires_at: newExpiresAt.toISOString(),
     })
   } catch (error) {
     console.error("[API] Unexpected error:", error)
