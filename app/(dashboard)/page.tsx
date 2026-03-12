@@ -18,9 +18,15 @@ const statusConfig: Record<JobStatus, { label: string; className: string }> = {
 }
 
 export default function DashboardPage() {
-  const { jobs, technicians, smsLogs, currentAdmin, subscription } = useStore()
+  const { jobs, technicians, smsLogs, currentAdmin, subscription, loadJobsFromSupabase, loadTechniciansFromSupabase } = useStore()
   const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
+
+  // Load data from Supabase on mount
+  useEffect(() => {
+    loadJobsFromSupabase()
+    loadTechniciansFromSupabase()
+  }, [loadJobsFromSupabase, loadTechniciansFromSupabase])
 
   // Prevent hydration mismatch by only rendering dynamic content after mount
   useEffect(() => {

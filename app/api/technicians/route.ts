@@ -47,6 +47,14 @@ export async function GET(request: NextRequest) {
 // POST /api/technicians - Create new technician
 export async function POST(request: NextRequest) {
   try {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return NextResponse.json(
+        { error: "Database not configured" },
+        { status: 503 }
+      )
+    }
+
     const supabase = await createClient()
     
     // Check authentication

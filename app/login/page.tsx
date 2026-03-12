@@ -23,10 +23,25 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    // Demo mode - accept any credentials
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        setError(errorData.error || "Login failed")
+        setLoading(false)
+        return
+      }
+
       router.push("/")
-    }, 500)
+    } catch (err) {
+      setError("An error occurred. Please try again.")
+      setLoading(false)
+    }
   }
 
   return (

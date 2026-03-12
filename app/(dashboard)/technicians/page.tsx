@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,7 +26,7 @@ import { useStore } from "@/lib/store"
 import { Spinner } from "@/components/ui/spinner"
 
 export default function TechniciansPage() {
-  const { technicians, jobs, addTechnician, updateTechnician, deleteTechnician } =
+  const { technicians, jobs, addTechnician, updateTechnician, deleteTechnician, loadTechniciansFromSupabase } =
     useStore()
 
   const [isAddOpen, setIsAddOpen] = useState(false)
@@ -38,17 +38,50 @@ export default function TechniciansPage() {
     pin: "",
   })
 
+  // Load technicians from Supabase on mount
+  useEffect(() => {
+    loadTechniciansFromSupabase()
+  }, [loadTechniciansFromSupabase])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
-    addTechnician({
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      pin: formData.pin,
-      is_active: true,
-    })
+    try {
+      const response = await fetch('/api/technicians', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          pin: formData.pin,
+        }),
+      })
+
+      if (response.ok) {
+        // Reload from Supabase
+        await loadTechniciansFromSupabase()
+      } else {
+        // Fall back to local store
+        addTechnician({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          pin: formData.pin,
+          is_active: true,
+        })
+      }
+    } catch {
+      // Fall back to local store on error
+      addTechnician({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        pin: formData.pin,
+        is_active: true,
+      })
+    }
 
     setFormData({ name: "", email: "", phone: "", pin: "" })
     setIsLoading(false)

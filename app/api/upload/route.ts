@@ -5,6 +5,14 @@ import { compressImage, generateThumbnail, validateImageFile } from "@/lib/image
 // POST /api/upload - Upload and process an image
 export async function POST(request: NextRequest) {
   try {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return NextResponse.json(
+        { error: "Database not configured" },
+        { status: 503 }
+      )
+    }
+
     const supabase = await createClient()
     
     // Check authentication
