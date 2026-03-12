@@ -143,6 +143,13 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
+
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      // Demo mode - just return success, the client-side store handles the deletion
+      return NextResponse.json({ success: true })
+    }
+
     const supabase = await createClient()
     
     // Check authentication
