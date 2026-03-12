@@ -16,6 +16,14 @@ export function SetupGuard({ children }: { children: React.ReactNode }) {
   const checkSetupStatus = async () => {
     try {
       const response = await fetch('/api/auth/user-role')
+      
+      // If API returns 503 (Supabase not configured) or other errors, allow demo mode
+      if (!response.ok) {
+        setSetupComplete(true)
+        setIsChecking(false)
+        return
+      }
+
       const data = await response.json()
 
       if (data.role === 'admin' && data.user?.company) {
@@ -26,12 +34,16 @@ export function SetupGuard({ children }: { children: React.ReactNode }) {
         setSetupComplete(true)
       } else if (data.role === 'technician') {
         setSetupComplete(true)
+      } else if (data.error) {
+        // API returned error (likely not authenticated) - allow demo mode
+        setSetupComplete(true)
       } else {
-        router.push('/auth/login')
-        return
+        // No role or user - still allow demo mode
+        setSetupComplete(true)
       }
-    } catch (error) {
-      console.error('Error checking setup status:', error)
+    } catch {
+      // Allow demo mode on error
+      setSetupComplete(true)
     } finally {
       setIsChecking(false)
     }
