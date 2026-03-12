@@ -1,6 +1,7 @@
 "use client"
 
 import { use, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +14,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
   ArrowLeft,
   Phone,
@@ -37,6 +47,7 @@ export default function JobDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  const router = useRouter()
   const { id } = use(params)
   const {
     jobs,
@@ -48,6 +59,7 @@ export default function JobDetailPage({
     updateJobStatus,
     addPhoto,
     deletePhoto,
+    deleteJob,
     addSmsLog,
   } = useStore()
 
@@ -57,6 +69,8 @@ export default function JobDetailPage({
   const [selectedTemplate, setSelectedTemplate] = useState(templates[0]?.id || "")
   const [editingNotes, setEditingNotes] = useState(false)
   const [notes, setNotes] = useState(job?.notes || "")
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   if (!job) {
     return (
@@ -87,6 +101,25 @@ export default function JobDetailPage({
   const handleSaveNotes = () => {
     updateJob(job.id, { notes: notes || null })
     setEditingNotes(false)
+  }
+
+  const handleDeleteJob = async () => {
+    setIsDeleting(true)
+    try {
+      // Call API to delete
+      await fetch(`/api/jobs/${job.id}`, {
+        method: "DELETE",
+      })
+      
+      // Update store
+      deleteJob(job.id)
+      
+      // Redirect to jobs list
+      router.push("/jobs")
+    } catch (error) {
+      console.error("[v0] Error deleting job:", error)
+      setIsDeleting(false)
+    }
   }
 
   const handleSendSMS = async () => {
@@ -374,7 +407,7 @@ export default function JobDetailPage({
               </Field>
             </div>
 
-            <div className="mt-4">
+            <div className="mt-4 flex gap-2">
               <Button
                 onClick={handleSendSMS}
                 disabled={smsSending || !selectedTemplate}
@@ -382,10 +415,37 @@ export default function JobDetailPage({
                 <MessageSquare className="mr-2 h-4 w-4" />
                 {smsSending ? "Sending..." : smsSent ? "SMS Sent!" : "Send Status SMS"}
               </Button>
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Job
+              </Button>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Job</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this job for {job.customer_name}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteJob}
+            disabled={isDeleting}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
