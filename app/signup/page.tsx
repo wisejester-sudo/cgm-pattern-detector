@@ -74,9 +74,9 @@ export default function SignupPage() {
 
       setStep("success")
       
-      // Redirect after 2 seconds
+      // Redirect to setup after successful signup
       setTimeout(() => {
-        router.push("/")
+        router.push("/setup")
       }, 2000)
     } catch (err) {
       setError("An error occurred. Please try again.")
