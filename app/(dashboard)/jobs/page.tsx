@@ -50,7 +50,7 @@ export default function JobsPage() {
             Manage and track all your service jobs
           </p>
         </div>
-        <CreateJobModal technicians={technicians} onCreateJob={handleCreateJob} />
+        <CreateJobModal technicians={technicians} />
       </div>
 
       {/* Job Cards Grid */}
