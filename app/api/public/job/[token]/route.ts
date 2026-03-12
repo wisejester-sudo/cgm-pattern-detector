@@ -7,6 +7,14 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return NextResponse.json(
+        { error: "Database not configured" },
+        { status: 503 }
+      )
+    }
+
     const { token } = await params
     const supabase = await createClient()
 

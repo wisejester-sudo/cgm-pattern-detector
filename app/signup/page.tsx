@@ -52,15 +52,36 @@ export default function SignupPage() {
     setLoading(true)
     setError(null)
 
-    // Demo mode - simulate success
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
+          companyName,
+          companyPhone,
+          companyAddress,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        setError(errorData.error || "Signup failed")
+        setLoading(false)
+        return
+      }
+
       setStep("success")
       
       // Redirect after 2 seconds
       setTimeout(() => {
         router.push("/")
       }, 2000)
-    }, 500)
+    } catch (err) {
+      setError("An error occurred. Please try again.")
+      setLoading(false)
+    }
   }
 
   if (step === "success") {

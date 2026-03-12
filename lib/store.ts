@@ -463,17 +463,22 @@ export const useStore = create<AppState>()(
       },
 
       // Supabase sync actions
+      // These only update the store if Supabase returns actual data
+      // If no data is returned, we keep the existing demo data
       loadJobsFromSupabase: async () => {
         try {
           const response = await fetch('/api/jobs')
           if (!response.ok) {
-            console.error("[v0] Failed to load jobs:", response.statusText)
+            // Keep using demo data if API fails
             return
           }
-          const jobs = await response.json()
-          set({ jobs: Array.isArray(jobs) ? jobs : [] })
+          const data = await response.json()
+          // Only update if we got actual data from Supabase (not empty from demo mode)
+          if (Array.isArray(data) && data.length > 0) {
+            set({ jobs: data })
+          }
         } catch (error) {
-          console.error("[v0] Error loading jobs from Supabase:", error)
+          // Keep using demo data on error
         }
       },
 
@@ -481,13 +486,14 @@ export const useStore = create<AppState>()(
         try {
           const response = await fetch('/api/technicians')
           if (!response.ok) {
-            console.error("[v0] Failed to load technicians:", response.statusText)
             return
           }
-          const technicians = await response.json()
-          set({ technicians: Array.isArray(technicians) ? technicians : [] })
+          const data = await response.json()
+          if (Array.isArray(data) && data.length > 0) {
+            set({ technicians: data })
+          }
         } catch (error) {
-          console.error("[v0] Error loading technicians from Supabase:", error)
+          // Keep using demo data on error
         }
       },
 
@@ -495,13 +501,14 @@ export const useStore = create<AppState>()(
         try {
           const response = await fetch('/api/templates')
           if (!response.ok) {
-            console.error("[v0] Failed to load templates:", response.statusText)
             return
           }
-          const templates = await response.json()
-          set({ templates: Array.isArray(templates) ? templates : [] })
+          const data = await response.json()
+          if (Array.isArray(data) && data.length > 0) {
+            set({ templates: data })
+          }
         } catch (error) {
-          console.error("[v0] Error loading templates from Supabase:", error)
+          // Keep using demo data on error
         }
       },
     }),

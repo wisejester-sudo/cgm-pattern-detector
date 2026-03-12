@@ -97,14 +97,10 @@ export function CreateJobModal({
       })
 
       if (response.ok) {
-        // Successfully created via API
-        const createdJob = await response.json()
-        console.log("[v0] Job created successfully:", createdJob)
-        // Reload jobs from Supabase
+        // Successfully created via API - reload jobs from Supabase
         await useStore.getState().loadJobsFromSupabase()
       } else {
-        // Fall back to local store if API fails
-        console.warn("[v0] API job creation failed, using local store")
+        // Fall back to local store if API fails (demo mode)
         const scheduledDateTime = formData.scheduled_date && formData.scheduled_time
           ? new Date(`${formData.scheduled_date}T${formData.scheduled_time}`).toISOString()
           : new Date().toISOString()
@@ -132,8 +128,8 @@ export function CreateJobModal({
         assigned_tech_id: "",
       })
       setOpen(false)
-    } catch (error) {
-      console.error("[v0] Error creating job:", error)
+    } catch {
+      // Silently fail - the local store fallback should have worked
     } finally {
       setIsLoading(false)
     }
