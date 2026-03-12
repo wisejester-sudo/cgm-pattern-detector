@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
@@ -106,18 +105,13 @@ export default function JobDetailPage({
   const handleDeleteJob = async () => {
     setIsDeleting(true)
     try {
-      // Call API to delete
       await fetch(`/api/jobs/${job.id}`, {
         method: "DELETE",
       })
-      
-      // Update store
       deleteJob(job.id)
-      
-      // Redirect to jobs list
       router.push("/jobs")
     } catch (error) {
-      console.error("[v0] Error deleting job:", error)
+      console.error("Error deleting job:", error)
       setIsDeleting(false)
     }
   }
@@ -129,7 +123,6 @@ export default function JobDetailPage({
     setSmsSending(true)
     const message = renderTemplate(template.template_body, job, technician, settings)
 
-    // Simulate sending SMS
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
     addSmsLog({
@@ -158,7 +151,6 @@ export default function JobDetailPage({
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      {/* Back button and header */}
       <div className="flex flex-col gap-4">
         <Link
           href="/jobs"
@@ -183,9 +175,7 @@ export default function JobDetailPage({
         </div>
       </div>
 
-      {/* Main content */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Contact Information */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Contact Information</CardTitle>
@@ -212,7 +202,6 @@ export default function JobDetailPage({
           </CardContent>
         </Card>
 
-        {/* Job Details */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Job Details</CardTitle>
@@ -256,7 +245,6 @@ export default function JobDetailPage({
           </CardContent>
         </Card>
 
-        {/* Notes */}
         <Card className="md:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg">Notes</CardTitle>
@@ -302,7 +290,6 @@ export default function JobDetailPage({
           </CardContent>
         </Card>
 
-        {/* Photos */}
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle className="text-lg">Job Photos</CardTitle>
@@ -340,7 +327,6 @@ export default function JobDetailPage({
           </CardContent>
         </Card>
 
-        {/* Actions */}
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle className="text-lg">Actions</CardTitle>
@@ -427,7 +413,6 @@ export default function JobDetailPage({
         </Card>
       </div>
 
-      {/* Delete confirmation dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

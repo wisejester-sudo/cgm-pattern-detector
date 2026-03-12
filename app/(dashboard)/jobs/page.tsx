@@ -1,30 +1,29 @@
 "use client"
 
+import { useEffect } from "react"
 import { JobCard } from "@/components/job-card"
 import { CreateJobModal } from "@/components/create-job-modal"
 import { useStore, getTechnicianById } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
 
 export default function JobsPage() {
-  const { jobs, technicians, addJob, updateJobStatus } = useStore()
+  const { jobs, technicians, loadJobsFromSupabase } = useStore()
+
+  // Load jobs from Supabase on mount
+  useEffect(() => {
+    loadJobsFromSupabase()
+  }, [loadJobsFromSupabase])
 
   const handleStatusChange = (jobId: string, newStatus: JobStatus) => {
-    updateJobStatus(jobId, newStatus)
-  }
-
-  const handleCreateJob = (jobData: {
-    customer_name: string
-    customer_phone: string
-    customer_address: string
-    job_type: string
-    scheduled_time: string
-    notes: string | null
-    assigned_tech_id: string | null
-  }) => {
-    addJob({
-      ...jobData,
-      status: "scheduled",
+    // Update status in Supabase
+    fetch(`/api/jobs/${jobId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
     })
+      .then((res) => res.json())
+      .then(() => loadJobsFromSupabase())
+      .catch((error) => console.error("[v0] Error updating job status:", error))
   }
 
   // Sort jobs: active jobs first, then by scheduled time
@@ -51,7 +50,7 @@ export default function JobsPage() {
             Manage and track all your service jobs
           </p>
         </div>
-        <CreateJobModal technicians={technicians} onCreateJob={handleCreateJob} />
+        <CreateJobModal technicians={technicians} />
       </div>
 
       {/* Job Cards Grid */}

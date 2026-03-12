@@ -4,6 +4,12 @@ import { createClient } from "@/lib/supabase/server"
 // POST /api/jobs - Create a new job
 export async function POST(request: NextRequest) {
   try {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      // Return 503 in demo mode - frontend will use local store
+      return NextResponse.json({ error: "Database not configured" }, { status: 503 })
+    }
+
     const supabase = await createClient()
     
     // Check authentication
@@ -19,34 +25,40 @@ export async function POST(request: NextRequest) {
     const { 
       customer_name, 
       customer_phone, 
-      address, 
+      customer_address, 
       job_type, 
-      technician_id,
+      assigned_tech_id,
+      scheduled_date,
       scheduled_time,
       notes 
     } = body
 
     // Validate required fields
-    if (!customer_name || !customer_phone || !address || !job_type) {
+    if (!customer_name || !customer_phone || !customer_address || !job_type) {
       return NextResponse.json(
-        { error: "Missing required fields: customer_name, customer_phone, address, job_type" },
+        { error: "Missing required fields" },
         { status: 400 }
       )
     }
+
+    // Combine date and time into a single timestamp
+    const scheduledDateTime = scheduled_date && scheduled_time 
+      ? new Date(`${scheduled_date}T${scheduled_time}`)
+      : new Date()
 
     // Create job in database
     const { data: job, error } = await supabase
       .from("jobs")
       .insert({
+        admin_id: user.id,
         customer_name,
         customer_phone,
-        customer_address: address,
+        customer_address,
         job_type,
-        assigned_tech_id: technician_id || null,
-        scheduled_time: scheduled_time || new Date().toISOString(),
+        assigned_tech_id: assigned_tech_id || null,
+        scheduled_time: scheduledDateTime.toISOString(),
         notes: notes || null,
         status: "scheduled",
-        created_by: user.id,
       })
       .select()
       .single()
@@ -59,7 +71,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ id: job.id, job }, { status: 201 })
+    return NextResponse.json(job, { status: 201 })
   } catch (error) {
     console.error("[API] Unexpected error:", error)
     return NextResponse.json(
@@ -69,9 +81,15 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET /api/jobs - List all jobs
+// GET /api/jobs - List all jobs for the current user
 export async function GET(request: NextRequest) {
   try {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      // Return empty array in demo mode - frontend will use local store
+      return NextResponse.json([])
+    }
+
     const supabase = await createClient()
     
     // Check authentication
@@ -87,7 +105,11 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status")
     const technicianId = searchParams.get("technician_id")
 
-    let query = supabase.from("jobs").select("*").order("scheduled_time", { ascending: true })
+    let query = supabase
+      .from("jobs")
+      .select("*")
+      .eq("admin_id", user.id)
+      .order("scheduled_time", { ascending: true })
 
     if (status) {
       query = query.eq("status", status)
@@ -107,7 +129,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ jobs })
+    return NextResponse.json(jobs)
   } catch (error) {
     console.error("[API] Unexpected error:", error)
     return NextResponse.json(
