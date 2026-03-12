@@ -77,41 +77,66 @@ export function CreateJobModal({
     e.preventDefault()
     setIsLoading(true)
 
-    // Combine date and time
-    const scheduledDateTime = formData.scheduled_date && formData.scheduled_time
-      ? new Date(`${formData.scheduled_date}T${formData.scheduled_time}`).toISOString()
-      : new Date().toISOString()
+    try {
+      const jobData = {
+        customer_name: formData.customer_name,
+        customer_phone: formData.customer_phone,
+        customer_address: formData.customer_address,
+        job_type: formData.job_type,
+        scheduled_date: formData.scheduled_date,
+        scheduled_time: formData.scheduled_time,
+        notes: formData.notes || null,
+        assigned_tech_id: formData.assigned_tech_id || null,
+      }
 
-    const jobData = {
-      customer_name: formData.customer_name,
-      customer_phone: formData.customer_phone,
-      customer_address: formData.customer_address,
-      job_type: formData.job_type,
-      scheduled_time: scheduledDateTime,
-      notes: formData.notes || null,
-      assigned_tech_id: formData.assigned_tech_id || null,
-      status: "scheduled" as const,
+      // Try to create via API first (Supabase)
+      const response = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(jobData),
+      })
+
+      if (response.ok) {
+        // Successfully created via API
+        const createdJob = await response.json()
+        console.log("[v0] Job created successfully:", createdJob)
+        // Reload jobs from Supabase
+        await useStore.getState().loadJobsFromSupabase()
+      } else {
+        // Fall back to local store if API fails
+        console.warn("[v0] API job creation failed, using local store")
+        const scheduledDateTime = formData.scheduled_date && formData.scheduled_time
+          ? new Date(`${formData.scheduled_date}T${formData.scheduled_time}`).toISOString()
+          : new Date().toISOString()
+
+        addJob({
+          customer_name: formData.customer_name,
+          customer_phone: formData.customer_phone,
+          customer_address: formData.customer_address,
+          job_type: formData.job_type,
+          scheduled_time: scheduledDateTime,
+          notes: formData.notes || null,
+          assigned_tech_id: formData.assigned_tech_id || null,
+          status: "scheduled" as const,
+        })
+      }
+
+      setFormData({
+        customer_name: "",
+        customer_phone: "",
+        customer_address: "",
+        job_type: "",
+        scheduled_date: "",
+        scheduled_time: "",
+        notes: "",
+        assigned_tech_id: "",
+      })
+      setOpen(false)
+    } catch (error) {
+      console.error("[v0] Error creating job:", error)
+    } finally {
+      setIsLoading(false)
     }
-
-    // Use provided callback or fall back to store's addJob
-    if (onCreateJob) {
-      onCreateJob(jobData)
-    } else {
-      addJob(jobData)
-    }
-
-    setFormData({
-      customer_name: "",
-      customer_phone: "",
-      customer_address: "",
-      job_type: "",
-      scheduled_date: "",
-      scheduled_time: "",
-      notes: "",
-      assigned_tech_id: "",
-    })
-    setIsLoading(false)
-    setOpen(false)
   }
 
   const isValid =

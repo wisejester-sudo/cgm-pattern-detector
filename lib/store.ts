@@ -248,6 +248,11 @@ interface AppState {
   // Subscription actions
   updateSubscription: (updates: Partial<Subscription>) => void
   updateNotificationPreferences: (updates: Partial<NotificationPreferences>) => void
+  
+  // Supabase sync actions
+  loadJobsFromSupabase: () => Promise<void>
+  loadTechniciansFromSupabase: () => Promise<void>
+  loadTemplatesFromSupabase: () => Promise<void>
 }
 
 export const useStore = create<AppState>()(
@@ -455,6 +460,49 @@ export const useStore = create<AppState>()(
         set((state) => ({
           notificationPreferences: { ...state.notificationPreferences, ...updates },
         }))
+      },
+
+      // Supabase sync actions
+      loadJobsFromSupabase: async () => {
+        try {
+          const response = await fetch('/api/jobs')
+          if (!response.ok) {
+            console.error("[v0] Failed to load jobs:", response.statusText)
+            return
+          }
+          const jobs = await response.json()
+          set({ jobs: Array.isArray(jobs) ? jobs : [] })
+        } catch (error) {
+          console.error("[v0] Error loading jobs from Supabase:", error)
+        }
+      },
+
+      loadTechniciansFromSupabase: async () => {
+        try {
+          const response = await fetch('/api/technicians')
+          if (!response.ok) {
+            console.error("[v0] Failed to load technicians:", response.statusText)
+            return
+          }
+          const technicians = await response.json()
+          set({ technicians: Array.isArray(technicians) ? technicians : [] })
+        } catch (error) {
+          console.error("[v0] Error loading technicians from Supabase:", error)
+        }
+      },
+
+      loadTemplatesFromSupabase: async () => {
+        try {
+          const response = await fetch('/api/templates')
+          if (!response.ok) {
+            console.error("[v0] Failed to load templates:", response.statusText)
+            return
+          }
+          const templates = await response.json()
+          set({ templates: Array.isArray(templates) ? templates : [] })
+        } catch (error) {
+          console.error("[v0] Error loading templates from Supabase:", error)
+        }
       },
     }),
     {
