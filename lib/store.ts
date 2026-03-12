@@ -2,10 +2,35 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Job, Technician, JobPhoto, SmsLog, SmsTemplate, CompanySettings, JobStatus } from './types'
+import type { 
+  Job, 
+  Technician, 
+  JobPhoto, 
+  SmsLog, 
+  SmsTemplate, 
+  CompanySettings, 
+  JobStatus,
+  Admin,
+  Subscription,
+  Invoice,
+  NotificationPreferences
+} from './types'
 
 // Generate unique IDs
 const generateId = () => Math.random().toString(36).substring(2, 15)
+
+// Initial Admin
+const initialAdmin: Admin = {
+  id: 'admin-1',
+  name: 'HVAC Harry',
+  email: 'harry@coolairhvac.com',
+  phone: '(555) 999-0000',
+  role: 'admin',
+  is_active: true,
+  created_at: new Date().toISOString(),
+  last_login: new Date().toISOString(),
+  avatar_url: null,
+}
 
 // Initial mock data
 const initialJobs: Job[] = [
@@ -18,7 +43,7 @@ const initialJobs: Job[] = [
     status: 'scheduled',
     scheduled_time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
     notes: 'Customer reports AC not cooling properly',
-    assigned_tech_id: '1',
+    assigned_tech_id: 'tech-1',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -31,7 +56,7 @@ const initialJobs: Job[] = [
     status: 'en_route',
     scheduled_time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
     notes: 'Annual maintenance checkup',
-    assigned_tech_id: '2',
+    assigned_tech_id: 'tech-2',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -44,7 +69,7 @@ const initialJobs: Job[] = [
     status: 'working',
     scheduled_time: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
     notes: null,
-    assigned_tech_id: '1',
+    assigned_tech_id: 'tech-1',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -57,7 +82,7 @@ const initialJobs: Job[] = [
     status: 'complete',
     scheduled_time: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
     notes: 'New unit installed successfully',
-    assigned_tech_id: '2',
+    assigned_tech_id: 'tech-2',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -65,22 +90,28 @@ const initialJobs: Job[] = [
 
 const initialTechnicians: Technician[] = [
   {
-    id: '1',
+    id: 'tech-1',
     name: 'Bob Martinez',
-    email: 'bob@dispatchly.com',
+    email: 'bob@coolairhvac.com',
     phone: '(555) 111-2222',
+    role: 'technician',
     pin: '1234',
     is_active: true,
     created_at: new Date().toISOString(),
+    last_login: null,
+    assigned_jobs: ['1', '3'],
   },
   {
-    id: '2',
+    id: 'tech-2',
     name: 'Alice Chen',
-    email: 'alice@dispatchly.com',
+    email: 'alice@coolairhvac.com',
     phone: '(555) 333-4444',
+    role: 'technician',
     pin: '5678',
     is_active: true,
     created_at: new Date().toISOString(),
+    last_login: null,
+    assigned_jobs: ['2', '4'],
   },
 ]
 
@@ -107,16 +138,84 @@ const initialSettings: CompanySettings = {
   company_phone: '(555) 999-0000',
   default_sms_template_id: '1',
   updated_at: new Date().toISOString(),
+  logo_url: null,
+  primary_color: '#3b82f6',
+  tagline: 'Keeping You Cool Since 2010',
+  business_hours: 'Mon-Fri 8AM-6PM, Sat 9AM-2PM',
+  service_area: 'Austin Metro Area',
+}
+
+const initialSubscription: Subscription = {
+  id: 'sub-1',
+  plan: 'pro',
+  status: 'active',
+  current_period_start: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+  current_period_end: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+  sms_used_this_month: 127,
+  sms_limit: 500,
+}
+
+const initialInvoices: Invoice[] = [
+  {
+    id: 'inv-1',
+    amount: 79,
+    status: 'paid',
+    created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    description: 'Pro Plan - Monthly',
+  },
+  {
+    id: 'inv-2',
+    amount: 79,
+    status: 'paid',
+    created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+    description: 'Pro Plan - Monthly',
+  },
+  {
+    id: 'inv-3',
+    amount: 79,
+    status: 'paid',
+    created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+    description: 'Pro Plan - Monthly',
+  },
+]
+
+const initialNotificationPreferences: NotificationPreferences = {
+  email_new_job: true,
+  email_status_updates: true,
+  email_customer_replies: true,
+  email_daily_summary: false,
+  sms_enabled: false,
+  quiet_hours_start: '22:00',
+  quiet_hours_end: '07:00',
 }
 
 interface AppState {
+  // Core data
   jobs: Job[]
   technicians: Technician[]
   photos: JobPhoto[]
   smsLogs: SmsLog[]
   templates: SmsTemplate[]
   settings: CompanySettings
+  
+  // Auth state
+  currentAdmin: Admin | null
   currentTechId: string | null
+  isAdminAuthenticated: boolean
+  
+  // Subscription & billing
+  subscription: Subscription
+  invoices: Invoice[]
+  notificationPreferences: NotificationPreferences
+  
+  // Role checks (computed)
+  isAdmin: () => boolean
+  isTechnician: () => boolean
+  
+  // Admin auth actions
+  loginAdmin: (email: string, password: string) => Admin | null
+  logoutAdmin: () => void
+  updateAdmin: (updates: Partial<Admin>) => void
   
   // Job actions
   addJob: (job: Omit<Job, 'id' | 'created_at' | 'updated_at'>) => Job
@@ -125,7 +224,7 @@ interface AppState {
   deleteJob: (id: string) => void
   
   // Technician actions
-  addTechnician: (tech: Omit<Technician, 'id' | 'created_at'>) => void
+  addTechnician: (tech: Omit<Technician, 'id' | 'created_at' | 'last_login' | 'role' | 'assigned_jobs'>) => void
   updateTechnician: (id: string, updates: Partial<Technician>) => void
   deleteTechnician: (id: string) => void
   loginTechnician: (pin: string) => Technician | null
@@ -145,18 +244,65 @@ interface AppState {
   
   // Settings actions
   updateSettings: (updates: Partial<CompanySettings>) => void
+  
+  // Subscription actions
+  updateSubscription: (updates: Partial<Subscription>) => void
+  updateNotificationPreferences: (updates: Partial<NotificationPreferences>) => void
+  
+  // Supabase sync actions
+  loadJobsFromSupabase: () => Promise<void>
+  loadTechniciansFromSupabase: () => Promise<void>
+  loadTemplatesFromSupabase: () => Promise<void>
 }
 
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
+      // Core data
       jobs: initialJobs,
       technicians: initialTechnicians,
       photos: [],
       smsLogs: [],
       templates: initialTemplates,
       settings: initialSettings,
+      
+      // Auth state
+      currentAdmin: initialAdmin,
       currentTechId: null,
+      isAdminAuthenticated: true, // Start authenticated for demo
+      
+      // Subscription & billing
+      subscription: initialSubscription,
+      invoices: initialInvoices,
+      notificationPreferences: initialNotificationPreferences,
+      
+      // Role checks
+      isAdmin: () => get().isAdminAuthenticated && get().currentAdmin !== null,
+      isTechnician: () => get().currentTechId !== null,
+      
+      // Admin auth actions
+      loginAdmin: (email, password) => {
+        // Simple mock auth - in production would check password hash
+        const admin = initialAdmin
+        if (email === admin.email && password === 'demo123') {
+          const updatedAdmin = { ...admin, last_login: new Date().toISOString() }
+          set({ currentAdmin: updatedAdmin, isAdminAuthenticated: true })
+          return updatedAdmin
+        }
+        return null
+      },
+      
+      logoutAdmin: () => {
+        set({ currentAdmin: null, isAdminAuthenticated: false })
+      },
+      
+      updateAdmin: (updates) => {
+        set((state) => ({
+          currentAdmin: state.currentAdmin 
+            ? { ...state.currentAdmin, ...updates }
+            : null
+        }))
+      },
       
       // Job actions
       addJob: (jobData) => {
@@ -201,8 +347,11 @@ export const useStore = create<AppState>()(
       addTechnician: (techData) => {
         const newTech: Technician = {
           ...techData,
-          id: generateId(),
+          id: `tech-${generateId()}`,
+          role: 'technician',
           created_at: new Date().toISOString(),
+          last_login: null,
+          assigned_jobs: [],
         }
         set((state) => ({ technicians: [...state.technicians, newTech] }))
       },
@@ -224,8 +373,14 @@ export const useStore = create<AppState>()(
       loginTechnician: (pin) => {
         const tech = get().technicians.find((t) => t.pin === pin && t.is_active)
         if (tech) {
-          set({ currentTechId: tech.id })
-          return tech
+          const updatedTech = { ...tech, last_login: new Date().toISOString() }
+          set((state) => ({ 
+            currentTechId: tech.id,
+            technicians: state.technicians.map((t) => 
+              t.id === tech.id ? updatedTech : t
+            )
+          }))
+          return updatedTech
         }
         return null
       },
@@ -293,6 +448,69 @@ export const useStore = create<AppState>()(
           settings: { ...state.settings, ...updates, updated_at: new Date().toISOString() },
         }))
       },
+      
+      // Subscription actions
+      updateSubscription: (updates) => {
+        set((state) => ({
+          subscription: { ...state.subscription, ...updates },
+        }))
+      },
+      
+      updateNotificationPreferences: (updates) => {
+        set((state) => ({
+          notificationPreferences: { ...state.notificationPreferences, ...updates },
+        }))
+      },
+
+      // Supabase sync actions
+      // These only update the store if Supabase returns actual data
+      // If no data is returned, we keep the existing demo data
+      loadJobsFromSupabase: async () => {
+        try {
+          const response = await fetch('/api/jobs')
+          if (!response.ok) {
+            // Keep using demo data if API fails
+            return
+          }
+          const data = await response.json()
+          // Only update if we got actual data from Supabase (not empty from demo mode)
+          if (Array.isArray(data) && data.length > 0) {
+            set({ jobs: data })
+          }
+        } catch (error) {
+          // Keep using demo data on error
+        }
+      },
+
+      loadTechniciansFromSupabase: async () => {
+        try {
+          const response = await fetch('/api/technicians')
+          if (!response.ok) {
+            return
+          }
+          const data = await response.json()
+          if (Array.isArray(data) && data.length > 0) {
+            set({ technicians: data })
+          }
+        } catch (error) {
+          // Keep using demo data on error
+        }
+      },
+
+      loadTemplatesFromSupabase: async () => {
+        try {
+          const response = await fetch('/api/templates')
+          if (!response.ok) {
+            return
+          }
+          const data = await response.json()
+          if (Array.isArray(data) && data.length > 0) {
+            set({ templates: data })
+          }
+        } catch (error) {
+          // Keep using demo data on error
+        }
+      },
     }),
     {
       name: 'dispatchly-storage',
@@ -326,4 +544,19 @@ export const renderTemplate = (
     .replace(/{company_name}/g, settings.company_name)
     .replace(/{company_phone}/g, settings.company_phone)
     .replace(/{eta}/g, '15-20 minutes')
+}
+
+// Helper to mask phone numbers for technician view
+export const maskPhoneNumber = (phone: string) => {
+  // Returns format: (555) ***-****
+  const match = phone.match(/^\((\d{3})\)/)
+  if (match) {
+    return `(${match[1]}) ***-****`
+  }
+  return '***-***-****'
+}
+
+// Helper to get jobs assigned to a technician
+export const getTechnicianJobs = (jobs: Job[], techId: string) => {
+  return jobs.filter((j) => j.assigned_tech_id === techId)
 }

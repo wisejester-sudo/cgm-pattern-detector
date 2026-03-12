@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -41,6 +42,14 @@ interface JobCardProps {
 export function JobCard({ job, technician, onStatusChange }: JobCardProps) {
   const status = statusConfig[job.status]
   const scheduledDate = new Date(job.scheduled_time)
+  const [formattedTime, setFormattedTime] = useState<string>("")
+
+  // Format time on client side only to avoid hydration mismatch
+  useEffect(() => {
+    setFormattedTime(
+      `${scheduledDate.toLocaleDateString()} at ${scheduledDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+    )
+  }, [job.scheduled_time])
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -67,10 +76,7 @@ export function JobCard({ job, technician, onStatusChange }: JobCardProps) {
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              <span>
-                {scheduledDate.toLocaleDateString()} at{" "}
-                {scheduledDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </span>
+              <span>{formattedTime || "Loading..."}</span>
             </div>
             {technician && (
               <div className="flex items-center gap-2">

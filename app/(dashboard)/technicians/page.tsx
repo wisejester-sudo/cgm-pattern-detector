@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,16 +21,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
-import { Plus, MoreVertical, Phone, Mail, User, KeyRound } from "lucide-react"
+import { Plus, MoreVertical, Phone, Mail, User, KeyRound, Send } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { Spinner } from "@/components/ui/spinner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function TechniciansPage() {
-  const { technicians, jobs, addTechnician, updateTechnician, deleteTechnician } =
+  const { technicians, jobs, addTechnician, updateTechnician, deleteTechnician, loadTechniciansFromSupabase } =
     useStore()
 
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [invitingTechId, setInvitingTechId] = useState<string | null>(null)
+  const [showInviteDialog, setShowInviteDialog] = useState(false)
+  const [inviteLink, setInviteLink] = useState('')
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -38,17 +50,50 @@ export default function TechniciansPage() {
     pin: "",
   })
 
+  // Load technicians from Supabase on mount
+  useEffect(() => {
+    loadTechniciansFromSupabase()
+  }, [loadTechniciansFromSupabase])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
-    addTechnician({
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      pin: formData.pin,
-      is_active: true,
-    })
+    try {
+      const response = await fetch('/api/technicians', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          pin: formData.pin,
+        }),
+      })
+
+      if (response.ok) {
+        // Reload from Supabase
+        await loadTechniciansFromSupabase()
+      } else {
+        // Fall back to local store
+        addTechnician({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          pin: formData.pin,
+          is_active: true,
+        })
+      }
+    } catch {
+      // Fall back to local store on error
+      addTechnician({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        pin: formData.pin,
+        is_active: true,
+      })
+    }
 
     setFormData({ name: "", email: "", phone: "", pin: "" })
     setIsLoading(false)
@@ -61,6 +106,35 @@ export default function TechniciansPage() {
 
   const handleDelete = (techId: string) => {
     deleteTechnician(techId)
+  }
+
+  const handleSendInvite = async (techId: string) => {
+    setInvitingTechId(techId)
+    try {
+      const response = await fetch('/api/technicians/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ technicianId: techId }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setInviteLink(data.magicLink)
+        setShowInviteDialog(true)
+      } else {
+        alert('Failed to generate invite link')
+      }
+    } catch (error) {
+      console.error('Error sending invite:', error)
+      alert('Failed to send invite')
+    } finally {
+      setInvitingTechId(null)
+    }
+  }
+
+  const copyInviteLink = () => {
+    navigator.clipboard.writeText(inviteLink)
+    alert('Invite link copied to clipboard!')
   }
 
   const getAssignedJobCount = (techId: string) => {
@@ -196,6 +270,13 @@ export default function TechniciansPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
+                      onClick={() => handleSendInvite(tech.id)}
+                      disabled={invitingTechId === tech.id}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Send Invite Link
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
                       onClick={() => handleToggleActive(tech.id, tech.is_active)}
                     >
                       {tech.is_active ? "Deactivate" : "Activate"}
@@ -246,6 +327,29 @@ export default function TechniciansPage() {
           </p>
         </div>
       )}
+
+      <AlertDialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Technician Invite Link</AlertDialogTitle>
+            <AlertDialogDescription>
+              Share this link with your technician. They can use it to set up their account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-muted rounded-lg border border-border break-all text-sm font-mono">
+              {inviteLink}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This link will expire in 7 days. You can generate a new one by clicking "Send Invite Link" again.
+            </p>
+          </div>
+          <AlertDialogCancel className="mr-2">Close</AlertDialogCancel>
+          <AlertDialogAction onClick={copyInviteLink} className="bg-primary">
+            Copy Link
+          </AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -1,10 +1,10 @@
 "use client"
 
 import { use, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
@@ -13,6 +13,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
   ArrowLeft,
   Phone,
@@ -37,6 +46,7 @@ export default function JobDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  const router = useRouter()
   const { id } = use(params)
   const {
     jobs,
@@ -48,6 +58,7 @@ export default function JobDetailPage({
     updateJobStatus,
     addPhoto,
     deletePhoto,
+    deleteJob,
     addSmsLog,
   } = useStore()
 
@@ -57,6 +68,8 @@ export default function JobDetailPage({
   const [selectedTemplate, setSelectedTemplate] = useState(templates[0]?.id || "")
   const [editingNotes, setEditingNotes] = useState(false)
   const [notes, setNotes] = useState(job?.notes || "")
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   if (!job) {
     return (
@@ -89,6 +102,20 @@ export default function JobDetailPage({
     setEditingNotes(false)
   }
 
+  const handleDeleteJob = async () => {
+    setIsDeleting(true)
+    try {
+      await fetch(`/api/jobs/${job.id}`, {
+        method: "DELETE",
+      })
+      deleteJob(job.id)
+      router.push("/jobs")
+    } catch (error) {
+      console.error("Error deleting job:", error)
+      setIsDeleting(false)
+    }
+  }
+
   const handleSendSMS = async () => {
     const template = templates.find((t) => t.id === selectedTemplate)
     if (!template) return
@@ -96,7 +123,6 @@ export default function JobDetailPage({
     setSmsSending(true)
     const message = renderTemplate(template.template_body, job, technician, settings)
 
-    // Simulate sending SMS
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
     addSmsLog({
@@ -125,7 +151,6 @@ export default function JobDetailPage({
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      {/* Back button and header */}
       <div className="flex flex-col gap-4">
         <Link
           href="/jobs"
@@ -150,9 +175,7 @@ export default function JobDetailPage({
         </div>
       </div>
 
-      {/* Main content */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Contact Information */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Contact Information</CardTitle>
@@ -179,7 +202,6 @@ export default function JobDetailPage({
           </CardContent>
         </Card>
 
-        {/* Job Details */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Job Details</CardTitle>
@@ -223,7 +245,6 @@ export default function JobDetailPage({
           </CardContent>
         </Card>
 
-        {/* Notes */}
         <Card className="md:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg">Notes</CardTitle>
@@ -269,7 +290,6 @@ export default function JobDetailPage({
           </CardContent>
         </Card>
 
-        {/* Photos */}
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle className="text-lg">Job Photos</CardTitle>
@@ -307,7 +327,6 @@ export default function JobDetailPage({
           </CardContent>
         </Card>
 
-        {/* Actions */}
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle className="text-lg">Actions</CardTitle>
@@ -374,7 +393,7 @@ export default function JobDetailPage({
               </Field>
             </div>
 
-            <div className="mt-4">
+            <div className="mt-4 flex gap-2">
               <Button
                 onClick={handleSendSMS}
                 disabled={smsSending || !selectedTemplate}
@@ -382,10 +401,36 @@ export default function JobDetailPage({
                 <MessageSquare className="mr-2 h-4 w-4" />
                 {smsSending ? "Sending..." : smsSent ? "SMS Sent!" : "Send Status SMS"}
               </Button>
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Job
+              </Button>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Job</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this job for {job.customer_name}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteJob}
+            disabled={isDeleting}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
