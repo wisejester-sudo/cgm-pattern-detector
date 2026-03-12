@@ -4,6 +4,12 @@ import { createClient } from "@/lib/supabase/server"
 // POST /api/jobs - Create a new job
 export async function POST(request: NextRequest) {
   try {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      // Return 503 in demo mode - frontend will use local store
+      return NextResponse.json({ error: "Database not configured" }, { status: 503 })
+    }
+
     const supabase = await createClient()
     
     // Check authentication
@@ -78,6 +84,12 @@ export async function POST(request: NextRequest) {
 // GET /api/jobs - List all jobs for the current user
 export async function GET(request: NextRequest) {
   try {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      // Return empty array in demo mode - frontend will use local store
+      return NextResponse.json([])
+    }
+
     const supabase = await createClient()
     
     // Check authentication
