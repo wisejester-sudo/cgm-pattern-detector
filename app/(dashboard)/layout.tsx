@@ -1,7 +1,9 @@
 "use client"
 
+import { useEffect } from "react"
 import dynamic from "next/dynamic"
 import { SetupGuard } from "@/components/setup-guard"
+import { useStore } from "@/lib/store"
 
 // Dynamically import components with Radix UI to prevent hydration mismatch
 const AppSidebar = dynamic(() => import("@/components/app-sidebar").then(mod => ({ default: mod.AppSidebar })), {
@@ -33,6 +35,13 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
+  const initializeUserFromSupabase = useStore(state => state.initializeUserFromSupabase)
+  
+  // Initialize user data from Supabase on mount
+  useEffect(() => {
+    initializeUserFromSupabase()
+  }, [initializeUserFromSupabase])
+
   return (
     <SetupGuard>
       <div className="flex min-h-screen bg-background">

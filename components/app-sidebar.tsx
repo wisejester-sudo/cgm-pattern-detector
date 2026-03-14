@@ -43,7 +43,7 @@ interface UserProfile {
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { currentAdmin, logoutAdmin } = useStore();
+  const { currentAdmin, logoutAdmin, resetStore } = useStore();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -65,8 +65,16 @@ export function AppSidebar() {
     fetchUserProfile();
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    resetStore();
     logoutAdmin();
+    
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // Ignore errors
+    }
+    
     router.push("/login");
   };
 

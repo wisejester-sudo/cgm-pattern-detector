@@ -26,7 +26,7 @@ interface UserProfile {
 
 export function TopBar() {
   const router = useRouter();
-  const { currentAdmin, logoutAdmin } = useStore();
+  const { currentAdmin, logoutAdmin, resetStore } = useStore();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -48,8 +48,18 @@ export function TopBar() {
     fetchUserProfile();
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Clear local store
+    resetStore();
     logoutAdmin();
+    
+    // Also sign out from Supabase
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // Ignore errors
+    }
+    
     router.push("/login");
   };
 

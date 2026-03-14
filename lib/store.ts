@@ -19,112 +19,33 @@ import type {
 // Generate unique IDs
 const generateId = () => Math.random().toString(36).substring(2, 15)
 
-// Initial Admin
-const initialAdmin: Admin = {
-  id: 'admin-1',
-  name: 'HVAC Harry',
-  email: 'harry@coolairhvac.com',
-  phone: '(555) 999-0000',
-  role: 'admin',
-  is_active: true,
-  created_at: new Date().toISOString(),
-  last_login: new Date().toISOString(),
-  avatar_url: null,
+// Empty initial state - will be populated from Supabase or user data
+const emptyAdmin: Admin | null = null
+
+const emptySettings: CompanySettings = {
+  id: '',
+  company_name: '',
+  company_phone: '',
+  default_sms_template_id: null,
+  updated_at: new Date().toISOString(),
+  logo_url: null,
+  primary_color: '#3b82f6',
+  tagline: '',
+  business_hours: '',
+  service_area: '',
 }
 
-// Initial mock data
-const initialJobs: Job[] = [
+// Default SMS templates for new accounts
+const defaultTemplates: SmsTemplate[] = [
   {
-    id: '1',
-    customer_name: 'John Smith',
-    customer_phone: '(555) 123-4567',
-    customer_address: '123 Oak Street, Austin, TX 78701',
-    job_type: 'AC Repair',
-    status: 'scheduled',
-    scheduled_time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-    notes: 'Customer reports AC not cooling properly',
-    assigned_tech_id: 'tech-1',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    customer_name: 'Sarah Johnson',
-    customer_phone: '(555) 234-5678',
-    customer_address: '456 Maple Ave, Austin, TX 78702',
-    job_type: 'Furnace Maintenance',
-    status: 'en_route',
-    scheduled_time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
-    notes: 'Annual maintenance checkup',
-    assigned_tech_id: 'tech-2',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    customer_name: 'Mike Davis',
-    customer_phone: '(555) 345-6789',
-    customer_address: '789 Pine Rd, Austin, TX 78703',
-    job_type: 'Duct Cleaning',
-    status: 'working',
-    scheduled_time: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-    notes: null,
-    assigned_tech_id: 'tech-1',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    customer_name: 'Emily Wilson',
-    customer_phone: '(555) 456-7890',
-    customer_address: '321 Elm Blvd, Austin, TX 78704',
-    job_type: 'AC Installation',
-    status: 'complete',
-    scheduled_time: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-    notes: 'New unit installed successfully',
-    assigned_tech_id: 'tech-2',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-]
-
-const initialTechnicians: Technician[] = [
-  {
-    id: 'tech-1',
-    name: 'Bob Martinez',
-    email: 'bob@coolairhvac.com',
-    phone: '(555) 111-2222',
-    role: 'technician',
-    pin: '1234',
-    is_active: true,
-    created_at: new Date().toISOString(),
-    last_login: null,
-    assigned_jobs: ['1', '3'],
-  },
-  {
-    id: 'tech-2',
-    name: 'Alice Chen',
-    email: 'alice@coolairhvac.com',
-    phone: '(555) 333-4444',
-    role: 'technician',
-    pin: '5678',
-    is_active: true,
-    created_at: new Date().toISOString(),
-    last_login: null,
-    assigned_jobs: ['2', '4'],
-  },
-]
-
-const initialTemplates: SmsTemplate[] = [
-  {
-    id: '1',
+    id: 'default-1',
     name: 'En Route Notification',
     template_body: 'Hi {customer_name}, your technician {tech_name} is on the way to {address}. ETA: {eta}. Questions? Call {company_phone}.',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
   {
-    id: '2',
+    id: 'default-2',
     name: 'Job Complete',
     template_body: 'Hi {customer_name}, your {job_type} service has been completed. Thank you for choosing {company_name}!',
     created_at: new Date().toISOString(),
@@ -132,52 +53,15 @@ const initialTemplates: SmsTemplate[] = [
   },
 ]
 
-const initialSettings: CompanySettings = {
-  id: '1',
-  company_name: 'CoolAir HVAC Services',
-  company_phone: '(555) 999-0000',
-  default_sms_template_id: '1',
-  updated_at: new Date().toISOString(),
-  logo_url: null,
-  primary_color: '#3b82f6',
-  tagline: 'Keeping You Cool Since 2010',
-  business_hours: 'Mon-Fri 8AM-6PM, Sat 9AM-2PM',
-  service_area: 'Austin Metro Area',
-}
-
 const initialSubscription: Subscription = {
-  id: 'sub-1',
-  plan: 'pro',
+  id: '',
+  plan: 'free',
   status: 'active',
-  current_period_start: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-  current_period_end: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-  sms_used_this_month: 127,
-  sms_limit: 500,
+  current_period_start: new Date().toISOString(),
+  current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  sms_used_this_month: 0,
+  sms_limit: 100,
 }
-
-const initialInvoices: Invoice[] = [
-  {
-    id: 'inv-1',
-    amount: 79,
-    status: 'paid',
-    created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    description: 'Pro Plan - Monthly',
-  },
-  {
-    id: 'inv-2',
-    amount: 79,
-    status: 'paid',
-    created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-    description: 'Pro Plan - Monthly',
-  },
-  {
-    id: 'inv-3',
-    amount: 79,
-    status: 'paid',
-    created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-    description: 'Pro Plan - Monthly',
-  },
-]
 
 const initialNotificationPreferences: NotificationPreferences = {
   email_new_job: true,
@@ -253,27 +137,33 @@ interface AppState {
   loadJobsFromSupabase: () => Promise<void>
   loadTechniciansFromSupabase: () => Promise<void>
   loadTemplatesFromSupabase: () => Promise<void>
+  
+  // User initialization - fetches user profile and settings from Supabase
+  initializeUserFromSupabase: () => Promise<void>
+  
+  // Reset store to empty state (for logout)
+  resetStore: () => void
 }
 
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
-      // Core data
-      jobs: initialJobs,
-      technicians: initialTechnicians,
+      // Core data - start empty, populated from Supabase or user signup
+      jobs: [],
+      technicians: [],
       photos: [],
       smsLogs: [],
-      templates: initialTemplates,
-      settings: initialSettings,
+      templates: defaultTemplates,
+      settings: emptySettings,
       
-      // Auth state
-      currentAdmin: initialAdmin,
+      // Auth state - not authenticated by default
+      currentAdmin: emptyAdmin,
       currentTechId: null,
-      isAdminAuthenticated: true, // Start authenticated for demo
+      isAdminAuthenticated: false,
       
       // Subscription & billing
       subscription: initialSubscription,
-      invoices: initialInvoices,
+      invoices: [],
       notificationPreferences: initialNotificationPreferences,
       
       // Role checks
@@ -282,14 +172,21 @@ export const useStore = create<AppState>()(
       
       // Admin auth actions
       loginAdmin: (email, password) => {
-        // Simple mock auth - in production would check password hash
-        const admin = initialAdmin
-        if (email === admin.email && password === 'demo123') {
-          const updatedAdmin = { ...admin, last_login: new Date().toISOString() }
-          set({ currentAdmin: updatedAdmin, isAdminAuthenticated: true })
-          return updatedAdmin
+        // This is called after Supabase auth succeeds
+        // The actual auth is handled by Supabase, this just sets up the local state
+        const admin: Admin = {
+          id: generateId(),
+          name: email.split('@')[0],
+          email: email,
+          phone: '',
+          role: 'admin',
+          is_active: true,
+          created_at: new Date().toISOString(),
+          last_login: new Date().toISOString(),
+          avatar_url: null,
         }
-        return null
+        set({ currentAdmin: admin, isAdminAuthenticated: true })
+        return admin
       },
       
       logoutAdmin: () => {
@@ -507,9 +404,84 @@ export const useStore = create<AppState>()(
           if (Array.isArray(data) && data.length > 0) {
             set({ templates: data })
           }
-        } catch (error) {
-          // Keep using demo data on error
+        } catch {
+          // Keep using default templates on error
         }
+      },
+      
+      // Initialize user from Supabase auth and profile data
+      initializeUserFromSupabase: async () => {
+        try {
+          // Fetch user profile from API
+          const response = await fetch('/api/auth/user-profile')
+          if (!response.ok) {
+            return
+          }
+          const profile = await response.json()
+          
+          // Skip if demo profile
+          if (profile.id === 'demo') {
+            return
+          }
+          
+          // Set admin data from profile
+          const admin: Admin = {
+            id: profile.id,
+            name: profile.full_name || profile.email?.split('@')[0] || 'User',
+            email: profile.email || '',
+            phone: profile.phone || '',
+            role: 'admin',
+            is_active: true,
+            created_at: new Date().toISOString(),
+            last_login: new Date().toISOString(),
+            avatar_url: null,
+          }
+          
+          set({ 
+            currentAdmin: admin, 
+            isAdminAuthenticated: true 
+          })
+          
+          // Try to fetch company settings
+          try {
+            const settingsResponse = await fetch('/api/settings')
+            if (settingsResponse.ok) {
+              const settingsData = await settingsResponse.json()
+              if (settingsData && settingsData.company_name) {
+                set({ settings: settingsData })
+              }
+            }
+          } catch {
+            // Use default settings
+          }
+          
+          // Load jobs, technicians, templates
+          await Promise.all([
+            get().loadJobsFromSupabase(),
+            get().loadTechniciansFromSupabase(),
+            get().loadTemplatesFromSupabase(),
+          ])
+        } catch {
+          // Silently fail - user will see empty state
+        }
+      },
+      
+      // Reset store to empty state
+      resetStore: () => {
+        set({
+          jobs: [],
+          technicians: [],
+          photos: [],
+          smsLogs: [],
+          templates: defaultTemplates,
+          settings: emptySettings,
+          currentAdmin: null,
+          currentTechId: null,
+          isAdminAuthenticated: false,
+          subscription: initialSubscription,
+          invoices: [],
+          notificationPreferences: initialNotificationPreferences,
+        })
       },
     }),
     {

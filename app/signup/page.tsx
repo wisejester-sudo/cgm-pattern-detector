@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,13 +8,20 @@ import { Input } from "@/components/ui/input"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import Link from "next/link"
 import { Zap, AlertCircle, CheckCircle } from "lucide-react"
+import { useStore } from "@/lib/store"
 
 type SignupStep = "form" | "success"
 
 export default function SignupPage() {
   const router = useRouter()
+  const resetStore = useStore(state => state.resetStore)
 
   const [step, setStep] = useState<SignupStep>("form")
+  
+  // Clear any existing store data when visiting signup page
+  useEffect(() => {
+    resetStore()
+  }, [resetStore])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -77,6 +84,7 @@ export default function SignupPage() {
   }
 
   if (step === "success") {
+    const displayName = ownerName || email.split('@')[0]
     return (
       <div className="min-h-screen bg-sidebar flex flex-col items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -84,15 +92,21 @@ export default function SignupPage() {
             <div className="mx-auto mb-4 flex items-center justify-center w-12 h-12 rounded-full bg-green-100">
               <CheckCircle className="h-7 w-7 text-green-600" />
             </div>
-            <CardTitle className="text-2xl">Welcome to Dispatchly!</CardTitle>
+            <CardTitle className="text-2xl">Welcome, {displayName}!</CardTitle>
             <CardDescription>
               Your account has been created successfully
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <div className="bg-muted p-4 rounded-lg">
-              <p className="text-sm text-muted-foreground mb-2">Company:</p>
-              <p className="font-medium">{companyName}</p>
+            <div className="bg-muted p-4 rounded-lg space-y-2">
+              <div>
+                <p className="text-xs text-muted-foreground">Company</p>
+                <p className="font-medium">{companyName}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Phone</p>
+                <p className="font-medium">{companyPhone}</p>
+              </div>
             </div>
             <p className="text-sm text-muted-foreground">
               Redirecting to your dashboard...

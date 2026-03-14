@@ -142,10 +142,7 @@ export default function LoginPage() {
         </CardContent>
       </Card>
 
-      <div className="mt-6 text-center space-y-2">
-        <p className="text-sm text-sidebar-muted">
-          Demo mode - enter any credentials to continue
-        </p>
+      <div className="mt-6 text-center">
         <Link
           href="/tech"
           className="text-sm text-sidebar-muted hover:text-sidebar-foreground"
