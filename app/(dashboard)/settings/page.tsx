@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { toast } from "sonner"
 import {
   Card,
   CardContent,
@@ -107,6 +108,7 @@ export default function SettingsPage() {
         template_body: templateBody,
       })
       setEditingTemplate(null)
+      toast.success('Template saved')
     }
   }
 
@@ -118,6 +120,7 @@ export default function SettingsPage() {
     setNewTemplateName("")
     setNewTemplateBody("")
     setIsAddOpen(false)
+    toast.success(`Template "${newTemplateName}" created`)
   }
 
   const handleDeleteTemplate = (id: string) => {
@@ -125,6 +128,7 @@ export default function SettingsPage() {
     if (editingTemplate === id) {
       setEditingTemplate(null)
     }
+    toast.success('Template deleted')
   }
 
   const handleSaveSettings = () => {
@@ -133,6 +137,7 @@ export default function SettingsPage() {
       company_phone: companyPhone,
     })
     setSettingsSaved(true)
+    toast.success('Company info saved')
     setTimeout(() => setSettingsSaved(false), 2000)
   }
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -74,6 +75,7 @@ export default function TechniciansPage() {
       if (response.ok) {
         // Reload from Supabase
         await loadTechniciansFromSupabase()
+        toast.success(`${formData.name} added successfully`)
       } else {
         // Fall back to local store
         addTechnician({
@@ -83,6 +85,7 @@ export default function TechniciansPage() {
           pin: formData.pin,
           is_active: true,
         })
+        toast.success(`${formData.name} added locally`)
       }
     } catch {
       // Fall back to local store on error
@@ -93,6 +96,7 @@ export default function TechniciansPage() {
         pin: formData.pin,
         is_active: true,
       })
+      toast.success(`${formData.name} added locally`)
     }
 
     setFormData({ name: "", email: "", phone: "", pin: "" })
@@ -129,12 +133,13 @@ export default function TechniciansPage() {
             invited_at: new Date().toISOString()
           })
         }
+        toast.success('Invite link generated')
       } else {
-        alert('Failed to generate invite link')
+        toast.error('Failed to generate invite link')
       }
     } catch (error) {
       console.error('Error sending invite:', error)
-      alert('Failed to send invite')
+      toast.error('Failed to send invite')
     } finally {
       setInvitingTechId(null)
     }
@@ -142,7 +147,7 @@ export default function TechniciansPage() {
 
   const copyInviteLink = () => {
     navigator.clipboard.writeText(inviteLink)
-    alert('Invite link copied to clipboard!')
+    toast.success('Invite link copied to clipboard')
   }
 
   const getAssignedJobCount = (techId: string) => {

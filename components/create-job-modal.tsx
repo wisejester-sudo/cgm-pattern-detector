@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -99,6 +100,7 @@ export function CreateJobModal({
       if (response.ok) {
         // Successfully created via API - reload jobs from Supabase
         await useStore.getState().loadJobsFromSupabase()
+        toast.success(`Job for ${formData.customer_name} created`)
       } else {
         // Fall back to local store if API fails (demo mode)
         const scheduledDateTime = formData.scheduled_date && formData.scheduled_time
@@ -115,6 +117,7 @@ export function CreateJobModal({
           assigned_tech_id: formData.assigned_tech_id || null,
           status: "scheduled" as const,
         })
+        toast.success(`Job for ${formData.customer_name} created locally`)
       }
 
       setFormData({
