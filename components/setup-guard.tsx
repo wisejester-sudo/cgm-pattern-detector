@@ -1,11 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 
 export function SetupGuard({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
   const [isChecking, setIsChecking] = useState(true)
   const [setupComplete, setSetupComplete] = useState(false)
 
@@ -26,19 +24,12 @@ export function SetupGuard({ children }: { children: React.ReactNode }) {
 
       const data = await response.json()
 
-      if (data.role === 'admin' && data.user?.company) {
-        if (!data.user.company.setup_completed) {
-          router.push('/setup')
-          return
-        }
-        setSetupComplete(true)
-      } else if (data.role === 'technician') {
-        setSetupComplete(true)
-      } else if (data.error) {
-        // API returned error (likely not authenticated) - allow demo mode
+      // All users (admin, technician, or demo) can access dashboard
+      // Setup is now handled during signup, not in a separate flow
+      if (data.role === 'admin' || data.role === 'technician' || data.error) {
         setSetupComplete(true)
       } else {
-        // No role or user - still allow demo mode
+        // No role - allow demo mode
         setSetupComplete(true)
       }
     } catch {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -21,6 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useStore } from "@/lib/store";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -30,29 +32,65 @@ const navItems = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-// Demo user for preview
-const demoUser = {
-  email: "admin@dispatchly.demo",
-  name: "Demo Admin"
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string | null;
+  phone: string | null;
+  role: 'admin' | 'technician';
 }
 
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { currentAdmin, logoutAdmin, resetStore } = useStore();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleLogout = () => {
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await fetch('/api/auth/user-profile');
+        if (response.ok) {
+          const data = await response.json();
+          setUserProfile(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
+  const handleLogout = async () => {
+    resetStore();
+    logoutAdmin();
+    
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // Ignore errors
+    }
+    
     router.push("/login");
   };
 
-  const getInitials = (email: string) => {
-    return email
-      .split("@")[0]
-      .split(".")
+  const getInitials = (name: string | null) => {
+    if (!name) return "?";
+    return name
+      .split(" ")
       .map((n) => n[0])
       .join("")
       .toUpperCase()
       .slice(0, 2);
   };
+
+  // Use user profile if available, fall back to store
+  const displayName = userProfile?.full_name || currentAdmin?.name || "Admin";
+  const displayEmail = userProfile?.email || currentAdmin?.email || "";
 
   return (
     <aside className="hidden md:flex w-[200px] flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
@@ -97,20 +135,20 @@ export function AppSidebar() {
             <button className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:bg-sidebar-accent transition-colors">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
-                  {getInitials(demoUser.email)}
+                  {getInitials(displayName)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 text-left min-w-0">
-                <p className="font-medium truncate text-xs">{demoUser.email}</p>
+                <p className="font-medium truncate text-xs">{displayName.split(' ')[0]}</p>
                 <p className="text-xs text-sidebar-muted truncate">Admin</p>
               </div>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem asChild>
-              <Link href="/profile" className="flex items-center">
-                <User className="h-4 w-4 mr-2" />
-                Profile & Settings
+              <Link href="/settings" className="flex items-center">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />

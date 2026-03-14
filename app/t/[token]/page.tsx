@@ -41,9 +41,15 @@ export default function TechnicianAcceptPage({
         }
 
         const data = await response.json()
-        setTechnicianName(data.name || '')
+        setTechnicianName(data.name || 'Technician')
+        // Store token in localStorage for session persistence
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('tech_magic_token', token)
+          localStorage.setItem('tech_name', data.name || 'Technician')
+        }
         setStep('setup')
       } catch (err) {
+        console.error('[v0] Token validation error:', err)
         setError('Failed to validate invite link')
       } finally {
         setIsLoading(false)

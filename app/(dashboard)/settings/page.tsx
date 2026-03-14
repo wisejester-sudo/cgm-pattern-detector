@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { toast } from "sonner"
 import {
   Card,
   CardContent,
@@ -32,6 +33,16 @@ import { Plus, MoreVertical, Copy, ExternalLink } from "lucide-react"
 import { useStore } from "@/lib/store"
 import Link from "next/link"
 
+interface UserProfile {
+  id: string
+  email: string
+  full_name: string | null
+  phone: string | null
+  company_name: string | null
+  company_phone: string | null
+  role: 'admin' | 'technician'
+}
+
 const variables = [
   { name: "{customer_name}", description: "Customer's full name" },
   { name: "{tech_name}", description: "Technician's name" },
@@ -46,6 +57,7 @@ export default function SettingsPage() {
   const { templates, settings, addTemplate, updateTemplate, deleteTemplate, updateSettings } =
     useStore()
 
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [editingTemplate, setEditingTemplate] = useState<string | null>(null)
   const [templateBody, setTemplateBody] = useState("")
   const [templateName, setTemplateName] = useState("")
@@ -54,7 +66,40 @@ export default function SettingsPage() {
   const [newTemplateBody, setNewTemplateBody] = useState("")
   const [companyName, setCompanyName] = useState(settings.company_name)
   const [companyPhone, setCompanyPhone] = useState(settings.company_phone)
+  const [ownerName, setOwnerName] = useState("")
+  const [ownerPhone, setOwnerPhone] = useState("")
+  const [ownerEmail, setOwnerEmail] = useState("")
   const [settingsSaved, setSettingsSaved] = useState(false)
+  const [profileLoading, setProfileLoading] = useState(true)
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch('/api/auth/user-profile')
+        if (response.ok) {
+          const data = await response.json()
+          setUserProfile(data)
+          setOwnerName(data.full_name || "")
+          setOwnerPhone(data.phone || "")
+          setOwnerEmail(data.email || "")
+          // Pre-fill company fields from user metadata if settings are empty
+          if (!companyName && data.company_name) {
+            setCompanyName(data.company_name)
+          }
+          if (!companyPhone && data.company_phone) {
+            setCompanyPhone(data.company_phone)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error)
+      } finally {
+        setProfileLoading(false)
+      }
+    }
+
+    fetchProfile()
+  }, [])
 
   const handleEditTemplate = (id: string) => {
     const template = templates.find((t) => t.id === id)
@@ -72,6 +117,7 @@ export default function SettingsPage() {
         template_body: templateBody,
       })
       setEditingTemplate(null)
+      toast.success('Template saved')
     }
   }
 
@@ -83,6 +129,7 @@ export default function SettingsPage() {
     setNewTemplateName("")
     setNewTemplateBody("")
     setIsAddOpen(false)
+    toast.success(`Template "${newTemplateName}" created`)
   }
 
   const handleDeleteTemplate = (id: string) => {
@@ -90,6 +137,7 @@ export default function SettingsPage() {
     if (editingTemplate === id) {
       setEditingTemplate(null)
     }
+    toast.success('Template deleted')
   }
 
   const handleSaveSettings = () => {
@@ -98,6 +146,7 @@ export default function SettingsPage() {
       company_phone: companyPhone,
     })
     setSettingsSaved(true)
+    toast.success('Company info saved')
     setTimeout(() => setSettingsSaved(false), 2000)
   }
 
@@ -132,9 +181,66 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
         <p className="text-muted-foreground">
-          Configure your company settings and SMS templates
+          Configure your account and SMS templates
         </p>
       </div>
+
+      {/* Owner Profile Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Account Owner Profile</CardTitle>
+          <CardDescription>
+            Your personal account information
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {profileLoading ? (
+            <p className="text-muted-foreground">Loading profile...</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="ownerName">Full Name</FieldLabel>
+                <Input
+                  id="ownerName"
+                  value={ownerName}
+                  disabled
+                  className="bg-muted"
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="ownerEmail">Email</FieldLabel>
+                <Input
+                  id="ownerEmail"
+                  type="email"
+                  value={ownerEmail}
+                  disabled
+                  className="bg-muted"
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="ownerPhone">Phone Number</FieldLabel>
+                <Input
+                  id="ownerPhone"
+                  value={ownerPhone}
+                  disabled
+                  className="bg-muted"
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="userRole">Role</FieldLabel>
+                <div className="flex items-center gap-2 pt-2">
+                  <Badge variant="secondary" className="capitalize">
+                    {userProfile?.role || "admin"}
+                  </Badge>
+                </div>
+              </Field>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground mt-4">
+            To update your profile information, contact support or sign in with updated details.
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Company Settings */}
       <Card>
