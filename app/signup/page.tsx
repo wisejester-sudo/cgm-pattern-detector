@@ -8,28 +8,25 @@ import { Input } from "@/components/ui/input"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import Link from "next/link"
 import { Zap, AlertCircle, CheckCircle } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-type SignupStep = "account" | "company" | "success"
+type SignupStep = "form" | "success"
 
 export default function SignupPage() {
   const router = useRouter()
 
-  const [step, setStep] = useState<SignupStep>("account")
+  const [step, setStep] = useState<SignupStep>("form")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Account form
+  // All form fields on one page
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-
-  // Company form
+  const [ownerName, setOwnerName] = useState("")
   const [companyName, setCompanyName] = useState("")
   const [companyPhone, setCompanyPhone] = useState("")
-  const [companyAddress, setCompanyAddress] = useState("")
 
-  const handleAccountSubmit = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
@@ -44,13 +41,7 @@ export default function SignupPage() {
       return
     }
 
-    setStep("company")
-  }
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
     setLoading(true)
-    setError(null)
 
     try {
       const response = await fetch('/api/auth/signup', {
@@ -59,26 +50,27 @@ export default function SignupPage() {
         body: JSON.stringify({
           email,
           password,
+          ownerName: ownerName || email.split('@')[0],
           companyName,
           companyPhone,
-          companyAddress,
         }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        setError(errorData.error || "Signup failed")
+        setError(data.error || "Signup failed")
         setLoading(false)
         return
       }
 
       setStep("success")
       
-      // Redirect to setup after successful signup
+      // Redirect directly to dashboard after successful signup
       setTimeout(() => {
-        router.push("/setup")
+        router.push("/")
       }, 2000)
-    } catch (err) {
+    } catch {
       setError("An error occurred. Please try again.")
       setLoading(false)
     }
@@ -89,8 +81,8 @@ export default function SignupPage() {
       <div className="min-h-screen bg-sidebar flex flex-col items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex items-center justify-center w-12 h-12 rounded-full bg-status-complete/10">
-              <CheckCircle className="h-7 w-7 text-status-complete" />
+            <div className="mx-auto mb-4 flex items-center justify-center w-12 h-12 rounded-full bg-green-100">
+              <CheckCircle className="h-7 w-7 text-green-600" />
             </div>
             <CardTitle className="text-2xl">Welcome to Dispatchly!</CardTitle>
             <CardDescription>
@@ -124,158 +116,112 @@ export default function SignupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs value={step} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="account" disabled={step === "company"}>
-                Account
-              </TabsTrigger>
-              <TabsTrigger value="company" disabled={step === "account"}>
-                Company
-              </TabsTrigger>
-            </TabsList>
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
 
-            {/* Account Step */}
-            <TabsContent value="account">
-              {error && (
-                <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-                  <p className="text-sm text-destructive">{error}</p>
-                </div>
-              )}
+          <form onSubmit={handleSignup}>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="email">Email Address</FieldLabel>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    setError(null)
+                  }}
+                  required
+                />
+              </Field>
 
-              <form onSubmit={handleAccountSubmit}>
-                <FieldGroup>
-                  <Field>
-                    <FieldLabel htmlFor="email">Email Address</FieldLabel>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="you@company.com"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value)
-                        setError(null)
-                      }}
-                      required
-                    />
-                  </Field>
+              <Field>
+                <FieldLabel htmlFor="password">Password</FieldLabel>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Min 8 characters"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    setError(null)
+                  }}
+                  required
+                />
+              </Field>
 
-                  <Field>
-                    <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Min 8 characters"
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value)
-                        setError(null)
-                      }}
-                      required
-                    />
-                  </Field>
+              <Field>
+                <FieldLabel htmlFor="confirm">Confirm Password</FieldLabel>
+                <Input
+                  id="confirm"
+                  type="password"
+                  placeholder="Confirm password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value)
+                    setError(null)
+                  }}
+                  required
+                />
+              </Field>
 
-                  <Field>
-                    <FieldLabel htmlFor="confirm">Confirm Password</FieldLabel>
-                    <Input
-                      id="confirm"
-                      type="password"
-                      placeholder="Confirm password"
-                      value={confirmPassword}
-                      onChange={(e) => {
-                        setConfirmPassword(e.target.value)
-                        setError(null)
-                      }}
-                      required
-                    />
-                  </Field>
+              <div className="border-t pt-4 mt-2">
+                <p className="text-sm font-medium text-muted-foreground mb-3">Company Details</p>
+              </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={!email || !password || !confirmPassword}
-                  >
-                    Continue
-                  </Button>
-                </FieldGroup>
-              </form>
-            </TabsContent>
+              <Field>
+                <FieldLabel htmlFor="ownerName">Your Name (Optional)</FieldLabel>
+                <Input
+                  id="ownerName"
+                  placeholder="John Smith"
+                  value={ownerName}
+                  onChange={(e) => setOwnerName(e.target.value)}
+                />
+              </Field>
 
-            {/* Company Step */}
-            <TabsContent value="company">
-              {error && (
-                <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-                  <p className="text-sm text-destructive">{error}</p>
-                </div>
-              )}
+              <Field>
+                <FieldLabel htmlFor="company">Company Name</FieldLabel>
+                <Input
+                  id="company"
+                  placeholder="Your HVAC Company"
+                  value={companyName}
+                  onChange={(e) => {
+                    setCompanyName(e.target.value)
+                    setError(null)
+                  }}
+                  required
+                />
+              </Field>
 
-              <form onSubmit={handleSignup}>
-                <FieldGroup>
-                  <Field>
-                    <FieldLabel htmlFor="company">Company Name</FieldLabel>
-                    <Input
-                      id="company"
-                      placeholder="Your HVAC Company"
-                      value={companyName}
-                      onChange={(e) => {
-                        setCompanyName(e.target.value)
-                        setError(null)
-                      }}
-                      required
-                    />
-                  </Field>
+              <Field>
+                <FieldLabel htmlFor="phone">Company Phone</FieldLabel>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="(555) 123-4567"
+                  value={companyPhone}
+                  onChange={(e) => {
+                    setCompanyPhone(e.target.value)
+                    setError(null)
+                  }}
+                  required
+                />
+              </Field>
 
-                  <Field>
-                    <FieldLabel htmlFor="phone">Company Phone</FieldLabel>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="(555) 123-4567"
-                      value={companyPhone}
-                      onChange={(e) => {
-                        setCompanyPhone(e.target.value)
-                        setError(null)
-                      }}
-                      required
-                    />
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="address">Service Address (Optional)</FieldLabel>
-                    <Input
-                      id="address"
-                      placeholder="123 Main St, City, State ZIP"
-                      value={companyAddress}
-                      onChange={(e) => {
-                        setCompanyAddress(e.target.value)
-                        setError(null)
-                      }}
-                    />
-                  </Field>
-
-                  <div className="flex gap-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => setStep("account")}
-                      disabled={loading}
-                    >
-                      Back
-                    </Button>
-                    <Button
-                      type="submit"
-                      className="flex-1"
-                      disabled={!companyName || !companyPhone || loading}
-                    >
-                      {loading ? "Creating Account..." : "Create Account"}
-                    </Button>
-                  </div>
-                </FieldGroup>
-              </form>
-            </TabsContent>
-          </Tabs>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={!email || !password || !confirmPassword || !companyName || !companyPhone || loading}
+              >
+                {loading ? "Creating Account..." : "Create Account"}
+              </Button>
+            </FieldGroup>
+          </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">

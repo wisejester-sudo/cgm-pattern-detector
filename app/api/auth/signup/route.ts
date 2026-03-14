@@ -6,12 +6,12 @@ export async function POST(request: NextRequest) {
   try {
     // Check if Supabase is configured
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      // Demo mode - accept any credentials
-      return NextResponse.json({ success: true })
+      // Demo mode - accept any credentials and redirect to dashboard
+      return NextResponse.json({ success: true, demo: true })
     }
 
     const body = await request.json()
-    const { email, password, companyName, companyPhone, companyAddress } = body
+    const { email, password, companyName, companyPhone, companyAddress, ownerName } = body
 
     if (!email || !password || !companyName) {
       return NextResponse.json(
@@ -29,15 +29,19 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
 
-    // Sign up with email and password
+    // Sign up with email and password, include all metadata
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
+          `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/`,
         data: {
+          full_name: ownerName || email.split('@')[0],
           company_name: companyName,
           company_phone: companyPhone,
           company_address: companyAddress,
+          role: 'admin',
         },
       },
     })
@@ -56,7 +60,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ success: true, user: data.user })
+    // Note: company_settings and profiles are created automatically by database trigger
+    // The handle_new_user trigger in the database creates these rows on auth.users insert
+
+    return NextResponse.json({ 
+      success: true, 
+      user: data.user,
+      requiresConfirmation: !data.session // If no session, email confirmation is required
+    })
   } catch (error) {
     console.error("[API] Signup error:", error)
     return NextResponse.json(

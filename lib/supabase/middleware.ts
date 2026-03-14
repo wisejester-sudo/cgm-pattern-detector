@@ -48,7 +48,6 @@ export async function updateSession(request: NextRequest) {
     const publicRoutes = [
       "/login", 
       "/signup", 
-      "/setup",
       "/auth", 
       "/t/", 
       "/j/", 
