@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import Link from "next/link"
 import { Zap, AlertCircle, CheckCircle, Mail } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { createClient, createClientAsync } from "@/lib/supabase/client"
 import { useStore } from "@/lib/store"
 
 type SignupStep = "form" | "success" | "confirm_email"
@@ -49,13 +49,13 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      // Try to create Supabase client - may fail if env vars are missing
+      // Try to create Supabase client - try async version first that can fetch config
       let supabase
       try {
-        supabase = createClient()
+        supabase = await createClientAsync()
       } catch (clientError) {
         console.error("[v0] Failed to create Supabase client:", clientError)
-        setError("Database configuration error. Please contact support.")
+        setError("Database configuration error. Please ensure Supabase is properly configured.")
         setLoading(false)
         return
       }
