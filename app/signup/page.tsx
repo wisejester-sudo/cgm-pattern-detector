@@ -7,14 +7,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import Link from "next/link"
-import { Zap, AlertCircle, CheckCircle } from "lucide-react"
+import { Zap, AlertCircle, CheckCircle, Mail } from "lucide-react"
 import { useStore } from "@/lib/store"
 
-type SignupStep = "form" | "success"
+type SignupStep = "form" | "success" | "confirm_email"
 
 export default function SignupPage() {
   const router = useRouter()
-  const resetStore = useStore(state => state.resetStore)
+  const { resetStore, updateSettings } = useStore()
 
   const [step, setStep] = useState<SignupStep>("form")
   
@@ -71,18 +71,69 @@ export default function SignupPage() {
         return
       }
 
-      setStep("success")
-      
-      // Redirect directly to dashboard after successful signup
-      setTimeout(() => {
-        router.push("/")
-      }, 2000)
+      // Store company settings locally so they're available after email confirmation
+      updateSettings({
+        company_name: companyName,
+        company_phone: companyPhone,
+      })
+
+      // Check if email confirmation is required
+      if (data.requiresConfirmation) {
+        setStep("confirm_email")
+      } else {
+        setStep("success")
+        // Redirect directly to dashboard after successful signup with session
+        setTimeout(() => {
+          router.push("/")
+        }, 2000)
+      }
     } catch {
       setError("An error occurred. Please try again.")
       setLoading(false)
     }
   }
 
+  // Email confirmation required step
+  if (step === "confirm_email") {
+    return (
+      <div className="min-h-screen bg-sidebar flex flex-col items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 flex items-center justify-center w-12 h-12 rounded-full bg-blue-100">
+              <Mail className="h-7 w-7 text-blue-600" />
+            </div>
+            <CardTitle className="text-2xl">Check Your Email</CardTitle>
+            <CardDescription>
+              We sent a confirmation link to <span className="font-medium text-foreground">{email}</span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Click the link in your email to confirm your account and start using Dispatchly.
+            </p>
+            <div className="bg-muted p-4 rounded-lg space-y-2">
+              <div>
+                <p className="text-xs text-muted-foreground">Company</p>
+                <p className="font-medium">{companyName}</p>
+              </div>
+            </div>
+            <div className="pt-4 space-y-2">
+              <Link href="/login">
+                <Button variant="outline" className="w-full">
+                  Go to Login
+                </Button>
+              </Link>
+              <p className="text-xs text-muted-foreground">
+                {"Didn't receive the email? Check your spam folder."}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Success step (when no email confirmation needed)
   if (step === "success") {
     const displayName = ownerName || email.split('@')[0]
     return (

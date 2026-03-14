@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createServerClient } from "@supabase/ssr"
+import { cookies } from "next/headers"
 
 // POST /api/auth/login - Login with email and password
 export async function POST(request: NextRequest) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    
     // Check if Supabase is configured
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       // Demo mode - accept any credentials
-      return NextResponse.json({ success: true })
+      return NextResponse.json({ success: true, demo: true })
     }
 
     const body = await request.json()
@@ -20,7 +24,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              )
+            } catch {
+              // Ignore
+            }
+          },
+        },
+      }
+    )
 
     // Sign in with email and password
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -42,7 +66,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ success: true, user: data.user })
+    // Return user info with metadata
+    return NextResponse.json({ 
+      success: true, 
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        full_name: data.user.user_metadata?.full_name,
+        company_name: data.user.user_metadata?.company_name,
+        company_phone: data.user.user_metadata?.company_phone,
+      }
+    })
   } catch (error) {
     console.error("[API] Login error:", error)
     return NextResponse.json(

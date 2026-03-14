@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,15 +8,22 @@ import { Input } from "@/components/ui/input"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import Link from "next/link"
 import { Zap, Eye, EyeOff, AlertCircle } from "lucide-react"
+import { useStore } from "@/lib/store"
 
 export default function LoginPage() {
   const router = useRouter()
+  const { resetStore, updateSettings } = useStore()
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+
+  // Clear old store data on login page visit
+  useEffect(() => {
+    resetStore()
+  }, [resetStore])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,15 +37,24 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        setError(errorData.error || "Login failed")
+        setError(data.error || "Login failed")
         setLoading(false)
         return
       }
 
+      // Store user's company info locally
+      if (data.user?.company_name || data.user?.company_phone) {
+        updateSettings({
+          company_name: data.user.company_name || '',
+          company_phone: data.user.company_phone || '',
+        })
+      }
+
       router.push("/")
-    } catch (err) {
+    } catch {
       setError("An error occurred. Please try again.")
       setLoading(false)
     }
