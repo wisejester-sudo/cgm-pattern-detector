@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { NetworkStatus } from '@/components/network-status'
 import './globals.css'
 
+// Force rebuild: rebuild-marker-2026
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
