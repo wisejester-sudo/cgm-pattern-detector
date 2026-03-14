@@ -16,7 +16,6 @@ const supabaseClient = createBrowserClient(
   'https://ltyrituojmxhkwetsnyk.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0eXJpdHVvam14aGt3ZXRzbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNzE2NzYsImV4cCI6MjA4ODg0NzY3Nn0.A9fRHHbuT4w373JeEYFIpwZjCIVa6zb1G6r2M3XiHhs'
 )
-import { useStore } from "@/lib/store"
 
 type SignupStep = "form" | "success" | "confirm_email"
 
