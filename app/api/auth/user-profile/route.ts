@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 // Default demo profile for when Supabase is not configured or user is not authenticated
 const DEMO_PROFILE = {
@@ -10,15 +12,38 @@ const DEMO_PROFILE = {
 }
 
 export async function GET() {
-  // Check if Supabase is configured - do this before any imports that might fail
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  // Check if Supabase is configured first
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
     return NextResponse.json(DEMO_PROFILE)
   }
 
   try {
-    // Dynamic import to avoid errors when env vars aren't set
-    const { createClient } = await import('@/lib/supabase/server')
-    const supabase = await createClient()
+    const cookieStore = await cookies()
+    
+    const supabase = createServerClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              )
+            } catch {
+              // Ignore - called from Server Component
+            }
+          },
+        },
+      }
+    )
+    
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
@@ -42,7 +67,6 @@ export async function GET() {
 
     return NextResponse.json(profile)
   } catch {
-    // Return demo profile on any error to prevent UI breakage
     return NextResponse.json(DEMO_PROFILE)
   }
 }
