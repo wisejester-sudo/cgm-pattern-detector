@@ -49,7 +49,16 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      const supabase = createClient()
+      // Try to create Supabase client - may fail if env vars are missing
+      let supabase
+      try {
+        supabase = createClient()
+      } catch (clientError) {
+        console.error("[v0] Failed to create Supabase client:", clientError)
+        setError("Database configuration error. Please contact support.")
+        setLoading(false)
+        return
+      }
 
       // Sign up directly via browser client — this correctly sets the session cookie
       const { data, error: authError } = await supabase.auth.signUp({
@@ -69,6 +78,7 @@ export default function SignupPage() {
       })
 
       if (authError) {
+        console.error("[v0] Signup auth error:", authError)
         setError(authError.message || "Signup failed")
         setLoading(false)
         return
@@ -91,8 +101,10 @@ export default function SignupPage() {
         // Email confirmation required
         setStep("confirm_email")
       }
-    } catch {
-      setError("An error occurred. Please try again.")
+    } catch (error) {
+      console.error("[v0] Signup error:", error)
+      const errorMessage = error instanceof Error ? error.message : "An error occurred. Please try again."
+      setError(errorMessage)
       setLoading(false)
     }
   }

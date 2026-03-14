@@ -32,13 +32,24 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const supabase = createClient()
+      // Try to create Supabase client - may fail if env vars are missing
+      let supabase
+      try {
+        supabase = createClient()
+      } catch (clientError) {
+        console.error("[v0] Failed to create Supabase client:", clientError)
+        setError("Database configuration error. Please contact support.")
+        setLoading(false)
+        return
+      }
+
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (authError) {
+        console.error("[v0] Login auth error:", authError)
         setError(authError.message || "Invalid email or password")
         setLoading(false)
         return
@@ -53,8 +64,10 @@ export default function LoginPage() {
       // Navigate to dashboard — session cookie is now set by the browser client
       router.push("/")
       router.refresh()
-    } catch {
-      setError("An error occurred. Please try again.")
+    } catch (error) {
+      console.error("[v0] Login error:", error)
+      const errorMessage = error instanceof Error ? error.message : "An error occurred. Please try again."
+      setError(errorMessage)
       setLoading(false)
     }
   }
