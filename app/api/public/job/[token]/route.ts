@@ -85,7 +85,7 @@ export async function GET(
         id: job.id,
         job_type: job.job_type,
         status: job.status,
-        technician_name: job.technician?.name || null,
+        technician_name: job.technician?.[0]?.name || null,
         last_updated: job.updated_at,
       },
       updates: updates || [],

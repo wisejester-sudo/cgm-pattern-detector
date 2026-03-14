@@ -4,8 +4,11 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID
 const authToken = process.env.TWILIO_AUTH_TOKEN
 const fromNumber = process.env.TWILIO_PHONE_NUMBER
 
-// Initialize Twilio client
-const client = accountSid && authToken ? twilio(accountSid, authToken) : null
+// Check if credentials look valid (real Twilio SIDs start with "AC")
+const hasValidCredentials = accountSid?.startsWith("AC") && authToken && authToken.length > 10
+
+// Initialize Twilio client only if credentials are valid
+const client = hasValidCredentials ? twilio(accountSid, authToken) : null
 
 export interface SendSMSOptions {
   to: string
@@ -100,7 +103,7 @@ export function validateTwilioSignature(
   url: string,
   params: Record<string, string>
 ): boolean {
-  if (!authToken) return false
+  if (!authToken || authToken.length < 10) return false
   
   const twilioLib = require("twilio")
   return twilioLib.validateRequest(authToken, signature, url, params)
