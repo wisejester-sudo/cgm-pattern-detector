@@ -8,8 +8,14 @@ import { Input } from "@/components/ui/input"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import Link from "next/link"
 import { Zap, Eye, EyeOff, AlertCircle } from "lucide-react"
-import { createClient, createClientAsync } from "@/lib/supabase/client"
 import { useStore } from "@/lib/store"
+import { createBrowserClient } from "@supabase/ssr"
+
+// HARDCODED Supabase client - direct inline to bypass any module caching issues
+const supabaseClient = createBrowserClient(
+  'https://ltyrituojmxhkwetsnyk.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0eXJpdHVvam14aGt3ZXRzbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNzE2NzYsImV4cCI6MjA4ODg0NzY3Nn0.A9fRHHbuT4w373JeEYFIpwZjCIVa6zb1G6r2M3XiHhs'
+)
 
 export default function LoginPage() {
   const router = useRouter()
@@ -32,16 +38,8 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      // Try to create Supabase client - try async version first that can fetch config
-      let supabase
-      try {
-        supabase = await createClientAsync()
-      } catch (clientError) {
-        console.error("[v0] Failed to create Supabase client:", clientError)
-        setError("Database configuration error. Please ensure Supabase is properly configured.")
-        setLoading(false)
-        return
-      }
+      // Use hardcoded Supabase client directly
+      const supabase = supabaseClient
 
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
