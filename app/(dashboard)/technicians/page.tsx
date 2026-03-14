@@ -121,6 +121,14 @@ export default function TechniciansPage() {
         const data = await response.json()
         setInviteLink(data.magicLink)
         setShowInviteDialog(true)
+        // Update last invited timestamp in store
+        const technician = technicians.find(t => t.id === techId)
+        if (technician) {
+          updateTechnician(techId, { 
+            ...technician,
+            invited_at: new Date().toISOString()
+          })
+        }
       } else {
         alert('Failed to generate invite link')
       }

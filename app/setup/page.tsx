@@ -60,7 +60,11 @@ export default function SetupPage() {
       const response = await fetch('/api/setup/owner', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ownerData),
+        body: JSON.stringify({
+          ownerName: ownerData.ownerName,
+          ownerPhone: ownerData.ownerPhone,
+          companyPhone: companyData.companyPhone,
+        }),
       })
 
       if (!response.ok) {

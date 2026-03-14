@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { ownerName, ownerPhone } = body
+    const { ownerName, ownerPhone, companyPhone } = body
 
     if (!ownerName || !ownerPhone) {
       return NextResponse.json(
@@ -24,8 +24,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Update auth.users metadata with full_name and role
+    const { error: updateAuthError } = await supabase.auth.updateUser({
+      data: {
+        full_name: ownerName,
+        role: 'admin',
+      }
+    })
+
+    if (updateAuthError) {
+      console.error('[API] Error updating auth metadata:', updateAuthError)
+      return NextResponse.json(
+        { error: 'Failed to update user profile' },
+        { status: 500 }
+      )
+    }
+
     // Update company settings with owner info and mark setup as complete
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from('company_settings')
       .update({
         owner_name: ownerName,
@@ -34,15 +50,23 @@ export async function POST(request: NextRequest) {
       })
       .eq('admin_id', user.id)
 
-    if (error) {
-      console.error('[API] Error saving owner info:', error)
+    if (updateError) {
+      console.error('[API] Error saving owner info:', updateError)
       return NextResponse.json(
         { error: 'Failed to save owner information' },
         { status: 500 }
       )
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ 
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: ownerName,
+        phone: ownerPhone,
+      }
+    })
   } catch (error) {
     console.error('[API] Unexpected error:', error)
     return NextResponse.json(

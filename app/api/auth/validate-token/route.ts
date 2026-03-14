@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       .from("technicians")
       .select("*")
       .eq("magic_link_token", token)
+      .eq("is_active", true)
       .single()
 
     if (tokenError || !technician) {
@@ -38,8 +39,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check expiration
-    if (technician.magic_link_expires_at && new Date(technician.magic_link_expires_at) < new Date()) {
+    // Check expiration - try both column names for compatibility
+    const expiresAt = technician.token_expires_at || technician.magic_link_expires_at
+    if (expiresAt && new Date(expiresAt) < new Date()) {
       return NextResponse.json(
         { valid: false, error: "Token has expired" },
         { status: 401 }
