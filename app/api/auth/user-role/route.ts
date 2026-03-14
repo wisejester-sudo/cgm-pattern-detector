@@ -8,6 +8,9 @@ export async function GET() {
     }
 
     const supabase = await createClient()
+    if (!supabase) {
+      return NextResponse.json({ role: 'none' })
+    }
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {

@@ -10,6 +10,9 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = await createClient()
+    if (!supabase) {
+      return NextResponse.json([])
+    }
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -56,6 +59,9 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient()
+    if (!supabase) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 503 })
+    }
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()

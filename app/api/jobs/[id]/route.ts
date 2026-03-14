@@ -17,6 +17,9 @@ export async function GET(
 
     const { id } = await params
     const supabase = await createClient()
+    if (!supabase) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 503 })
+    }
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -81,6 +84,9 @@ export async function PATCH(
   try {
     const { id } = await params
     const supabase = await createClient()
+    if (!supabase) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 503 })
+    }
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -159,6 +165,9 @@ export async function DELETE(
     }
 
     const supabase = await createClient()
+    if (!supabase) {
+      return NextResponse.json({ success: true })
+    }
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()

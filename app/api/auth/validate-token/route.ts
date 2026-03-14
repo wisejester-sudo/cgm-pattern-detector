@@ -13,6 +13,9 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient()
+    if (!supabase) {
+      return NextResponse.json({ valid: false, error: "Database not configured" }, { status: 503 })
+    }
     
     const body = await request.json()
     const { token } = body

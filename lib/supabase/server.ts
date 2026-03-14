@@ -11,7 +11,8 @@ export async function createClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Supabase environment variables are not configured")
+    // Return null instead of throwing - callers must check for null
+    return null
   }
 
   const cookieStore = await cookies()
