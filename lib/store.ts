@@ -419,17 +419,17 @@ export const useStore = create<AppState>()(
           }
           const profile = await response.json()
           
-          // Skip if demo profile
+          // Skip if demo profile (not authenticated)
           if (profile.id === 'demo') {
             return
           }
           
-          // Set admin data from profile
+          // Set admin data from profile (using metadata set during signup)
           const admin: Admin = {
             id: profile.id,
             name: profile.full_name || profile.email?.split('@')[0] || 'User',
             email: profile.email || '',
-            phone: profile.phone || '',
+            phone: profile.company_phone || '',
             role: 'admin',
             is_active: true,
             created_at: new Date().toISOString(),
@@ -437,12 +437,20 @@ export const useStore = create<AppState>()(
             avatar_url: null,
           }
           
-          set({ 
-            currentAdmin: admin, 
-            isAdminAuthenticated: true 
-          })
+          set({ currentAdmin: admin, isAdminAuthenticated: true })
           
-          // Try to fetch company settings
+          // Populate company settings from user metadata (available immediately after signup)
+          if (profile.company_name || profile.company_phone) {
+            set({
+              settings: {
+                ...get().settings,
+                company_name: profile.company_name || get().settings.company_name,
+                company_phone: profile.company_phone || get().settings.company_phone,
+              }
+            })
+          }
+          
+          // Try to also fetch persisted company settings from DB (may be empty for new users)
           try {
             const settingsResponse = await fetch('/api/settings')
             if (settingsResponse.ok) {
@@ -452,7 +460,7 @@ export const useStore = create<AppState>()(
               }
             }
           } catch {
-            // Use default settings
+            // Fall through — metadata values are already set above
           }
           
           // Load jobs, technicians, templates
@@ -462,7 +470,7 @@ export const useStore = create<AppState>()(
             get().loadTemplatesFromSupabase(),
           ])
         } catch {
-          // Silently fail - user will see empty state
+          // Silently fail — user will see empty state
         }
       },
       

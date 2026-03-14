@@ -8,24 +8,19 @@ import { Input } from "@/components/ui/input"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import Link from "next/link"
 import { Zap, AlertCircle, CheckCircle, Mail } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 import { useStore } from "@/lib/store"
 
 type SignupStep = "form" | "success" | "confirm_email"
 
 export default function SignupPage() {
   const router = useRouter()
-  const { resetStore, updateSettings } = useStore()
+  const { resetStore } = useStore()
 
   const [step, setStep] = useState<SignupStep>("form")
-  
-  // Clear any existing store data when visiting signup page
-  useEffect(() => {
-    resetStore()
-  }, [resetStore])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // All form fields on one page
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -33,16 +28,19 @@ export default function SignupPage() {
   const [companyName, setCompanyName] = useState("")
   const [companyPhone, setCompanyPhone] = useState("")
 
+  // Clear any existing session/store data on signup page
+  useEffect(() => {
+    resetStore()
+  }, [resetStore])
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
-    // Validation
     if (password.length < 8) {
       setError("Password must be at least 8 characters")
       return
     }
-
     if (password !== confirmPassword) {
       setError("Passwords don't match")
       return
@@ -51,41 +49,47 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          ownerName: ownerName || email.split('@')[0],
-          companyName,
-          companyPhone,
-        }),
+      const supabase = createClient()
+
+      // Sign up directly via browser client — this correctly sets the session cookie
+      const { data, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo:
+            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
+            `${window.location.origin}/`,
+          data: {
+            full_name: ownerName || email.split('@')[0],
+            company_name: companyName,
+            company_phone: companyPhone,
+            role: 'admin',
+          },
+        },
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || "Signup failed")
+      if (authError) {
+        setError(authError.message || "Signup failed")
         setLoading(false)
         return
       }
 
-      // Store company settings locally so they're available after email confirmation
-      updateSettings({
-        company_name: companyName,
-        company_phone: companyPhone,
-      })
+      if (!data.user) {
+        setError("Signup failed. Please try again.")
+        setLoading(false)
+        return
+      }
 
-      // Check if email confirmation is required
-      if (data.requiresConfirmation) {
-        setStep("confirm_email")
-      } else {
+      // If a session was returned, email confirmation is disabled — go straight to dashboard
+      if (data.session) {
         setStep("success")
-        // Redirect directly to dashboard after successful signup with session
         setTimeout(() => {
           router.push("/")
-        }, 2000)
+          router.refresh()
+        }, 1500)
+      } else {
+        // Email confirmation required
+        setStep("confirm_email")
       }
     } catch {
       setError("An error occurred. Please try again.")
@@ -93,7 +97,6 @@ export default function SignupPage() {
     }
   }
 
-  // Email confirmation required step
   if (step === "confirm_email") {
     return (
       <div className="min-h-screen bg-sidebar flex flex-col items-center justify-center p-4">
@@ -104,36 +107,30 @@ export default function SignupPage() {
             </div>
             <CardTitle className="text-2xl">Check Your Email</CardTitle>
             <CardDescription>
-              We sent a confirmation link to <span className="font-medium text-foreground">{email}</span>
+              We sent a confirmation link to{" "}
+              <span className="font-medium text-foreground">{email}</span>
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-sm text-muted-foreground">
-              Click the link in your email to confirm your account and start using Dispatchly.
+              Click the link in your email to verify your account, then log in to start using Dispatchly.
             </p>
-            <div className="bg-muted p-4 rounded-lg space-y-2">
-              <div>
-                <p className="text-xs text-muted-foreground">Company</p>
-                <p className="font-medium">{companyName}</p>
-              </div>
+            <div className="bg-muted p-4 rounded-lg">
+              <p className="text-xs text-muted-foreground mb-1">Company registered</p>
+              <p className="font-semibold">{companyName}</p>
             </div>
-            <div className="pt-4 space-y-2">
-              <Link href="/login">
-                <Button variant="outline" className="w-full">
-                  Go to Login
-                </Button>
-              </Link>
-              <p className="text-xs text-muted-foreground">
-                {"Didn't receive the email? Check your spam folder."}
-              </p>
-            </div>
+            <Link href="/login">
+              <Button className="w-full">Go to Login</Button>
+            </Link>
+            <p className="text-xs text-muted-foreground">
+              {"Didn't receive the email? Check your spam folder."}
+            </p>
           </CardContent>
         </Card>
       </div>
     )
   }
 
-  // Success step (when no email confirmation needed)
   if (step === "success") {
     const displayName = ownerName || email.split('@')[0]
     return (
@@ -144,24 +141,16 @@ export default function SignupPage() {
               <CheckCircle className="h-7 w-7 text-green-600" />
             </div>
             <CardTitle className="text-2xl">Welcome, {displayName}!</CardTitle>
-            <CardDescription>
-              Your account has been created successfully
-            </CardDescription>
+            <CardDescription>Your account has been created.</CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <div className="bg-muted p-4 rounded-lg space-y-2">
-              <div>
-                <p className="text-xs text-muted-foreground">Company</p>
-                <p className="font-medium">{companyName}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Phone</p>
-                <p className="font-medium">{companyPhone}</p>
-              </div>
+            <div className="bg-muted p-4 rounded-lg space-y-1">
+              <p className="text-xs text-muted-foreground">Company</p>
+              <p className="font-semibold">{companyName}</p>
+              <p className="text-xs text-muted-foreground mt-1">Phone</p>
+              <p className="font-semibold">{companyPhone}</p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Redirecting to your dashboard...
-            </p>
+            <p className="text-sm text-muted-foreground">Taking you to your dashboard...</p>
           </CardContent>
         </Card>
       </div>
@@ -176,9 +165,7 @@ export default function SignupPage() {
             <Zap className="h-7 w-7 text-primary-foreground" />
           </div>
           <CardTitle className="text-2xl">Create Dispatchly Account</CardTitle>
-          <CardDescription>
-            Set up your HVAC business in minutes
-          </CardDescription>
+          <CardDescription>Set up your HVAC business in minutes</CardDescription>
         </CardHeader>
         <CardContent>
           {error && (
@@ -197,10 +184,7 @@ export default function SignupPage() {
                   type="email"
                   placeholder="you@company.com"
                   value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value)
-                    setError(null)
-                  }}
+                  onChange={(e) => { setEmail(e.target.value); setError(null) }}
                   required
                 />
               </Field>
@@ -212,10 +196,7 @@ export default function SignupPage() {
                   type="password"
                   placeholder="Min 8 characters"
                   value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value)
-                    setError(null)
-                  }}
+                  onChange={(e) => { setPassword(e.target.value); setError(null) }}
                   required
                 />
               </Field>
@@ -227,10 +208,7 @@ export default function SignupPage() {
                   type="password"
                   placeholder="Confirm password"
                   value={confirmPassword}
-                  onChange={(e) => {
-                    setConfirmPassword(e.target.value)
-                    setError(null)
-                  }}
+                  onChange={(e) => { setConfirmPassword(e.target.value); setError(null) }}
                   required
                 />
               </Field>
@@ -240,7 +218,7 @@ export default function SignupPage() {
               </div>
 
               <Field>
-                <FieldLabel htmlFor="ownerName">Your Name (Optional)</FieldLabel>
+                <FieldLabel htmlFor="ownerName">Your Name <span className="text-muted-foreground font-normal">(optional)</span></FieldLabel>
                 <Input
                   id="ownerName"
                   placeholder="John Smith"
@@ -253,12 +231,9 @@ export default function SignupPage() {
                 <FieldLabel htmlFor="company">Company Name</FieldLabel>
                 <Input
                   id="company"
-                  placeholder="Your HVAC Company"
+                  placeholder="Smith HVAC Services"
                   value={companyName}
-                  onChange={(e) => {
-                    setCompanyName(e.target.value)
-                    setError(null)
-                  }}
+                  onChange={(e) => { setCompanyName(e.target.value); setError(null) }}
                   required
                 />
               </Field>
@@ -270,10 +245,7 @@ export default function SignupPage() {
                   type="tel"
                   placeholder="(555) 123-4567"
                   value={companyPhone}
-                  onChange={(e) => {
-                    setCompanyPhone(e.target.value)
-                    setError(null)
-                  }}
+                  onChange={(e) => { setCompanyPhone(e.target.value); setError(null) }}
                   required
                 />
               </Field>

@@ -8,11 +8,12 @@ import { Input } from "@/components/ui/input"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import Link from "next/link"
 import { Zap, Eye, EyeOff, AlertCircle } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 import { useStore } from "@/lib/store"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { resetStore, updateSettings } = useStore()
+  const { resetStore } = useStore()
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -31,29 +32,27 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      const supabase = createClient()
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || "Login failed")
+      if (authError) {
+        setError(authError.message || "Invalid email or password")
         setLoading(false)
         return
       }
 
-      // Store user's company info locally
-      if (data.user?.company_name || data.user?.company_phone) {
-        updateSettings({
-          company_name: data.user.company_name || '',
-          company_phone: data.user.company_phone || '',
-        })
+      if (!data.user) {
+        setError("Login failed. Please try again.")
+        setLoading(false)
+        return
       }
 
+      // Navigate to dashboard — session cookie is now set by the browser client
       router.push("/")
+      router.refresh()
     } catch {
       setError("An error occurred. Please try again.")
       setLoading(false)
@@ -101,12 +100,6 @@ export default function LoginPage() {
               <Field>
                 <div className="flex items-center justify-between mb-2">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <Link
-                    href="/forgot-password"
-                    className="text-sm text-primary hover:underline"
-                  >
-                    Forgot password?
-                  </Link>
                 </div>
                 <div className="relative">
                   <Input
@@ -149,7 +142,7 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Don&apos;t have an account?{" "}
+              {"Don't have an account? "}
               <Link href="/signup" className="text-primary hover:underline font-medium">
                 Sign up for free
               </Link>

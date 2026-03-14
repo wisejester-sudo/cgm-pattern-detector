@@ -34,11 +34,13 @@ import { useStore } from "@/lib/store"
 import Link from "next/link"
 
 interface UserProfile {
-  id: string;
-  email: string;
-  full_name: string | null;
-  phone: string | null;
-  role: 'admin' | 'technician';
+  id: string
+  email: string
+  full_name: string | null
+  phone: string | null
+  company_name: string | null
+  company_phone: string | null
+  role: 'admin' | 'technician'
 }
 
 const variables = [
@@ -81,6 +83,13 @@ export default function SettingsPage() {
           setOwnerName(data.full_name || "")
           setOwnerPhone(data.phone || "")
           setOwnerEmail(data.email || "")
+          // Pre-fill company fields from user metadata if settings are empty
+          if (!companyName && data.company_name) {
+            setCompanyName(data.company_name)
+          }
+          if (!companyPhone && data.company_phone) {
+            setCompanyPhone(data.company_phone)
+          }
         }
       } catch (error) {
         console.error('Failed to fetch profile:', error)
