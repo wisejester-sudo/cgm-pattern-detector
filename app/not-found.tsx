@@ -1,5 +1,6 @@
 "use client"
 
+import { useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -7,6 +8,10 @@ import { Home, ArrowLeft } from "lucide-react"
 
 export default function NotFound() {
   const router = useRouter()
+  
+  const handleGoBack = useCallback(() => {
+    router.back()
+  }, [router])
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
@@ -27,7 +32,7 @@ export default function NotFound() {
               Go to Dashboard
             </Button>
           </Link>
-          <Button variant="outline" onClick={() => router.back()}>
+          <Button variant="outline" onClick={handleGoBack}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Go Back
           </Button>

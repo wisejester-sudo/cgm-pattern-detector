@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertTriangle, RefreshCw, Home } from "lucide-react"
@@ -14,9 +14,12 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    // Log the error to an error reporting service
     console.error("[Dispatchly Error]", error)
   }, [error])
+
+  const handleReset = useCallback(() => {
+    reset()
+  }, [reset])
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -37,7 +40,7 @@ export default function Error({
             </div>
           )}
           <div className="flex gap-3">
-            <Button onClick={reset} variant="outline" className="flex-1">
+            <Button onClick={handleReset} variant="outline" className="flex-1">
               <RefreshCw className="h-4 w-4 mr-2" />
               Try Again
             </Button>
