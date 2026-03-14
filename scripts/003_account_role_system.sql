@@ -1,5 +1,5 @@
 -- Migration 003: Account & Role System Enhancements
--- Adds owner profile fields, enhances technicians table, creates user_profiles table
+-- Adds owner profile fields, enhances technicians table, and magic link support
 
 -- Add setup_completed to company_settings if it doesn't exist
 ALTER TABLE public.company_settings ADD COLUMN IF NOT EXISTS setup_completed BOOLEAN DEFAULT false;
@@ -10,8 +10,6 @@ ALTER TABLE public.company_settings ADD COLUMN IF NOT EXISTS owner_phone TEXT;
 ALTER TABLE public.company_settings ADD COLUMN IF NOT EXISTS address TEXT;
 
 -- Enhance technicians table for invite/magic-link system
-ALTER TABLE public.technicians ADD COLUMN IF NOT EXISTS email TEXT;
-ALTER TABLE public.technicians ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
 ALTER TABLE public.technicians ADD COLUMN IF NOT EXISTS magic_link_token TEXT UNIQUE;
 ALTER TABLE public.technicians ADD COLUMN IF NOT EXISTS token_expires_at TIMESTAMPTZ;
 ALTER TABLE public.technicians ADD COLUMN IF NOT EXISTS invited_at TIMESTAMPTZ;
@@ -21,35 +19,32 @@ ALTER TABLE public.technicians ADD COLUMN IF NOT EXISTS invited_by UUID REFERENC
 -- Add indexes for faster lookups
 CREATE INDEX IF NOT EXISTS idx_technicians_admin ON public.technicians(admin_id);
 CREATE INDEX IF NOT EXISTS idx_technicians_magic_link ON public.technicians(magic_link_token);
-CREATE INDEX IF NOT EXISTS idx_technicians_active ON public.technicians(admin_id, is_active);
 CREATE INDEX IF NOT EXISTS idx_jobs_admin ON public.jobs(admin_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_tech ON public.jobs(assigned_tech_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON public.jobs(admin_id, status);
 
--- Create user_profiles table for extended profile info
-CREATE TABLE IF NOT EXISTS public.user_profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  full_name TEXT,
-  phone TEXT,
-  role TEXT DEFAULT 'admin' CHECK (role IN ('admin', 'technician')),
-  company_id UUID,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Function to generate a cryptographically secure magic link token
+CREATE OR REPLACE FUNCTION generate_technician_magic_token(tech_id UUID, expiry_hours INT DEFAULT 168)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  new_token TEXT;
+BEGIN
+  new_token := encode(gen_random_bytes(32), 'hex');
 
-ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
+  UPDATE public.technicians
+  SET
+    magic_link_token = new_token,
+    token_expires_at = NOW() + (expiry_hours || ' hours')::INTERVAL
+  WHERE id = tech_id;
 
-CREATE POLICY IF NOT EXISTS "profiles_select_own" ON public.user_profiles
-  FOR SELECT USING (auth.uid() = id);
+  RETURN new_token;
+END;
+$$;
 
-CREATE POLICY IF NOT EXISTS "profiles_insert_own" ON public.user_profiles
-  FOR INSERT WITH CHECK (auth.uid() = id);
-
-CREATE POLICY IF NOT EXISTS "profiles_update_own" ON public.user_profiles
-  FOR UPDATE USING (auth.uid() = id);
-
--- Update the handle_new_user trigger to capture full_name from metadata
+-- Update the handle_new_user trigger to capture full_name and create company settings with owner info
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -78,18 +73,11 @@ BEGIN
     email = EXCLUDED.email;
 
   -- Create company settings with owner info
-  INSERT INTO public.company_settings (
-    admin_id,
-    company_name,
-    owner_name,
-    company_phone,
-    setup_completed
-  )
+  INSERT INTO public.company_settings (admin_id, company_name, owner_name, setup_completed)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data ->> 'company_name', 'My Company'),
     owner_full_name,
-    NEW.raw_user_meta_data ->> 'company_phone',
     false
   )
   ON CONFLICT (admin_id) DO UPDATE SET
@@ -114,30 +102,3 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
-
--- Function to generate a cryptographically secure magic link token
-CREATE OR REPLACE FUNCTION generate_technician_magic_token(tech_id UUID, expiry_hours INT DEFAULT 168)
-RETURNS TEXT
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  new_token TEXT;
-BEGIN
-  new_token := encode(gen_random_bytes(32), 'hex');
-
-  UPDATE public.technicians
-  SET
-    magic_link_token = new_token,
-    token_expires_at = NOW() + (expiry_hours || ' hours')::INTERVAL
-  WHERE id = tech_id;
-
-  RETURN new_token;
-END;
-$$;
-
--- Drop old policy if exists and recreate for technicians
-DROP POLICY IF EXISTS "Admins can manage their technicians" ON public.technicians;
-
-CREATE POLICY "Admins can manage their technicians" ON public.technicians
-  FOR ALL USING (admin_id = auth.uid());
