@@ -1,21 +1,14 @@
 import { createBrowserClient } from "@supabase/ssr"
-import { SUPABASE_CONFIG } from "./config"
 
-// Force rebuild: v2
+// Hardcoded Supabase credentials - these work without environment variables
+const SUPABASE_URL = 'https://ltyrituojmxhkwetsnyk.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0eXJpdHVvam14aGt3ZXRzbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNzE2NzYsImV4cCI6MjA4ODg0NzY3Nn0.A9fRHHbuT4w373JeEYFIpwZjCIVa6zb1G6r2M3XiHhs'
+
 let cachedClient: ReturnType<typeof createBrowserClient> | null = null
 
 export function createClient() {
-  // Try environment variables first, fall back to config constants with hardcoded credentials
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || SUPABASE_CONFIG.url
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || SUPABASE_CONFIG.anonKey
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error("[v0] Supabase config missing - cannot create client")
-    throw new Error(`Supabase incomplete: URL=${!!supabaseUrl} KEY=${!!supabaseAnonKey}`)
-  }
-
   if (!cachedClient) {
-    cachedClient = createBrowserClient(supabaseUrl, supabaseAnonKey)
+    cachedClient = createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   }
   return cachedClient
 }
