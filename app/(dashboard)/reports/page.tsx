@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { toast } from "sonner"
 import {
   Card,
   CardContent,
@@ -164,6 +165,7 @@ export default function ReportsPage() {
     a.download = `dispatchly-report-${timeRange}.csv`
     a.click()
     URL.revokeObjectURL(url)
+    toast.success('Report exported successfully')
   }
 
   return (

@@ -1,10 +1,18 @@
 "use client"
 
 import { useEffect } from "react"
+import { toast } from "sonner"
 import { JobCard } from "@/components/job-card"
 import { CreateJobModal } from "@/components/create-job-modal"
 import { useStore, getTechnicianById } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
+
+const statusLabels: Record<JobStatus, string> = {
+  scheduled: "Scheduled",
+  en_route: "En Route",
+  working: "Working",
+  complete: "Complete",
+}
 
 export default function JobsPage() {
   const { jobs, technicians, loadJobsFromSupabase } = useStore()
@@ -14,16 +22,24 @@ export default function JobsPage() {
     loadJobsFromSupabase()
   }, [loadJobsFromSupabase])
 
-  const handleStatusChange = (jobId: string, newStatus: JobStatus) => {
-    // Update status in Supabase
-    fetch(`/api/jobs/${jobId}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus }),
-    })
-      .then((res) => res.json())
-      .then(() => loadJobsFromSupabase())
-      .catch((error) => console.error("[v0] Error updating job status:", error))
+  const handleStatusChange = async (jobId: string, newStatus: JobStatus) => {
+    try {
+      const response = await fetch(`/api/jobs/${jobId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      
+      if (response.ok) {
+        await loadJobsFromSupabase()
+        toast.success(`Status updated to ${statusLabels[newStatus]}`)
+      } else {
+        toast.error('Failed to update status')
+      }
+    } catch (error) {
+      console.error("Error updating job status:", error)
+      toast.error('Failed to update status')
+    }
   }
 
   // Sort jobs: active jobs first, then by scheduled time

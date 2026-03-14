@@ -1,32 +1,28 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+
+// Default demo profile for when Supabase is not configured or user is not authenticated
+const DEMO_PROFILE = {
+  id: 'demo',
+  email: 'admin@dispatchly.demo',
+  full_name: 'Demo Admin',
+  phone: null,
+  role: 'admin' as const,
+}
 
 export async function GET() {
-  try {
-    // Check if Supabase is configured
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      // Return a default profile when Supabase is not configured
-      return NextResponse.json({
-        id: 'demo',
-        email: 'admin@dispatchly.demo',
-        full_name: 'Demo Admin',
-        phone: null,
-        role: 'admin' as const,
-      })
-    }
+  // Check if Supabase is configured - do this before any imports that might fail
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return NextResponse.json(DEMO_PROFILE)
+  }
 
+  try {
+    // Dynamic import to avoid errors when env vars aren't set
+    const { createClient } = await import('@/lib/supabase/server')
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      // Return demo profile when not authenticated
-      return NextResponse.json({
-        id: 'demo',
-        email: 'admin@dispatchly.demo',
-        full_name: 'Demo Admin',
-        phone: null,
-        role: 'admin' as const,
-      })
+      return NextResponse.json(DEMO_PROFILE)
     }
 
     // Get company settings to find owner name
@@ -45,15 +41,8 @@ export async function GET() {
     }
 
     return NextResponse.json(profile)
-  } catch (error) {
-    console.error('[API] Error fetching user profile:', error)
-    // Return a default profile on error to prevent UI breakage
-    return NextResponse.json({
-      id: 'demo',
-      email: 'admin@dispatchly.demo',
-      full_name: 'Demo Admin',
-      phone: null,
-      role: 'admin' as const,
-    })
+  } catch {
+    // Return demo profile on any error to prevent UI breakage
+    return NextResponse.json(DEMO_PROFILE)
   }
 }

@@ -2,6 +2,7 @@
 
 import { use, useState } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -91,15 +92,19 @@ export default function JobDetailPage({
 
   const handleStatusChange = (newStatus: JobStatus) => {
     updateJobStatus(job.id, newStatus)
+    toast.success(`Status updated to ${statusConfig[newStatus].label}`)
   }
 
   const handleTechChange = (techId: string) => {
     updateJob(job.id, { assigned_tech_id: techId || null })
+    const tech = technicians.find(t => t.id === techId)
+    toast.success(tech ? `Assigned to ${tech.name}` : 'Technician unassigned')
   }
 
   const handleSaveNotes = () => {
     updateJob(job.id, { notes: notes || null })
     setEditingNotes(false)
+    toast.success('Notes saved')
   }
 
   const handleDeleteJob = async () => {
@@ -109,9 +114,11 @@ export default function JobDetailPage({
         method: "DELETE",
       })
       deleteJob(job.id)
+      toast.success('Job deleted')
       router.push("/jobs")
     } catch (error) {
       console.error("Error deleting job:", error)
+      toast.error('Failed to delete job')
       setIsDeleting(false)
     }
   }
@@ -134,6 +141,7 @@ export default function JobDetailPage({
 
     setSmsSending(false)
     setSmsSent(true)
+    toast.success('SMS sent successfully')
     setTimeout(() => setSmsSent(false), 3000)
   }
 
