@@ -3,15 +3,14 @@ import { cookies } from "next/headers"
 
 /**
  * Creates a Supabase client for server-side operations.
- * Returns null if Supabase is not configured (demo mode).
+ * Returns null if Supabase is not configured.
  */
 export async function createClient() {
-  // Check for required environment variables
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
+  // Return null when not configured - callers must handle this
   if (!supabaseUrl || !supabaseAnonKey) {
-    // Return null instead of throwing - callers must check for null
     return null
   }
 

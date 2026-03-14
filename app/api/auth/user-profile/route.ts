@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-const DEMO_PROFILE = {
+// Profile returned when not authenticated or Supabase not configured
+const DEFAULT_PROFILE = {
   id: 'demo',
   email: '',
   full_name: null,
   phone: null,
+  company_name: null,
+  company_phone: null,
   role: 'admin' as const,
 }
 
@@ -15,7 +18,7 @@ export async function GET() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.json(DEMO_PROFILE)
+    return NextResponse.json(DEFAULT_PROFILE)
   }
 
   try {
@@ -41,7 +44,7 @@ export async function GET() {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json(DEMO_PROFILE)
+      return NextResponse.json(DEFAULT_PROFILE)
     }
 
     // Read company info directly from user metadata set during signup
@@ -59,6 +62,6 @@ export async function GET() {
 
     return NextResponse.json(profile)
   } catch {
-    return NextResponse.json(DEMO_PROFILE)
+    return NextResponse.json(DEFAULT_PROFILE)
   }
 }
