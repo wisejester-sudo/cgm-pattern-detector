@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendSMS } from '@/lib/twilio'
 import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
@@ -103,14 +104,33 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     const magicLink = `${baseUrl}/t/${token}`
 
-    // TODO: Send SMS/email with magic link
-    // For now, just return the link for copying
+    // Send SMS with magic link to technician
+    let smsSent = false
+    let smsError = null
+    
+    if (technician.phone) {
+      const message = `You've been invited to join Dispatchly! Click here to access your jobs: ${magicLink} Link expires in 7 days.`
+      
+      const result = await sendSMS({
+        to: technician.phone,
+        body: message,
+      })
+      
+      smsSent = result.success
+      smsError = result.error
+      
+      if (!result.success) {
+        console.error('[API] Failed to send magic link SMS:', result.error)
+      }
+    }
 
     return NextResponse.json({
       success: true,
       magicLink,
       technician,
       expiresAt: expiresAt.toISOString(),
+      smsSent,
+      smsError,
     })
   } catch (error) {
     console.error('[API] Unexpected error:', error)
