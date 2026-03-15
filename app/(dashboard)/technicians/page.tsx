@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
-import { Plus, MoreVertical, Phone, Mail, User, KeyRound, Send, CheckCircle2, Clock, AlertCircle } from "lucide-react"
+import { Plus, MoreVertical, Phone, Mail, User, KeyRound, Send, CheckCircle2, Clock, AlertCircle, Eye, EyeOff, HelpCircle } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { Spinner } from "@/components/ui/spinner"
 import {
@@ -34,6 +34,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export default function TechniciansPage() {
   const { technicians, jobs, addTechnician, updateTechnician, deleteTechnician, loadTechniciansFromSupabase } =
@@ -47,18 +53,38 @@ export default function TechniciansPage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    countryCode: "+1",
     phone: "",
     pin: "",
   })
+  const [showPin, setShowPin] = useState(false)
+  const [visiblePins, setVisiblePins] = useState<Record<string, boolean>>({})
 
   // Load technicians from Supabase on mount
   useEffect(() => {
     loadTechniciansFromSupabase()
   }, [loadTechniciansFromSupabase])
 
+  // Normalize phone number to E.164 format
+  const normalizePhone = (countryCode: string, phone: string): string => {
+    // Remove all non-numeric characters
+    const digitsOnly = phone.replace(/\D/g, '')
+    
+    // If phone already starts with country code, use as-is
+    if (digitsOnly.startsWith(countryCode.replace('+', ''))) {
+      return `+${digitsOnly}`
+    }
+    
+    // Otherwise, prepend country code
+    return `${countryCode}${digitsOnly}`
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+
+    // Normalize phone number
+    const normalizedPhone = normalizePhone(formData.countryCode, formData.phone)
 
     try {
       const response = await fetch('/api/technicians', {
@@ -67,7 +93,7 @@ export default function TechniciansPage() {
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
-          phone: formData.phone,
+          phone: normalizedPhone,
           pin: formData.pin,
         }),
       })
@@ -110,6 +136,13 @@ export default function TechniciansPage() {
 
   const handleDelete = (techId: string) => {
     deleteTechnician(techId)
+  }
+
+  const togglePinVisibility = (techId: string) => {
+    setVisiblePins(prev => ({
+      ...prev,
+      [techId]: !prev[techId]
+    }))
   }
 
   const handleSendInvite = async (techId: string, method: 'sms' | 'email' = 'sms') => {
@@ -185,7 +218,7 @@ export default function TechniciansPage() {
             <DialogHeader>
               <DialogTitle>Add New Technician</DialogTitle>
               <DialogDescription>
-                Enter the technician details. The PIN will be used for mobile login.
+                Enter the technician details. They will receive an SMS with their access link.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>
@@ -215,31 +248,85 @@ export default function TechniciansPage() {
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="phone">Phone Number</FieldLabel>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="(555) 123-4567"
-                    value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
-                  />
+                  <div className="flex gap-2">
+                    <select
+                      id="countryCode"
+                      className="w-24 px-3 py-2 border rounded-md text-sm bg-background"
+                      value={formData.countryCode}
+                      onChange={(e) =>
+                        setFormData({ ...formData, countryCode: e.target.value })
+                      }
+                    >
+                      <option value="+1">🇺🇸 +1</option>
+                      <option value="+44">🇬🇧 +44</option>
+                      <option value="+61">🇦🇺 +61</option>
+                      <option value="+49">🇩🇪 +49</option>
+                      <option value="+33">🇫🇷 +33</option>
+                      <option value="+34">🇪🇸 +34</option>
+                      <option value="+39">🇮🇹 +39</option>
+                      <option value="+81">🇯🇵 +81</option>
+                      <option value="+86">🇨🇳 +86</option>
+                      <option value="+91">🇮🇳 +91</option>
+                      <option value="+52">🇲🇽 +52</option>
+                      <option value="+55">🇧🇷 +55</option>
+                    </select>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="(555) 123-4567"
+                      className="flex-1"
+                      value={formData.phone}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone: e.target.value })
+                      }
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enter number in any format - we'll normalize it automatically
+                  </p>
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="pin">Login PIN (4 digits)</FieldLabel>
-                  <Input
-                    id="pin"
-                    type="password"
-                    placeholder="1234"
-                    maxLength={4}
-                    value={formData.pin}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        pin: e.target.value.replace(/\D/g, "").slice(0, 4),
-                      })
-                    }
-                  />
+                  <div className="flex items-center gap-2">
+                    <FieldLabel htmlFor="pin">Login PIN (4 digits)</FieldLabel>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>The technician enters this PIN after clicking the magic link to verify their identity. This adds a security layer - even if someone intercepts the SMS, they need the PIN to access the platform.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="pin"
+                      type={showPin ? "text" : "password"}
+                      placeholder="1234"
+                      maxLength={4}
+                      value={formData.pin}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          pin: e.target.value.replace(/\D/g, "").slice(0, 4),
+                        })
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                      onClick={() => setShowPin(!showPin)}
+                    >
+                      {showPin ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
                 </Field>
               </FieldGroup>
               <DialogFooter className="mt-6">
@@ -348,7 +435,19 @@ export default function TechniciansPage() {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <KeyRound className="h-4 w-4" />
-                  <span>PIN: ****</span>
+                  <span className="font-mono">PIN: {visiblePins[tech.id] ? tech.pin : '****'}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 ml-1"
+                    onClick={() => togglePinVisibility(tech.id)}
+                  >
+                    {visiblePins[tech.id] ? (
+                      <EyeOff className="h-3 w-3 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-3 w-3 text-muted-foreground" />
+                    )}
+                  </Button>
                 </div>
                 <div className="pt-2 border-t border-border">
                   <span className="text-sm">
