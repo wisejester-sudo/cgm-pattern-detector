@@ -156,7 +156,7 @@ export default function TechniciansPage() {
     ).length
   }
 
-  const isValid = formData.name && formData.email && formData.phone && formData.pin
+  const isValid = formData.name && formData.phone && formData.pin
 
   return (
     <div className="flex flex-col gap-6">
@@ -196,7 +196,7 @@ export default function TechniciansPage() {
                   />
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="email">Email</FieldLabel>
+                  <FieldLabel htmlFor="email">Email (Optional)</FieldLabel>
                   <Input
                     id="email"
                     type="email"

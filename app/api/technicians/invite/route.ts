@@ -104,10 +104,13 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     const magicLink = `${baseUrl}/t/${token}`
 
-    // Send SMS with magic link to technician
-    let smsSent = false
-    let smsError = null
+    // Send via available channels (SMS and/or Email)
+    const results = {
+      sms: { sent: false, error: null as string | null },
+      email: { sent: false, error: null as string | null },
+    }
     
+    // Send SMS if phone number exists
     if (technician.phone) {
       const message = `You've been invited to join Dispatchly! Click here to access your jobs: ${magicLink} Link expires in 7 days.`
       
@@ -116,12 +119,28 @@ export async function POST(request: NextRequest) {
         body: message,
       })
       
-      smsSent = result.success
-      smsError = result.error
+      results.sms.sent = result.success
+      results.sms.error = result.error || null
       
       if (!result.success) {
         console.error('[API] Failed to send magic link SMS:', result.error)
       }
+    }
+    
+    // Send Email if email exists (placeholder for future email integration)
+    if (technician.email) {
+      // TODO: Integrate with email service (SendGrid, AWS SES, etc.)
+      // For now, mark as not sent but indicate it would be sent
+      results.email.sent = false
+      results.email.error = 'Email service not configured. Magic link sent via SMS only.'
+      
+      // When email service is added:
+      // const emailResult = await sendEmail({
+      //   to: technician.email,
+      //   subject: 'Your Dispatchly Invitation',
+      //   body: `Click here to access your jobs: ${magicLink}`,
+      // })
+      // results.email.sent = emailResult.success
     }
 
     return NextResponse.json({
@@ -129,8 +148,12 @@ export async function POST(request: NextRequest) {
       magicLink,
       technician,
       expiresAt: expiresAt.toISOString(),
-      smsSent,
-      smsError,
+      smsSent: results.sms.sent,
+      smsError: results.sms.error,
+      emailSent: results.email.sent,
+      emailError: results.email.error,
+      sentVia: technician.phone && results.sms.sent ? 'sms' : 
+               technician.email ? 'email_pending' : 'none',
     })
   } catch (error) {
     console.error('[API] Unexpected error:', error)
