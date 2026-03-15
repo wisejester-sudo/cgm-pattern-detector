@@ -36,6 +36,8 @@ export async function POST(request: NextRequest) {
     let technician: any
 
     if (technicianId) {
+      console.log('[API] Updating existing technician:', technicianId)
+      
       // Update existing technician with magic link token
       const { error: updateError } = await supabase
         .from('technicians')
@@ -51,7 +53,7 @@ export async function POST(request: NextRequest) {
       if (updateError) {
         console.error('[API] Error updating technician:', updateError)
         return NextResponse.json(
-          { error: 'Failed to generate invite link' },
+          { error: `Failed to update technician: ${updateError.message}` },
           { status: 500 }
         )
       }
@@ -72,6 +74,8 @@ export async function POST(request: NextRequest) {
 
       technician = tech
     } else {
+      console.log('[API] Creating new technician:', { name, email, phone })
+      
       // Create new technician with magic link token
       const { data: newTech, error: createError } = await supabase
         .from('technicians')
@@ -92,12 +96,13 @@ export async function POST(request: NextRequest) {
       if (createError) {
         console.error('[API] Error creating technician:', createError)
         return NextResponse.json(
-          { error: 'Failed to create technician invitation' },
+          { error: `Failed to create technician: ${createError.message}` },
           { status: 500 }
         )
       }
 
       technician = newTech
+      console.log('[API] Technician created:', technician.id)
     }
 
     // Generate magic link
@@ -143,7 +148,7 @@ export async function POST(request: NextRequest) {
       // results.email.sent = emailResult.success
     }
 
-    return NextResponse.json({
+    const response = {
       success: true,
       magicLink,
       technician,
@@ -154,7 +159,10 @@ export async function POST(request: NextRequest) {
       emailError: results.email.error,
       sentVia: technician.phone && results.sms.sent ? 'sms' : 
                technician.email ? 'email_pending' : 'none',
-    })
+    }
+    
+    console.log('[API] Invite successful:', response)
+    return NextResponse.json(response)
   } catch (error) {
     console.error('[API] Unexpected error:', error)
     return NextResponse.json(
