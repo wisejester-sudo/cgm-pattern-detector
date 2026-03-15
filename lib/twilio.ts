@@ -1,15 +1,5 @@
 import twilio from "twilio"
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID
-const authToken = process.env.TWILIO_AUTH_TOKEN
-const fromNumber = process.env.TWILIO_PHONE_NUMBER
-
-// Check if credentials look valid (real Twilio SIDs start with "AC")
-const hasValidCredentials = accountSid?.startsWith("AC") && authToken && authToken.length > 10
-
-// Initialize Twilio client only if credentials are valid
-const client = hasValidCredentials ? twilio(accountSid, authToken) : null
-
 export interface SendSMSOptions {
   to: string
   body: string
@@ -26,14 +16,43 @@ export interface SMSResult {
  * Send an SMS message via Twilio
  */
 export async function sendSMS({ to, body, mediaUrls }: SendSMSOptions): Promise<SMSResult> {
-  if (!client || !fromNumber) {
-    console.error("[Twilio] Missing Twilio credentials")
-    return { success: false, error: "Twilio not configured" }
+  // Get credentials inside function to ensure they're loaded
+  const accountSid = process.env.TWILIO_ACCOUNT_SID
+  const authToken = process.env.TWILIO_AUTH_TOKEN
+  const fromNumber = process.env.TWILIO_PHONE_NUMBER
+
+  console.log("[Twilio] Environment check:", {
+    hasAccountSid: !!accountSid,
+    hasAuthToken: !!authToken,
+    hasFromNumber: !!fromNumber,
+    accountSidPrefix: accountSid?.substring(0, 4),
+    fromNumber,
+  })
+
+  // Check if credentials look valid (real Twilio SIDs start with "AC")
+  const hasValidCredentials = accountSid?.startsWith("AC") && authToken && authToken.length > 10
+
+  if (!hasValidCredentials || !fromNumber) {
+    console.error("[Twilio] Missing or invalid Twilio credentials:", {
+      hasValidCredentials,
+      fromNumber,
+      accountSidPrefix: accountSid?.substring(0, 4),
+    })
+    return { success: false, error: "Twilio not configured - check env vars" }
   }
+
+  // Initialize Twilio client
+  const client = twilio(accountSid, authToken)
 
   try {
     // Normalize phone number (remove non-digits, add +1 if needed)
     const normalizedTo = normalizePhoneNumber(to)
+    
+    console.log("[Twilio] Sending SMS:", {
+      to: normalizedTo,
+      from: fromNumber,
+      bodyLength: body.length,
+    })
     
     const messageOptions: {
       to: string
@@ -52,6 +71,11 @@ export async function sendSMS({ to, body, mediaUrls }: SendSMSOptions): Promise<
     }
 
     const message = await client.messages.create(messageOptions)
+    
+    console.log("[Twilio] SMS sent successfully:", {
+      messageId: message.sid,
+      status: message.status,
+    })
     
     return {
       success: true,
@@ -103,6 +127,7 @@ export function validateTwilioSignature(
   url: string,
   params: Record<string, string>
 ): boolean {
+  const authToken = process.env.TWILIO_AUTH_TOKEN
   if (!authToken || authToken.length < 10) return false
   
   const twilioLib = require("twilio")
