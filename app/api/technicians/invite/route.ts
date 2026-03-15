@@ -4,15 +4,21 @@ import { sendSMS } from '@/lib/twilio'
 import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
+  console.log('[API] Invite endpoint called')
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error('[API] Missing Supabase env vars')
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
     }
 
+    console.log('[API] Creating Supabase client...')
     const supabase = await createClient()
     if (!supabase) {
+      console.error('[API] Failed to create Supabase client')
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
     }
+    
+    console.log('[API] Getting user...')
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
@@ -110,6 +116,14 @@ export async function POST(request: NextRequest) {
     const magicLink = `${baseUrl}/t/${token}`
 
     // Send via selected method
+    console.log('[API] Preparing to send via method:', method)
+    console.log('[API] Technician phone:', technician.phone)
+    console.log('[API] Twilio env vars:', {
+      hasAccountSid: !!process.env.TWILIO_ACCOUNT_SID,
+      hasAuthToken: !!process.env.TWILIO_AUTH_TOKEN,
+      hasPhoneNumber: !!process.env.TWILIO_PHONE_NUMBER,
+    })
+    
     const results = {
       sms: { sent: false, error: null as string | null },
       email: { sent: false, error: null as string | null },
@@ -165,10 +179,14 @@ export async function POST(request: NextRequest) {
     
     console.log('[API] Invite successful:', response)
     return NextResponse.json(response)
-  } catch (error) {
+  } catch (error: any) {
     console.error('[API] Unexpected error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error?.message || 'Unknown error',
+        stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+      },
       { status: 500 }
     )
   }
