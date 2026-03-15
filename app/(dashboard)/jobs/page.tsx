@@ -4,9 +4,8 @@ import { useEffect } from "react"
 import { toast } from "sonner"
 import { JobCard } from "@/components/job-card"
 import { CreateJobModal } from "@/components/create-job-modal"
-import { useStore, getTechnicianById } from "@/lib/store"
+import { useStore } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
-import { sendSMS, generatePhotoLink } from "@/lib/twilio"
 
 const statusLabels: Record<JobStatus, string> = {
   scheduled: "Scheduled",
@@ -32,42 +31,17 @@ export default function JobsPage() {
       })
       
       if (response.ok) {
+        const data = await response.json()
         await loadJobsFromSupabase()
         toast.success(`Status updated to ${statusLabels[newStatus]}`)
         
-        // Send SMS notification for certain status changes
-        if (newStatus === 'en_route' || newStatus === 'complete') {
-          const job = jobs.find(j => j.id === jobId)
-          if (job) {
-            const templateName = newStatus === 'en_route' ? 'En Route Notification' : 'Job Complete'
-            const template = templates.find(t => t.name === templateName)
-            
-            if (template) {
-              const tech = getTechnicianById(technicians, job.assigned_tech_id)
-              const photoLink = generatePhotoLink(job.id)
-              
-              const messageBody = template.template_body
-                .replace(/\{customer_name\}/g, job.customer_name)
-                .replace(/\{tech_name\}/g, tech?.name || 'Your technician')
-                .replace(/\{job_type\}/g, job.job_type)
-                .replace(/\{address\}/g, job.customer_address)
-                .replace(/\{company_name\}/g, settings.company_name)
-                .replace(/\{company_phone\}/g, settings.company_phone)
-                .replace(/\{eta\}/g, new Date(job.scheduled_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
-                .replace(/\{link\}/g, photoLink)
-              
-              const result = await sendSMS({
-                to: job.customer_phone,
-                body: messageBody,
-              })
-              
-              if (result.success) {
-                toast.success('Customer notified via SMS')
-              } else {
-                console.error('[Dashboard] Failed to send SMS:', result.error)
-                toast.error('Status updated but SMS failed to send')
-              }
-            }
+        // Show SMS status if applicable
+        if (data.sms) {
+          if (data.sms.success) {
+            toast.success('Customer notified via SMS')
+          } else {
+            console.error('[Dashboard] SMS failed:', data.sms.error)
+            toast.error('Status updated but SMS failed to send')
           }
         }
       } else {

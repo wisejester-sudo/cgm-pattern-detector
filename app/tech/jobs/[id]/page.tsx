@@ -24,12 +24,10 @@ import {
   useStore,
   getTechnicianById,
   getPhotosByJobId,
-  renderTemplate,
   maskPhoneNumber,
 } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
-import { sendSMS, generatePhotoLink } from "@/lib/twilio"
 
 // Simplified status config with clear technician-friendly labels
 const statusConfig: Record<JobStatus, { 
@@ -116,55 +114,42 @@ export default function TechJobDetailPage({
   const handleStatusAdvance = async () => {
     if (!status.nextStatus) return
 
-    // Send SMS notification when status changes
-    const template = templates.find((t) =>
-      status.nextStatus === "en_route"
-        ? t.name.toLowerCase().includes("route")
-        : status.nextStatus === "complete"
-          ? t.name.toLowerCase().includes("complete")
-          : false
-    )
-
-    if (template) {
-      setSmsSending(true)
-      
-      // Generate photo link if photos exist
-      const photoLink = jobPhotos.length > 0 
-        ? generatePhotoLink(job.id) 
-        : ""
-      
-      // Render message with photo link
-      const messageBody = template.template_body
-        .replace(/\[tech_name\]/g, technician?.name || "Your technician")
-        .replace(/\[customer_name\]/g, job.customer_name)
-        .replace(/\[job_type\]/g, job.job_type)
-        .replace(/\[link\]/g, photoLink)
-        .replace(/\[company_name\]/g, settings.company_name)
-      
-      // ACTUALLY SEND SMS via Twilio
-      const result = await sendSMS({
-        to: job.customer_phone,
-        body: messageBody,
-      })
-
-      // Log the SMS (success or failure)
-      addSmsLog({
-        job_id: job.id,
-        recipient_phone: job.customer_phone,
-        message_body: messageBody,
-        status: result.success ? "sent" : "failed",
-        message_sid: result.messageId,
+    setSmsSending(true)
+    
+    // Call API to update status and send SMS
+    try {
+      const response = await fetch(`/api/jobs/${job.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: status.nextStatus }),
       })
       
-      if (!result.success) {
-        console.error("[TechView] Failed to send SMS:", result.error)
-        // Still update status even if SMS fails
+      if (response.ok) {
+        const data = await response.json()
+        updateJobStatus(job.id, status.nextStatus)
+        
+        // Log SMS status
+        if (data.sms) {
+          addSmsLog({
+            job_id: job.id,
+            recipient_phone: job.customer_phone,
+            message_body: `Status updated to ${status.nextStatus}`,
+            status: data.sms.success ? "sent" : "failed",
+            message_sid: data.sms.messageId,
+          })
+          
+          if (!data.sms.success) {
+            console.error("[TechView] SMS failed:", data.sms.error)
+          }
+        }
+      } else {
+        console.error("[TechView] Failed to update status")
       }
-      
-      setSmsSending(false)
+    } catch (error) {
+      console.error("[TechView] Error:", error)
     }
-
-    updateJobStatus(job.id, status.nextStatus)
+    
+    setSmsSending(false)
   }
 
   const handleSaveNotes = () => {
