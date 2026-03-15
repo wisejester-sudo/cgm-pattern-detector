@@ -51,6 +51,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Record first access if not already recorded
+    const updates: any = { last_active_at: new Date().toISOString() }
+    if (!technician.accessed_at) {
+      updates.accessed_at = new Date().toISOString()
+    }
+    
+    await supabase
+      .from("technicians")
+      .update(updates)
+      .eq("id", technician.id)
+
     return NextResponse.json({
       valid: true,
       name: technician.name,

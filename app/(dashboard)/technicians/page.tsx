@@ -264,70 +264,87 @@ export default function TechniciansPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {technicians.map((tech) => {
           const assignedJobs = getAssignedJobCount(tech.id)
+          const hasAccessed = !!tech.accessed_at
+          const lastAccessed = tech.last_active_at 
+            ? new Date(tech.last_active_at).toLocaleDateString() 
+            : null
+          
           return (
             <Card key={tech.id}>
-              <CardHeader className="flex flex-row items-start justify-between pb-2">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-primary/10">
-                    <User className="h-5 w-5 text-primary" />
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-primary/10">
+                      <User className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">{tech.name}</CardTitle>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge
+                          variant={tech.is_active ? "default" : "secondary"}
+                        >
+                          {tech.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                        {hasAccessed && (
+                          <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Accessed
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-base">{tech.name}</CardTitle>
-                    <Badge
-                      variant={tech.is_active ? "default" : "secondary"}
-                      className="mt-1"
-                    >
-                      {tech.is_active ? "Active" : "Inactive"}
-                    </Badge>
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => handleToggleActive(tech.id, tech.is_active)}
+                      >
+                        {tech.is_active ? "Deactivate" : "Activate"}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => handleDelete(tech.id)}
+                      >
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {tech.phone && (
-                      <DropdownMenuItem
-                        onClick={() => handleSendInvite(tech.id, 'sms')}
-                        disabled={invitingTechId === tech.id}
-                      >
-                        <Phone className="h-4 w-4 mr-2" />
-                        Send via SMS
-                      </DropdownMenuItem>
-                    )}
-                    {tech.email && (
-                      <DropdownMenuItem
-                        onClick={() => handleSendInvite(tech.id, 'email')}
-                        disabled={invitingTechId === tech.id}
-                      >
-                        <Mail className="h-4 w-4 mr-2" />
-                        Send via Email
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem
-                      onClick={() => handleToggleActive(tech.id, tech.is_active)}
-                    >
-                      {tech.is_active ? "Deactivate" : "Activate"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      onClick={() => handleDelete(tech.id)}
-                    >
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                
+                {/* Access Status */}
+                <div className="mt-2 text-xs">
+                  {hasAccessed ? (
+                    <span className="text-green-600 flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Last accessed: {lastAccessed || 'Recently'}
+                    </span>
+                  ) : tech.invited_at ? (
+                    <span className="text-amber-600 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      Invited {new Date(tech.invited_at).toLocaleDateString()} - Awaiting access
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Never invited
+                    </span>
+                  )}
+                </div>
               </CardHeader>
+              
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Mail className="h-4 w-4" />
-                  <span>{tech.email}</span>
+                  <span>{tech.email || 'No email'}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Phone className="h-4 w-4" />
-                  <span>{tech.phone}</span>
+                  <span>{tech.phone || 'No phone'}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <KeyRound className="h-4 w-4" />
@@ -342,6 +359,54 @@ export default function TechniciansPage() {
                     </span>
                   </span>
                 </div>
+                
+                {/* Prominent Invite Buttons */}
+                {!hasAccessed && (
+                  <div className="pt-2 flex flex-wrap gap-2">
+                    {tech.phone && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleSendInvite(tech.id, 'sms')}
+                        disabled={invitingTechId === tech.id}
+                        className="flex-1"
+                      >
+                        {invitingTechId === tech.id ? (
+                          <Spinner className="h-4 w-4 mr-2" />
+                        ) : (
+                          <Phone className="h-4 w-4 mr-2" />
+                        )}
+                        Send via SMS
+                      </Button>
+                    )}
+                    {tech.email && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleSendInvite(tech.id, 'email')}
+                        disabled={invitingTechId === tech.id}
+                        className="flex-1"
+                      >
+                        <Mail className="h-4 w-4 mr-2" />
+                        Send via Email
+                      </Button>
+                    )}
+                  </div>
+                )}
+                
+                {hasAccessed && (
+                  <div className="pt-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleSendInvite(tech.id, 'sms')}
+                      disabled={invitingTechId === tech.id}
+                      className="w-full"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Resend Invite
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )

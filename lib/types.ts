@@ -29,6 +29,8 @@ export interface Technician extends User {
   token_expires_at?: string | null
   invited_at?: string | null
   invited_by?: string | null
+  accessed_at?: string | null
+  last_active_at?: string | null
 }
 
 export interface Job {
