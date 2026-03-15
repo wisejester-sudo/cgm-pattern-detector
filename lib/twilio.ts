@@ -10,6 +10,7 @@ export interface SMSResult {
   success: boolean
   messageId?: string
   error?: string
+  status?: string
 }
 
 /**
