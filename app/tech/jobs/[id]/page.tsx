@@ -29,6 +29,7 @@ import {
 } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
+import { sendSMS, generatePhotoLink } from "@/lib/twilio"
 
 // Simplified status config with clear technician-friendly labels
 const statusConfig: Record<JobStatus, { 
@@ -126,16 +127,40 @@ export default function TechJobDetailPage({
 
     if (template) {
       setSmsSending(true)
-      const message = renderTemplate(template.template_body, job, technician, settings)
+      
+      // Generate photo link if photos exist
+      const photoLink = jobPhotos.length > 0 
+        ? generatePhotoLink(job.id) 
+        : ""
+      
+      // Render message with photo link
+      const messageBody = template.template_body
+        .replace(/\[tech_name\]/g, technician?.name || "Your technician")
+        .replace(/\[customer_name\]/g, job.customer_name)
+        .replace(/\[job_type\]/g, job.job_type)
+        .replace(/\[link\]/g, photoLink)
+        .replace(/\[company_name\]/g, settings.company_name)
+      
+      // ACTUALLY SEND SMS via Twilio
+      const result = await sendSMS({
+        to: job.customer_phone,
+        body: messageBody,
+      })
 
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
+      // Log the SMS (success or failure)
       addSmsLog({
         job_id: job.id,
         recipient_phone: job.customer_phone,
-        message_body: message,
-        status: "sent",
+        message_body: messageBody,
+        status: result.success ? "sent" : "failed",
+        message_sid: result.messageId,
       })
+      
+      if (!result.success) {
+        console.error("[TechView] Failed to send SMS:", result.error)
+        // Still update status even if SMS fails
+      }
+      
       setSmsSending(false)
     }
 
