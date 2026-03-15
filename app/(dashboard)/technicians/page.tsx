@@ -113,6 +113,7 @@ export default function TechniciansPage() {
   }
 
   const handleSendInvite = async (techId: string) => {
+    console.log('[Frontend] Sending invite for tech:', techId)
     setInvitingTechId(techId)
     try {
       const response = await fetch('/api/technicians/invite', {
@@ -121,8 +122,12 @@ export default function TechniciansPage() {
         body: JSON.stringify({ technicianId: techId }),
       })
 
+      console.log('[Frontend] Response status:', response.status)
+      
+      const data = await response.json()
+      console.log('[Frontend] Response data:', data)
+
       if (response.ok) {
-        const data = await response.json()
         setInviteLink(data.magicLink)
         setShowInviteDialog(true)
         // Update last invited timestamp in store
@@ -133,13 +138,14 @@ export default function TechniciansPage() {
             invited_at: new Date().toISOString()
           })
         }
-        toast.success('Invite link generated')
+        toast.success(data.smsSent ? 'Invite sent via SMS!' : 'Invite link generated')
       } else {
-        toast.error('Failed to generate invite link')
+        console.error('[Frontend] API error:', data.error)
+        toast.error(data.error || 'Failed to generate invite link')
       }
     } catch (error) {
-      console.error('Error sending invite:', error)
-      toast.error('Failed to send invite')
+      console.error('[Frontend] Error sending invite:', error)
+      toast.error('Failed to send invite - check console')
     } finally {
       setInvitingTechId(null)
     }
