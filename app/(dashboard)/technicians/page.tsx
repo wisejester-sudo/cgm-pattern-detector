@@ -125,7 +125,7 @@ export default function TechniciansPage() {
       toast.success(`${formData.name} added locally`)
     }
 
-    setFormData({ name: "", email: "", phone: "", pin: "" })
+    setFormData({ name: "", email: "", countryCode: "+1", phone: "", pin: "" })
     setIsLoading(false)
     setIsAddOpen(false)
   }
