@@ -72,14 +72,30 @@ export async function sendSMS({ to, body, mediaUrls }: SendSMSOptions): Promise<
 
     const message = await client.messages.create(messageOptions)
     
-    console.log("[Twilio] SMS sent successfully:", {
+    console.log("[Twilio] SMS API response:", {
       messageId: message.sid,
       status: message.status,
+      to: message.to,
+      from: message.from,
+      errorCode: message.errorCode,
+      errorMessage: message.errorMessage,
+      price: message.price,
     })
+    
+    // Check if message was actually accepted
+    const isAccepted = ['queued', 'sent', 'delivered', 'accepted'].includes(message.status)
+    
+    if (!isAccepted) {
+      return {
+        success: false,
+        error: `Twilio status: ${message.status}. Error: ${message.errorMessage || 'Unknown'}`,
+      }
+    }
     
     return {
       success: true,
       messageId: message.sid,
+      status: message.status,
     }
   } catch (error) {
     console.error("[Twilio] Error sending SMS:", error)

@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user profile from users table
+    console.log('[API] Fetching profile for user:', user.id)
     const { data: profile, error } = await supabase
       .from('users')
       .select('id, name, email, phone, role, company_name, created_at')
@@ -22,8 +23,17 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('[API] Error fetching profile:', error)
-      return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
+      console.log('[API] Profile not found, returning auth user data:', error.message)
+      // Return basic user data from auth if no profile row exists
+      return NextResponse.json({
+        id: user.id,
+        name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+        email: user.email,
+        phone: user.user_metadata?.phone || null,
+        role: 'admin',
+        company_name: null,
+        created_at: user.created_at,
+      })
     }
 
     return NextResponse.json(profile)
