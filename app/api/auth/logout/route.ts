@@ -12,7 +12,9 @@ export async function POST() {
     const supabase = await createClient()
 
     // Sign out from Supabase
-    await supabase.auth.signOut()
+    if (supabase) {
+      await supabase.auth.signOut()
+    }
 
     return NextResponse.json({ success: true })
   } catch {
