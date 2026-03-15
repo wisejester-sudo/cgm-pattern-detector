@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { toast } from "sonner"
 import { JobCard } from "@/components/job-card"
 import { CreateJobModal } from "@/components/create-job-modal"
-import { useStore } from "@/lib/store"
+import { useStore, getTechnicianById } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
 
 const statusLabels: Record<JobStatus, string> = {
