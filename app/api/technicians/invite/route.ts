@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { technicianId, name, phone, email } = body
+    const { technicianId, name, phone, email, method = 'auto' } = body
 
     if (!technicianId && !name) {
       return NextResponse.json(
@@ -109,14 +109,15 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     const magicLink = `${baseUrl}/t/${token}`
 
-    // Send via available channels (SMS and/or Email)
+    // Send via selected method
     const results = {
       sms: { sent: false, error: null as string | null },
       email: { sent: false, error: null as string | null },
     }
     
-    // Send SMS if phone number exists
-    if (technician.phone) {
+    // Send SMS if method is 'sms' or 'auto' and phone exists
+    if ((method === 'sms' || method === 'auto') && technician.phone) {
+      console.log('[API] Sending SMS invite to:', technician.phone)
       const message = `You've been invited to join Dispatchly! Click here to access your jobs: ${magicLink} Link expires in 7 days.`
       
       const result = await sendSMS({
@@ -132,12 +133,13 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Send Email if email exists (placeholder for future email integration)
-    if (technician.email) {
+    // Send Email if method is 'email' and email exists
+    if (method === 'email' && technician.email) {
+      console.log('[API] Sending Email invite to:', technician.email)
       // TODO: Integrate with email service (SendGrid, AWS SES, etc.)
       // For now, mark as not sent but indicate it would be sent
       results.email.sent = false
-      results.email.error = 'Email service not configured. Magic link sent via SMS only.'
+      results.email.error = 'Email service not configured. Please use SMS instead.'
       
       // When email service is added:
       // const emailResult = await sendEmail({
@@ -157,8 +159,8 @@ export async function POST(request: NextRequest) {
       smsError: results.sms.error,
       emailSent: results.email.sent,
       emailError: results.email.error,
-      sentVia: technician.phone && results.sms.sent ? 'sms' : 
-               technician.email ? 'email_pending' : 'none',
+      sentVia: results.sms.sent ? 'sms' : results.email.sent ? 'email' : 'none',
+      requestedMethod: method,
     }
     
     console.log('[API] Invite successful:', response)

@@ -112,14 +112,14 @@ export default function TechniciansPage() {
     deleteTechnician(techId)
   }
 
-  const handleSendInvite = async (techId: string) => {
-    console.log('[Frontend] Sending invite for tech:', techId)
+  const handleSendInvite = async (techId: string, method: 'sms' | 'email' = 'sms') => {
+    console.log('[Frontend] Sending invite for tech:', techId, 'via:', method)
     setInvitingTechId(techId)
     try {
       const response = await fetch('/api/technicians/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ technicianId: techId }),
+        body: JSON.stringify({ technicianId: techId, method }),
       })
 
       console.log('[Frontend] Response status:', response.status)
@@ -288,13 +288,24 @@ export default function TechniciansPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => handleSendInvite(tech.id)}
-                      disabled={invitingTechId === tech.id}
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      Send Invite Link
-                    </DropdownMenuItem>
+                    {tech.phone && (
+                      <DropdownMenuItem
+                        onClick={() => handleSendInvite(tech.id, 'sms')}
+                        disabled={invitingTechId === tech.id}
+                      >
+                        <Phone className="h-4 w-4 mr-2" />
+                        Send via SMS
+                      </DropdownMenuItem>
+                    )}
+                    {tech.email && (
+                      <DropdownMenuItem
+                        onClick={() => handleSendInvite(tech.id, 'email')}
+                        disabled={invitingTechId === tech.id}
+                      >
+                        <Mail className="h-4 w-4 mr-2" />
+                        Send via Email
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       onClick={() => handleToggleActive(tech.id, tech.is_active)}
                     >
