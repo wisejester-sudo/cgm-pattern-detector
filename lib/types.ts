@@ -2,7 +2,7 @@ export type JobStatus = 'scheduled' | 'en_route' | 'working' | 'complete'
 
 export type UserRole = 'admin' | 'technician'
 
-export type SubscriptionPlan = 'starter' | 'pro'
+export type SubscriptionPlan = 'free' | 'starter' | 'pro'
 
 export interface User {
   id: string
@@ -60,6 +60,7 @@ export interface SmsLog {
   message_body: string
   sent_at: string
   status: 'sent' | 'failed' | 'pending'
+  message_sid?: string | null
 }
 
 export interface SmsTemplate {
