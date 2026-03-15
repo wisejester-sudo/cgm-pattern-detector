@@ -71,6 +71,8 @@ export default function SettingsPage() {
   const [ownerEmail, setOwnerEmail] = useState("")
   const [settingsSaved, setSettingsSaved] = useState(false)
   const [profileLoading, setProfileLoading] = useState(true)
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileSaved, setProfileSaved] = useState(false)
 
   // Fetch user profile on mount
   useEffect(() => {
@@ -150,6 +152,35 @@ export default function SettingsPage() {
     setTimeout(() => setSettingsSaved(false), 2000)
   }
 
+  const handleSaveProfile = async () => {
+    setProfileSaving(true)
+    try {
+      const response = await fetch('/api/auth/user-profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: ownerName,
+          email: ownerEmail,
+          phone: ownerPhone,
+        }),
+      })
+
+      if (response.ok) {
+        setProfileSaved(true)
+        toast.success('Profile updated successfully')
+        setTimeout(() => setProfileSaved(false), 2000)
+      } else {
+        const data = await response.json()
+        toast.error(data.error || 'Failed to update profile')
+      }
+    } catch (error) {
+      console.error('Failed to save profile:', error)
+      toast.error('Failed to save profile')
+    } finally {
+      setProfileSaving(false)
+    }
+  }
+
   const insertVariable = (variable: string, isNew: boolean = false) => {
     if (isNew) {
       setNewTemplateBody((prev) => prev + variable)
@@ -190,55 +221,61 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle>Account Owner Profile</CardTitle>
           <CardDescription>
-            Your personal account information
+            Edit your personal account information
           </CardDescription>
         </CardHeader>
         <CardContent>
           {profileLoading ? (
             <p className="text-muted-foreground">Loading profile...</p>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field>
-                <FieldLabel htmlFor="ownerName">Full Name</FieldLabel>
-                <Input
-                  id="ownerName"
-                  value={ownerName}
-                  disabled
-                  className="bg-muted"
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="ownerEmail">Email</FieldLabel>
-                <Input
-                  id="ownerEmail"
-                  type="email"
-                  value={ownerEmail}
-                  disabled
-                  className="bg-muted"
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="ownerPhone">Phone Number</FieldLabel>
-                <Input
-                  id="ownerPhone"
-                  value={ownerPhone}
-                  disabled
-                  className="bg-muted"
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="userRole">Role</FieldLabel>
-                <div className="flex items-center gap-2 pt-2">
-                  <Badge variant="secondary" className="capitalize">
-                    {userProfile?.role || "admin"}
-                  </Badge>
-                </div>
-              </Field>
-            </div>
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="ownerName">Full Name</FieldLabel>
+                  <Input
+                    id="ownerName"
+                    value={ownerName}
+                    onChange={(e) => setOwnerName(e.target.value)}
+                    placeholder="Your full name"
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="ownerEmail">Email</FieldLabel>
+                  <Input
+                    id="ownerEmail"
+                    type="email"
+                    value={ownerEmail}
+                    onChange={(e) => setOwnerEmail(e.target.value)}
+                    placeholder="you@company.com"
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="ownerPhone">Phone Number</FieldLabel>
+                  <Input
+                    id="ownerPhone"
+                    value={ownerPhone}
+                    onChange={(e) => setOwnerPhone(e.target.value)}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="userRole">Role</FieldLabel>
+                  <div className="flex items-center gap-2 pt-2">
+                    <Badge variant="secondary" className="capitalize">
+                      {userProfile?.role || "admin"}
+                    </Badge>
+                  </div>
+                </Field>
+              </div>
+              <Button 
+                onClick={handleSaveProfile} 
+                className="mt-4"
+                disabled={profileSaving}
+              >
+                {profileSaving ? 'Saving...' : profileSaved ? 'Saved!' : 'Save Profile'}
+              </Button>
+            </>
           )}
-          <p className="text-xs text-muted-foreground mt-4">
-            To update your profile information, contact support or sign in with updated details.
-          </p>
         </CardContent>
       </Card>
 
