@@ -25,6 +25,10 @@ export interface Technician extends User {
   role: 'technician'
   pin: string
   assigned_jobs: string[]
+  magic_link_token?: string | null
+  token_expires_at?: string | null
+  invited_at?: string | null
+  invited_by?: string | null
 }
 
 export interface Job {
