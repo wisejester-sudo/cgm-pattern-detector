@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,9 +8,18 @@ import { Input } from "@/components/ui/input"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import Link from "next/link"
 import { Zap, Eye, EyeOff, AlertCircle } from "lucide-react"
+import { useStore } from "@/lib/store"
+import { createBrowserClient } from "@supabase/ssr"
+
+// HARDCODED Supabase client - direct inline to bypass any module caching issues
+const supabaseClient = createBrowserClient(
+  'https://ltyrituojmxhkwetsnyk.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0eXJpdHVvam14aGt3ZXRzbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNzE2NzYsImV4cCI6MjA4ODg0NzY3Nn0.A9fRHHbuT4w373JeEYFIpwZjCIVa6zb1G6r2M3XiHhs'
+)
 
 export default function LoginPage() {
   const router = useRouter()
+  const { resetStore } = useStore()
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -18,28 +27,45 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
 
+  // Clear old store data on login page visit
+  useEffect(() => {
+    resetStore()
+  }, [resetStore])
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      // Use hardcoded Supabase client directly
+      const supabase = supabaseClient
+
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        setError(errorData.error || "Login failed")
+      if (authError) {
+        console.error("[v0] Login auth error:", authError)
+        setError(authError.message || "Invalid email or password")
         setLoading(false)
         return
       }
 
+      if (!data.user) {
+        setError("Login failed. Please try again.")
+        setLoading(false)
+        return
+      }
+
+      // Navigate to dashboard — session cookie is now set by the browser client
       router.push("/")
-    } catch (err) {
-      setError("An error occurred. Please try again.")
+      router.refresh()
+    } catch (error) {
+      console.error("[v0] Login error:", error)
+      const errorMessage = error instanceof Error ? error.message : "An error occurred. Please try again."
+      setError(errorMessage)
       setLoading(false)
     }
   }
@@ -85,12 +111,6 @@ export default function LoginPage() {
               <Field>
                 <div className="flex items-center justify-between mb-2">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <Link
-                    href="/forgot-password"
-                    className="text-sm text-primary hover:underline"
-                  >
-                    Forgot password?
-                  </Link>
                 </div>
                 <div className="relative">
                   <Input
@@ -133,7 +153,7 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Don&apos;t have an account?{" "}
+              {"Don't have an account? "}
               <Link href="/signup" className="text-primary hover:underline font-medium">
                 Sign up for free
               </Link>
@@ -142,10 +162,7 @@ export default function LoginPage() {
         </CardContent>
       </Card>
 
-      <div className="mt-6 text-center space-y-2">
-        <p className="text-sm text-sidebar-muted">
-          Demo mode - enter any credentials to continue
-        </p>
+      <div className="mt-6 text-center">
         <Link
           href="/tech"
           className="text-sm text-sidebar-muted hover:text-sidebar-foreground"

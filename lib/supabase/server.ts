@@ -1,16 +1,27 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
+import { SUPABASE_CONFIG } from "./config"
 
+/**
+ * Creates a Supabase client for server-side operations.
+ * Returns null if Supabase is not configured.
+ */
 export async function createClient() {
-  const cookieStore = await cookies()
+  // Try environment variables first, fall back to config constants
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || SUPABASE_CONFIG.url
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || SUPABASE_CONFIG.anonKey
 
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    throw new Error("Supabase environment variables are not configured")
+  // Return null when not configured - callers must handle this
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.log("[v0] Supabase config missing - both URL and key required")
+    return null
   }
 
+  const cookieStore = await cookies()
+
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
@@ -30,4 +41,13 @@ export async function createClient() {
       },
     }
   )
+}
+
+/**
+ * Checks if Supabase is configured in the environment.
+ */
+export function isSupabaseConfigured(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || SUPABASE_CONFIG.url
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || SUPABASE_CONFIG.anonKey
+  return Boolean(url && key)
 }

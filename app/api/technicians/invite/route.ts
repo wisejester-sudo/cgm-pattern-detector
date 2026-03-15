@@ -9,6 +9,9 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient()
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
+    }
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
@@ -16,11 +19,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { technicianId } = body
+    const { technicianId, name, phone, email } = body
 
-    if (!technicianId) {
+    if (!technicianId && !name) {
       return NextResponse.json(
-        { error: 'Missing technician ID' },
+        { error: 'Missing technician ID or name' },
         { status: 400 }
       )
     }
@@ -29,45 +32,85 @@ export async function POST(request: NextRequest) {
     const token = crypto.randomBytes(32).toString('hex')
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
 
-    // Update technician with magic link token
-    const { error: updateError } = await supabase
-      .from('technicians')
-      .update({
-        magic_link_token: token,
-        magic_link_expires_at: expiresAt.toISOString(),
-      })
-      .eq('id', technicianId)
-      .eq('admin_id', user.id)
+    let technician: any
 
-    if (updateError) {
-      console.error('[API] Error generating magic link:', updateError)
-      return NextResponse.json(
-        { error: 'Failed to generate invite link' },
-        { status: 500 }
-      )
+    if (technicianId) {
+      // Update existing technician with magic link token
+      const { error: updateError } = await supabase
+        .from('technicians')
+        .update({
+          magic_link_token: token,
+          token_expires_at: expiresAt.toISOString(),
+          invited_at: new Date().toISOString(),
+          invited_by: user.id,
+        })
+        .eq('id', technicianId)
+        .eq('admin_id', user.id)
+
+      if (updateError) {
+        console.error('[API] Error updating technician:', updateError)
+        return NextResponse.json(
+          { error: 'Failed to generate invite link' },
+          { status: 500 }
+        )
+      }
+
+      // Fetch updated technician
+      const { data: tech, error: fetchError } = await supabase
+        .from('technicians')
+        .select('*')
+        .eq('id', technicianId)
+        .single()
+
+      if (fetchError || !tech) {
+        return NextResponse.json(
+          { error: 'Technician not found' },
+          { status: 404 }
+        )
+      }
+
+      technician = tech
+    } else {
+      // Create new technician with magic link token
+      const { data: newTech, error: createError } = await supabase
+        .from('technicians')
+        .insert({
+          admin_id: user.id,
+          name,
+          email: email || null,
+          phone,
+          magic_link_token: token,
+          token_expires_at: expiresAt.toISOString(),
+          invited_at: new Date().toISOString(),
+          invited_by: user.id,
+          is_active: true,
+        })
+        .select()
+        .single()
+
+      if (createError) {
+        console.error('[API] Error creating technician:', createError)
+        return NextResponse.json(
+          { error: 'Failed to create technician invitation' },
+          { status: 500 }
+        )
+      }
+
+      technician = newTech
     }
 
-    // Get the technician to retrieve email/phone for sending
-    const { data: technician, error: fetchError } = await supabase
-      .from('technicians')
-      .select('*')
-      .eq('id', technicianId)
-      .single()
-
-    if (fetchError || !technician) {
-      return NextResponse.json(
-        { error: 'Technician not found' },
-        { status: 404 }
-      )
-    }
+    // Generate magic link
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const magicLink = `${baseUrl}/t/${token}`
 
     // TODO: Send SMS/email with magic link
-    const magicLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/t/${token}`
+    // For now, just return the link for copying
 
     return NextResponse.json({
       success: true,
       magicLink,
       technician,
+      expiresAt: expiresAt.toISOString(),
     })
   } catch (error) {
     console.error('[API] Unexpected error:', error)

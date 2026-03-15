@@ -23,6 +23,9 @@ async function handleWebhook(request: NextRequest) {
     }
 
     const supabase = await createClient()
+    if (!supabase) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 503 })
+    }
     
     // Parse form data from Twilio
     let params: Record<string, string> = {}

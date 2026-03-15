@@ -17,6 +17,9 @@ export async function GET(
 
     const { token } = await params
     const supabase = await createClient()
+    if (!supabase) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 503 })
+    }
 
     // Find the public token
     const { data: publicToken, error: tokenError } = await supabase

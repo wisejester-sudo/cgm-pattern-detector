@@ -20,6 +20,9 @@ export async function POST(
 
     const { id } = await params
     const supabase = await createClient()
+    if (!supabase) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 503 })
+    }
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -153,6 +156,9 @@ export async function GET(
   try {
     const { id } = await params
     const supabase = await createClient()
+    if (!supabase) {
+      return NextResponse.json({ updates: [] })
+    }
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
