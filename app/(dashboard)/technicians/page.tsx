@@ -370,12 +370,8 @@ export default function TechniciansPage() {
                         disabled={invitingTechId === tech.id}
                         className="flex-1"
                       >
-                        {invitingTechId === tech.id ? (
-                          <Spinner className="h-4 w-4 mr-2" />
-                        ) : (
-                          <Phone className="h-4 w-4 mr-2" />
-                        )}
-                        Send via SMS
+                        {invitingTechId === tech.id && <Spinner className="h-4 w-4 mr-2" />}
+                        Send Platform Access Link
                       </Button>
                     )}
                     {tech.email && (
