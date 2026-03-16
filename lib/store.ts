@@ -105,12 +105,12 @@ interface AppState {
   addJob: (job: Omit<Job, 'id' | 'created_at' | 'updated_at'>) => Job
   updateJob: (id: string, updates: Partial<Job>) => void
   updateJobStatus: (id: string, status: JobStatus) => void
-  deleteJob: (id: string) => void
+  deleteJob: (id: string) => Promise<void>
   
   // Technician actions
   addTechnician: (tech: Omit<Technician, 'id' | 'created_at' | 'last_login' | 'role' | 'assigned_jobs'>) => void
   updateTechnician: (id: string, updates: Partial<Technician>) => void
-  deleteTechnician: (id: string) => void
+  deleteTechnician: (id: string) => Promise<void>
   loginTechnician: (pin: string) => Technician | null
   logoutTechnician: () => void
   
@@ -233,7 +233,23 @@ export const useStore = create<AppState>()(
         }))
       },
       
-      deleteJob: (id) => {
+      deleteJob: async (id) => {
+        // Try to delete from Supabase first
+        try {
+          const response = await fetch(`/api/jobs/${id}`, {
+            method: 'DELETE',
+          })
+          
+          if (!response.ok) {
+            console.error('Failed to delete job from API:', await response.text())
+            // Continue with local deletion even if API fails
+          }
+        } catch (error) {
+          console.error('Error deleting job:', error)
+          // Continue with local deletion even if API fails
+        }
+        
+        // Remove from local state
         set((state) => ({
           jobs: state.jobs.filter((job) => job.id !== id),
           photos: state.photos.filter((photo) => photo.job_id !== id),
@@ -261,7 +277,23 @@ export const useStore = create<AppState>()(
         }))
       },
       
-      deleteTechnician: (id) => {
+      deleteTechnician: async (id) => {
+        // Try to delete from Supabase first
+        try {
+          const response = await fetch(`/api/technicians/${id}`, {
+            method: 'DELETE',
+          })
+          
+          if (!response.ok) {
+            console.error('Failed to delete technician from API:', await response.text())
+            // Continue with local deletion even if API fails
+          }
+        } catch (error) {
+          console.error('Error deleting technician:', error)
+          // Continue with local deletion even if API fails
+        }
+        
+        // Remove from local state
         set((state) => ({
           technicians: state.technicians.filter((tech) => tech.id !== id),
         }))
