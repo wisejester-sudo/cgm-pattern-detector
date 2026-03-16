@@ -87,6 +87,9 @@ interface AppState {
   currentTechId: string | null
   isAdminAuthenticated: boolean
   
+  // Initialization state
+  isInitialized: boolean
+  
   // Subscription & billing
   subscription: Subscription
   invoices: Invoice[]
@@ -160,6 +163,9 @@ export const useStore = create<AppState>()(
       currentAdmin: emptyAdmin,
       currentTechId: null,
       isAdminAuthenticated: false,
+      
+      // Initialization state
+      isInitialized: false,
       
       // Subscription & billing
       subscription: initialSubscription,
@@ -443,6 +449,12 @@ export const useStore = create<AppState>()(
       
       // Initialize user from Supabase auth and profile data
       initializeUserFromSupabase: async () => {
+        // Skip if already initialized
+        if (get().isInitialized) {
+          console.log('[Store] Already initialized, skipping...')
+          return
+        }
+        
         try {
           // Fetch user profile from API
           const response = await fetch('/api/auth/user-profile')
@@ -501,6 +513,10 @@ export const useStore = create<AppState>()(
             get().loadTechniciansFromSupabase(),
             get().loadTemplatesFromSupabase(),
           ])
+          
+          // Mark as initialized
+          set({ isInitialized: true })
+          console.log('[Store] Initialization complete')
         } catch {
           // Silently fail — user will see empty state
         }
@@ -518,6 +534,7 @@ export const useStore = create<AppState>()(
           currentAdmin: null,
           currentTechId: null,
           isAdminAuthenticated: false,
+          isInitialized: false,
           subscription: initialSubscription,
           invoices: [],
           notificationPreferences: initialNotificationPreferences,
