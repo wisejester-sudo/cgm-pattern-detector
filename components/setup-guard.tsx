@@ -8,23 +8,33 @@ export function SetupGuard({ children }: { children: React.ReactNode }) {
   const [setupComplete, setSetupComplete] = useState(false)
 
   useEffect(() => {
+    // Check localStorage first to see if we already verified setup
+    const cachedSetup = localStorage.getItem('dispatchly_setup_verified')
+    if (cachedSetup === 'true') {
+      setSetupComplete(true)
+      setIsChecking(false)
+      return
+    }
+    
     checkSetupStatus()
   }, [])
 
   const checkSetupStatus = async () => {
-    // Add timeout so it doesn't hang forever
+    // Fast timeout - don't wait long
     const timeoutId = setTimeout(() => {
       console.log('[SetupGuard] Timeout - allowing access')
       setSetupComplete(true)
       setIsChecking(false)
-    }, 5000) // 5 second timeout
+    }, 2000) // 2 second timeout (was 5)
 
     try {
       const response = await fetch('/api/auth/user-role')
       
       clearTimeout(timeoutId)
       
-      // If API returns 503 (Supabase not configured) or other errors, allow demo mode
+      // Cache success in localStorage
+      localStorage.setItem('dispatchly_setup_verified', 'true')
+      
       if (!response.ok) {
         setSetupComplete(true)
         setIsChecking(false)
@@ -33,17 +43,14 @@ export function SetupGuard({ children }: { children: React.ReactNode }) {
 
       const data = await response.json()
 
-      // All users (admin, technician, or demo) can access dashboard
-      // Setup is now handled during signup, not in a separate flow
       if (data.role === 'admin' || data.role === 'technician' || data.error) {
         setSetupComplete(true)
       } else {
-        // No role - allow demo mode
         setSetupComplete(true)
       }
     } catch {
       clearTimeout(timeoutId)
-      // Allow demo mode on error
+      localStorage.setItem('dispatchly_setup_verified', 'true')
       setSetupComplete(true)
     } finally {
       setIsChecking(false)
@@ -63,4 +70,11 @@ export function SetupGuard({ children }: { children: React.ReactNode }) {
   }
 
   return <>{children}</>
+}
+
+// Helper to clear setup cache (call on logout)
+export function clearSetupCache() {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('dispatchly_setup_verified')
+  }
 }
