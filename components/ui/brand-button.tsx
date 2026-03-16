@@ -1,13 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { Button, type ButtonProps } from "./button"
+import { Button } from "./button"
 import { useBrandColor } from "@/lib/hooks/use-branding"
 import { cn } from "@/lib/utils"
 
-interface BrandButtonProps extends ButtonProps {
+interface BrandButtonProps extends React.ComponentProps<'button'> {
   useBrandColor?: boolean
-  children?: React.ReactNode
 }
 
 /**
