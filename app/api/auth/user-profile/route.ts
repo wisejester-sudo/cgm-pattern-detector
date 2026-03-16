@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     console.log('[API] Fetching profile for user:', user.id)
     const { data: profile, error } = await supabase
       .from('users')
-      .select('id, name, email, phone, role, company_name, created_at')
+      .select('id, full_name, email, phone, role, company_name, created_at')
       .eq('id', user.id)
       .single()
 
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       // Return basic user data from auth if no profile row exists
       return NextResponse.json({
         id: user.id,
-        name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+        full_name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
         email: user.email,
         phone: user.user_metadata?.phone || null,
         role: 'admin',
