@@ -108,10 +108,15 @@ export async function PATCH(request: NextRequest) {
       .from('users')
       .select('id')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     if (checkError) {
-      console.log('[API] User not found in users table, creating...', checkError.message)
+      console.error('[API] Error checking for existing user:', checkError)
+      return NextResponse.json({ error: `Database error: ${checkError.message}` }, { status: 500 })
+    }
+
+    if (!existingUser) {
+      console.log('[API] User not found in users table, creating...')
       // Insert new user row with ALL provided updates
       const insertData: any = {
         id: user.id,
