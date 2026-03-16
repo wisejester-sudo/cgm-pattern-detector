@@ -74,18 +74,28 @@ export default function SettingsPage() {
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileSaved, setProfileSaved] = useState(false)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
+  const [profileError, setProfileError] = useState<string | null>(null)
 
   // Fetch user profile on mount
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch('/api/auth/user-profile')
+        // Add timeout to prevent infinite loading
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+        
+        const response = await fetch('/api/auth/user-profile', {
+          signal: controller.signal
+        })
+        clearTimeout(timeoutId)
+        
         if (response.ok) {
           const data = await response.json()
           setUserProfile(data)
           setOwnerName(data.full_name || data.name || "")
           setOwnerPhone(data.phone || "")
           setOwnerEmail(data.email || "")
+          setProfileError(null)
           // Pre-fill company fields from user metadata if settings are empty
           if (!companyName && data.company_name) {
             setCompanyName(data.company_name)
@@ -93,9 +103,17 @@ export default function SettingsPage() {
           if (!companyPhone && data.company_phone) {
             setCompanyPhone(data.company_phone)
           }
+        } else {
+          const errorData = await response.json().catch(() => ({}))
+          setProfileError(errorData.error || `Failed to load profile: ${response.status}`)
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to fetch profile:', error)
+        if (error.name === 'AbortError') {
+          setProfileError('Profile load timed out. Please try again.')
+        } else {
+          setProfileError('Failed to load profile. Please check your connection.')
+        }
       } finally {
         setProfileLoading(false)
       }
@@ -269,6 +287,13 @@ export default function SettingsPage() {
         <CardContent>
           {profileLoading ? (
             <p className="text-muted-foreground">Loading profile...</p>
+          ) : profileError ? (
+            <div className="text-center py-4">
+              <p className="text-destructive mb-2">{profileError}</p>
+              <Button onClick={() => window.location.reload()} variant="outline">
+                Retry
+              </Button>
+            </div>
           ) : (
             <>
               <div className="grid gap-4 sm:grid-cols-2">
