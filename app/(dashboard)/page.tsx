@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Briefcase, Clock, Truck, CheckCircle, Users, MessageSquare, Plus, BarChart3, MapPin } from "lucide-react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { Button, BrandButton } from "@/components/ui/button"
 import { useStore, getTechnicianById } from "@/lib/store"
 import { CreateJobModal } from "@/components/create-job-modal"
 import type { JobStatus } from "@/lib/types"
@@ -131,10 +131,10 @@ export default function DashboardPage() {
             Here&apos;s what&apos;s happening with your business today
           </p>
         </div>
-        <Button onClick={() => setIsCreateJobOpen(true)}>
+        <BrandButton onClick={() => setIsCreateJobOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Create Job
-        </Button>
+        </BrandButton>
       </div>
 
       {/* Stats Grid */}

@@ -60,3 +60,4 @@ function Button({
 }
 
 export { Button, buttonVariants }
+export { BrandButton } from './brand-button'
