@@ -537,9 +537,9 @@ export default function TechniciansPage() {
             </p>
           </div>
           <AlertDialogCancel className="mr-2">Close</AlertDialogCancel>
-          <AlertDialogAction onClick={copyInviteLink} className="bg-primary">
+          <BrandButton onClick={copyInviteLink}>
             Copy Link
-          </AlertDialogAction>
+          </BrandButton>
         </AlertDialogContent>
       </AlertDialog>
     </div>

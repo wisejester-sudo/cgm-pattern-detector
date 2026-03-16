@@ -676,10 +676,10 @@ export default function SettingsPage() {
             </div>
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
               <DialogTrigger asChild>
-                <Button size="sm">
+                <BrandButton>
                   <Plus className="h-4 w-4 mr-1" />
                   Add
-                </Button>
+                </BrandButton>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>

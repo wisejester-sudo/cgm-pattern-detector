@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
+import { Button, BrandButton } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -171,10 +171,10 @@ export function CreateJobModal({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <BrandButton>
           <Plus className="mr-2 h-4 w-4" />
           Create Job
-        </Button>
+        </BrandButton>
       </DialogTrigger>
       <DialogContent className="w-full max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader className="shrink-0">
