@@ -76,6 +76,8 @@ export function CreateJobModal({
     if (!isControlled) setInternalOpen(value)
   }
   const [isLoading, setIsLoading] = useState(false)
+  const [countryCode, setCountryCode] = useState("+1")
+  const [phoneInput, setPhoneInput] = useState("")
   const [formData, setFormData] = useState({
     customer_name: "",
     customer_phone: "",
@@ -86,6 +88,15 @@ export function CreateJobModal({
     notes: "",
     assigned_tech_id: "",
   })
+
+  // Normalize phone number to E.164 format
+  const normalizePhone = (countryCode: string, phone: string): string => {
+    const digitsOnly = phone.replace(/\D/g, '')
+    if (digitsOnly.startsWith(countryCode.replace('+', ''))) {
+      return `+${digitsOnly}`
+    }
+    return `${countryCode}${digitsOnly}`
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -191,15 +202,40 @@ export function CreateJobModal({
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="customer_phone">Phone Number</FieldLabel>
-                  <Input
-                    id="customer_phone"
-                    type="tel"
-                    placeholder="(555) 123-4567"
-                    value={formData.customer_phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, customer_phone: e.target.value })
-                    }
-                  />
+                  <div className="flex gap-2">
+                    <select
+                      className="w-24 px-2 py-2 border rounded-md text-sm bg-background"
+                      value={countryCode}
+                      onChange={(e) => {
+                        setCountryCode(e.target.value)
+                        setFormData({ ...formData, customer_phone: normalizePhone(e.target.value, phoneInput) })
+                      }}
+                    >
+                      <option value="+1">🇺🇸 +1</option>
+                      <option value="+44">🇬🇧 +44</option>
+                      <option value="+61">🇦🇺 +61</option>
+                      <option value="+49">🇩🇪 +49</option>
+                      <option value="+33">🇫🇷 +33</option>
+                      <option value="+34">🇪🇸 +34</option>
+                      <option value="+39">🇮🇹 +39</option>
+                      <option value="+81">🇯🇵 +81</option>
+                      <option value="+86">🇨🇳 +86</option>
+                      <option value="+91">🇮🇳 +91</option>
+                      <option value="+52">🇲🇽 +52</option>
+                      <option value="+55">🇧🇷 +55</option>
+                    </select>
+                    <Input
+                      id="customer_phone"
+                      type="tel"
+                      placeholder="(555) 123-4567"
+                      value={phoneInput}
+                      onChange={(e) => {
+                        setPhoneInput(e.target.value)
+                        setFormData({ ...formData, customer_phone: normalizePhone(countryCode, e.target.value) })
+                      }}
+                      className="flex-1"
+                    />
+                  </div>
                 </Field>
               </div>
               <Field>

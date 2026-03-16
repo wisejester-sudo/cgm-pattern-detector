@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Button, BrandButton } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -212,10 +212,10 @@ export default function TechniciansPage() {
         </div>
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <BrandButton>
               <Plus className="mr-2 h-4 w-4" />
               Add Technician
-            </Button>
+            </BrandButton>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
@@ -340,10 +340,10 @@ export default function TechniciansPage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={!isValid || isLoading}>
+                <BrandButton type="submit" disabled={!isValid || isLoading}>
                   {isLoading && <Spinner className="mr-2" />}
                   Add Technician
-                </Button>
+                </BrandButton>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -466,15 +466,14 @@ export default function TechniciansPage() {
                 {!hasAccessed && (
                   <div className="pt-2 flex flex-wrap gap-2">
                     {tech.phone && (
-                      <Button
-                        size="sm"
+                      <BrandButton
                         onClick={() => handleSendInvite(tech.id, 'sms')}
                         disabled={invitingTechId === tech.id}
                         className="flex-1"
                       >
                         {invitingTechId === tech.id && <Spinner className="h-4 w-4 mr-2" />}
                         Send Platform Access Link
-                      </Button>
+                      </BrandButton>
                     )}
                     {tech.email && (
                       <Button
