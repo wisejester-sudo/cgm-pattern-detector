@@ -112,18 +112,22 @@ export async function PATCH(request: NextRequest) {
 
     if (checkError) {
       console.log('[API] User not found in users table, creating...', checkError.message)
-      // Insert new user row
+      // Insert new user row with ALL provided updates
+      const insertData: any = {
+        id: user.id,
+        email: email || user.email, // Use new email if provided, else keep current
+        name: name || user.user_metadata?.name || user.email?.split('@')[0],
+        phone: phone || null,
+        role: 'admin',
+        company_name: null,
+        created_at: new Date().toISOString(),
+      }
+      
+      console.log('[API] Inserting new profile:', insertData)
+      
       const { data: newProfile, error: insertError } = await supabase
         .from('users')
-        .insert({
-          id: user.id,
-          email: user.email,
-          name: name || user.user_metadata?.name || user.email?.split('@')[0],
-          phone: phone || null,
-          role: 'admin',
-          company_name: null,
-          created_at: new Date().toISOString(),
-        })
+        .insert(insertData)
         .select()
         .single()
 
@@ -132,7 +136,7 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ error: `Failed to create profile: ${insertError.message}` }, { status: 500 })
       }
 
-      console.log('[API] User profile created successfully')
+      console.log('[API] User profile created successfully:', newProfile)
       return NextResponse.json({
         success: true,
         profile: newProfile,
