@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Button, BrandButton } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
@@ -423,12 +423,12 @@ export default function SettingsPage() {
               </div>
               {isEditingProfile && (
                 <div className="flex gap-2 mt-4">
-                  <Button 
+                  <BrandButton 
                     onClick={handleSaveProfile}
                     disabled={profileSaving}
                   >
                     {profileSaving ? 'Saving...' : 'Save Profile'}
-                  </Button>
+                  </BrandButton>
                   <Button 
                     variant="outline"
                     onClick={handleCancelEdit}
@@ -576,12 +576,12 @@ export default function SettingsPage() {
           </div>
           {isEditingCompany && (
             <div className="flex gap-2 mt-4">
-              <Button 
+              <BrandButton 
                 onClick={handleSaveSettings}
                 disabled={companySaving}
               >
                 {companySaving ? 'Saving...' : companySaved ? 'Saved!' : 'Save Company Info'}
-              </Button>
+              </BrandButton>
               <Button 
                 variant="outline"
                 onClick={handleCancelCompanyEdit}
@@ -728,12 +728,12 @@ export default function SettingsPage() {
                   <Button variant="outline" onClick={() => setIsAddOpen(false)}>
                     Cancel
                   </Button>
-                  <Button
+                  <BrandButton
                     onClick={handleAddTemplate}
                     disabled={!newTemplateName || !newTemplateBody}
                   >
                     Create Template
-                  </Button>
+                  </BrandButton>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -862,9 +862,9 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <Button onClick={handleSaveTemplate} className="w-full">
+                <BrandButton onClick={handleSaveTemplate} className="w-full">
                   Save Template
-                </Button>
+                </BrandButton>
               </FieldGroup>
             ) : (
               <div className="flex flex-col items-center justify-center py-8 text-center">
