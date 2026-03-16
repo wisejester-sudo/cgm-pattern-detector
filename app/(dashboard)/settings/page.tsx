@@ -82,7 +82,7 @@ export default function SettingsPage() {
         if (response.ok) {
           const data = await response.json()
           setUserProfile(data)
-          setOwnerName(data.full_name || "")
+          setOwnerName(data.full_name || data.name || "")
           setOwnerPhone(data.phone || "")
           setOwnerEmail(data.email || "")
           // Pre-fill company fields from user metadata if settings are empty
@@ -172,7 +172,7 @@ export default function SettingsPage() {
         toast.success('Profile updated successfully')
         // Update local state with returned profile
         if (data.profile) {
-          setOwnerName(data.profile.name || '')
+          setOwnerName(data.profile.full_name || data.profile.name || '')
           setOwnerEmail(data.profile.email || '')
           setOwnerPhone(data.profile.phone || '')
         }

@@ -82,7 +82,7 @@ export async function PATCH(request: NextRequest) {
 
     // Build update object
     const updates: any = {}
-    if (name !== undefined) updates.name = name
+    if (name !== undefined) updates.full_name = name
     if (phone !== undefined) updates.phone = phone
     if (email !== undefined) updates.email = email
 
@@ -121,7 +121,7 @@ export async function PATCH(request: NextRequest) {
       const insertData: any = {
         id: user.id,
         email: email || user.email, // Use new email if provided, else keep current
-        name: name || user.user_metadata?.name || user.email?.split('@')[0],
+        full_name: name || user.user_metadata?.name || user.email?.split('@')[0],
         phone: phone || null,
         role: 'admin',
         company_name: null,
