@@ -12,8 +12,17 @@ export function SetupGuard({ children }: { children: React.ReactNode }) {
   }, [])
 
   const checkSetupStatus = async () => {
+    // Add timeout so it doesn't hang forever
+    const timeoutId = setTimeout(() => {
+      console.log('[SetupGuard] Timeout - allowing access')
+      setSetupComplete(true)
+      setIsChecking(false)
+    }, 5000) // 5 second timeout
+
     try {
       const response = await fetch('/api/auth/user-role')
+      
+      clearTimeout(timeoutId)
       
       // If API returns 503 (Supabase not configured) or other errors, allow demo mode
       if (!response.ok) {
@@ -33,6 +42,7 @@ export function SetupGuard({ children }: { children: React.ReactNode }) {
         setSetupComplete(true)
       }
     } catch {
+      clearTimeout(timeoutId)
       // Allow demo mode on error
       setSetupComplete(true)
     } finally {
