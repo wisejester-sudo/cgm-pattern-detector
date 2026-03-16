@@ -54,7 +54,7 @@ const variables = [
 ]
 
 export default function SettingsPage() {
-  const { templates, settings, addTemplate, updateTemplate, deleteTemplate, updateSettings } =
+  const { templates, settings, addTemplate, updateTemplate, deleteTemplate, updateSettings, initializeUserFromSupabase } =
     useStore()
 
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
@@ -73,6 +73,7 @@ export default function SettingsPage() {
   const [profileLoading, setProfileLoading] = useState(true)
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileSaved, setProfileSaved] = useState(false)
+  const [isEditingProfile, setIsEditingProfile] = useState(false)
 
   // Fetch user profile on mount
   useEffect(() => {
@@ -169,6 +170,7 @@ export default function SettingsPage() {
       
       if (response.ok) {
         setProfileSaved(true)
+        setIsEditingProfile(false)
         toast.success('Profile updated successfully')
         // Update local state with returned profile
         if (data.profile) {
@@ -176,6 +178,8 @@ export default function SettingsPage() {
           setOwnerEmail(data.profile.email || '')
           setOwnerPhone(data.profile.phone || '')
         }
+        // Refresh store data to update header and navigation
+        await initializeUserFromSupabase()
         setTimeout(() => setProfileSaved(false), 2000)
       } else {
         console.error('[Frontend] Profile update failed:', data)
@@ -187,6 +191,25 @@ export default function SettingsPage() {
     } finally {
       setProfileSaving(false)
     }
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditingProfile(false)
+    // Reload profile data to discard changes
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch('/api/auth/user-profile')
+        if (response.ok) {
+          const data = await response.json()
+          setOwnerName(data.full_name || data.name || "")
+          setOwnerPhone(data.phone || "")
+          setOwnerEmail(data.email || "")
+        }
+      } catch (error) {
+        console.error('Failed to reload profile:', error)
+      }
+    }
+    fetchProfile()
   }
 
   const insertVariable = (variable: string, isNew: boolean = false) => {
@@ -226,11 +249,22 @@ export default function SettingsPage() {
 
       {/* Owner Profile Section */}
       <Card>
-        <CardHeader>
-          <CardTitle>Account Owner Profile</CardTitle>
-          <CardDescription>
-            Edit your personal account information
-          </CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between">
+          <div>
+            <CardTitle>Account Owner Profile</CardTitle>
+            <CardDescription>
+              {isEditingProfile ? 'Edit your personal account information' : 'Your personal account information'}
+            </CardDescription>
+          </div>
+          {!isEditingProfile && !profileLoading && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setIsEditingProfile(true)}
+            >
+              Edit Profile
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {profileLoading ? (
@@ -245,6 +279,8 @@ export default function SettingsPage() {
                     value={ownerName}
                     onChange={(e) => setOwnerName(e.target.value)}
                     placeholder="Your full name"
+                    disabled={!isEditingProfile}
+                    className={!isEditingProfile ? "bg-muted" : ""}
                   />
                 </Field>
                 <Field>
@@ -255,6 +291,8 @@ export default function SettingsPage() {
                     value={ownerEmail}
                     onChange={(e) => setOwnerEmail(e.target.value)}
                     placeholder="you@company.com"
+                    disabled={!isEditingProfile}
+                    className={!isEditingProfile ? "bg-muted" : ""}
                   />
                 </Field>
                 <Field>
@@ -264,6 +302,8 @@ export default function SettingsPage() {
                     value={ownerPhone}
                     onChange={(e) => setOwnerPhone(e.target.value)}
                     placeholder="+1 (555) 123-4567"
+                    disabled={!isEditingProfile}
+                    className={!isEditingProfile ? "bg-muted" : ""}
                   />
                 </Field>
                 <Field>
@@ -275,13 +315,23 @@ export default function SettingsPage() {
                   </div>
                 </Field>
               </div>
-              <Button 
-                onClick={handleSaveProfile} 
-                className="mt-4"
-                disabled={profileSaving}
-              >
-                {profileSaving ? 'Saving...' : profileSaved ? 'Saved!' : 'Save Profile'}
-              </Button>
+              {isEditingProfile && (
+                <div className="flex gap-2 mt-4">
+                  <Button 
+                    onClick={handleSaveProfile}
+                    disabled={profileSaving}
+                  >
+                    {profileSaving ? 'Saving...' : 'Save Profile'}
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    disabled={profileSaving}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </CardContent>
