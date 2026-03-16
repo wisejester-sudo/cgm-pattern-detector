@@ -72,6 +72,8 @@ export default function SettingsPage() {
   const [serviceArea, setServiceArea] = useState(settings.service_area || '')
   const [logoUrl, setLogoUrl] = useState(settings.logo_url || '')
   const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [customJobTypes, setCustomJobTypes] = useState<string[]>(settings.custom_job_types || [])
+  const [newJobType, setNewJobType] = useState('')
   const [originalCompanyName, setOriginalCompanyName] = useState(settings.company_name)
   const [originalCompanyPhone, setOriginalCompanyPhone] = useState(settings.company_phone)
   const [originalPrimaryColor, setOriginalPrimaryColor] = useState(settings.primary_color || '#3b82f6')
@@ -209,6 +211,7 @@ export default function SettingsPage() {
         business_hours: businessHours,
         service_area: serviceArea,
         logo_url: finalLogoUrl,
+        custom_job_types: customJobTypes,
       })
       setOriginalCompanyName(companyName)
       setOriginalCompanyPhone(companyPhone)
@@ -236,6 +239,17 @@ export default function SettingsPage() {
     setBusinessHours(originalBusinessHours)
     setServiceArea(originalServiceArea)
     setIsEditingCompany(false)
+  }
+
+  const handleAddJobType = () => {
+    if (newJobType.trim() && !customJobTypes.includes(newJobType.trim())) {
+      setCustomJobTypes([...customJobTypes, newJobType.trim()])
+      setNewJobType('')
+    }
+  }
+
+  const handleRemoveJobType = (type: string) => {
+    setCustomJobTypes(customJobTypes.filter(t => t !== type))
   }
 
   const handleSaveProfile = async () => {
@@ -577,6 +591,49 @@ export default function SettingsPage() {
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Job Types */}
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between">
+          <div>
+            <CardTitle>Job Types</CardTitle>
+            <CardDescription>
+              Manage custom job types for your business
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {customJobTypes.map((type) => (
+                <Badge key={type} variant="secondary" className="flex items-center gap-1">
+                  {type}
+                  <button
+                    onClick={() => handleRemoveJobType(type)}
+                    className="ml-1 hover:text-destructive"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              ))}
+              {customJobTypes.length === 0 && (
+                <p className="text-sm text-muted-foreground">No custom job types yet</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Add new job type (e.g., Pool Cleaning)"
+                value={newJobType}
+                onChange={(e) => setNewJobType(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddJobType()}
+              />
+              <Button onClick={handleAddJobType} variant="outline">
+                Add
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

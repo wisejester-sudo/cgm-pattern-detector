@@ -50,9 +50,22 @@ export function CreateJobModal({
   technicians: propTechnicians, 
   onCreateJob 
 }: CreateJobModalProps) {
-  // Use store for technicians and addJob if not provided as props
-  const { technicians: storeTechnicians, addJob } = useStore()
+  // Use store for technicians, settings, and addJob if not provided as props
+  const { technicians: storeTechnicians, addJob, settings } = useStore()
   const technicians = propTechnicians ?? storeTechnicians ?? []
+  
+  // Combine default and custom job types
+  const defaultJobTypes = [
+    "Service Call",
+    "Installation", 
+    "Repair",
+    "Maintenance",
+    "Inspection",
+    "Emergency",
+    "Consultation"
+  ]
+  const customJobTypes = settings?.custom_job_types || []
+  const allJobTypes = [...new Set([...defaultJobTypes, ...customJobTypes])]
   
   // Support both controlled and uncontrolled open state
   const [internalOpen, setInternalOpen] = useState(false)
@@ -217,13 +230,11 @@ export function CreateJobModal({
                       <SelectValue placeholder="Select job type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Service Call">Service Call</SelectItem>
-                      <SelectItem value="Installation">Installation</SelectItem>
-                      <SelectItem value="Repair">Repair</SelectItem>
-                      <SelectItem value="Maintenance">Maintenance</SelectItem>
-                      <SelectItem value="Inspection">Inspection</SelectItem>
-                      <SelectItem value="Emergency">Emergency</SelectItem>
-                      <SelectItem value="Consultation">Consultation</SelectItem>
+                      {allJobTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </Field>
