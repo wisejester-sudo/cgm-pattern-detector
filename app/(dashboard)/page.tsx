@@ -280,10 +280,10 @@ export default function DashboardPage() {
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-3">
-            <Button variant="outline" onClick={() => setIsCreateJobOpen(true)}>
+            <BrandButton onClick={() => setIsCreateJobOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Create Job
-            </Button>
+            </BrandButton>
             <Link href="/technicians">
               <Button variant="outline">
                 <Users className="mr-2 h-4 w-4" />

@@ -352,10 +352,10 @@ export function CreateJobModal({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={!isValid || isLoading}>
+            <BrandButton type="submit" disabled={!isValid || isLoading}>
               {isLoading && <Spinner className="mr-2" />}
               Create Job
-            </Button>
+            </BrandButton>
           </DialogFooter>
         </form>
       </DialogContent>
