@@ -3,14 +3,24 @@ import { createClient } from '@/lib/supabase/server'
 
 // GET /api/auth/user-profile - Get current user profile
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
+  console.log('[API] GET /api/auth/user-profile started')
+  
   try {
+    console.log('[API] Creating Supabase client...')
     const supabase = await createClient()
     if (!supabase) {
+      console.log('[API] Supabase not configured')
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
     }
+    console.log('[API] Supabase client created in', Date.now() - startTime, 'ms')
 
+    console.log('[API] Getting user from auth...')
     const { data: { user }, error: authError } = await supabase.auth.getUser()
+    console.log('[API] Auth check complete in', Date.now() - startTime, 'ms')
+    
     if (authError || !user) {
+      console.log('[API] Unauthorized:', authError?.message)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
