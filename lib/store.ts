@@ -36,6 +36,170 @@ const emptySettings: CompanySettings = {
   service_area: '',
 }
 
+// Generate trade-specific SMS templates
+function getTradeSpecificTemplates(tradeType: string): SmsTemplate[] {
+  const baseTemplates: SmsTemplate[] = [
+    {
+      id: 'default-1',
+      name: 'En Route Notification',
+      template_body: 'Hi {customer_name}, your technician {tech_name} is on the way to {address}. ETA: {eta}. Questions? Call {company_phone}.',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: 'default-2',
+      name: 'Job Complete',
+      template_body: 'Hi {customer_name}, your {job_type} service has been completed. Thank you for choosing {company_name}!',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  ]
+
+  const tradeSpecificTemplates: Record<string, SmsTemplate[]> = {
+    hvac: [
+      {
+        id: 'hvac-1',
+        name: 'AC Repair',
+        template_body: 'Hi {customer_name}, your AC repair is scheduled for {scheduled_time}. Our technician will arrive within the appointment window. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'hvac-2',
+        name: 'Furnace Maintenance',
+        template_body: 'Hi {customer_name}, your furnace maintenance is scheduled for {scheduled_time}. Please ensure clear access to the unit. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'hvac-3',
+        name: 'System Tune-up',
+        template_body: 'Hi {customer_name}, your HVAC system tune-up is scheduled for {scheduled_time}. This service includes filter change and system check. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ],
+    plumbing: [
+      {
+        id: 'plumbing-1',
+        name: 'Leak Repair',
+        template_body: 'Hi {customer_name}, your leak repair is scheduled for {scheduled_time}. Please shut off the main water valve if possible. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'plumbing-2',
+        name: 'Drain Cleaning',
+        template_body: 'Hi {customer_name}, your drain cleaning service is scheduled for {scheduled_time}. Please clear the area around drains. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'plumbing-3',
+        name: 'Water Heater Service',
+        template_body: 'Hi {customer_name}, your water heater service is scheduled for {scheduled_time}. Please ensure clear access to the unit. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ],
+    electrical: [
+      {
+        id: 'electrical-1',
+        name: 'Panel Upgrade',
+        template_body: 'Hi {customer_name}, your electrical panel upgrade is scheduled for {scheduled_time}. Power may need to be shut off temporarily. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'electrical-2',
+        name: 'Outlet Installation',
+        template_body: 'Hi {customer_name}, your outlet installation is scheduled for {scheduled_time}. Our electrician will arrive within the appointment window. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'electrical-3',
+        name: 'Wiring Repair',
+        template_body: 'Hi {customer_name}, your wiring repair service is scheduled for {scheduled_time}. Power may need to be shut off temporarily. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ],
+    landscaping: [
+      {
+        id: 'landscaping-1',
+        name: 'Lawn Care',
+        template_body: 'Hi {customer_name}, your lawn care service is scheduled for {scheduled_time}. Please ensure yard access is clear. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'landscaping-2',
+        name: 'Tree Trimming',
+        template_body: 'Hi {customer_name}, your tree trimming service is scheduled for {scheduled_time}. Please ensure clear access to trees. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'landscaping-3',
+        name: 'Seasonal Cleanup',
+        template_body: 'Hi {customer_name}, your seasonal cleanup is scheduled for {scheduled_time}. Please ensure yard debris is accessible. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ],
+    cleaning: [
+      {
+        id: 'cleaning-1',
+        name: 'Deep Clean',
+        template_body: 'Hi {customer_name}, your deep cleaning service is scheduled for {scheduled_time}. Please ensure access to all areas. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'cleaning-2',
+        name: 'Move-out Cleaning',
+        template_body: 'Hi {customer_name}, your move-out cleaning is scheduled for {scheduled_time}. Keys or access instructions appreciated. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'cleaning-3',
+        name: 'Office Cleaning',
+        template_body: 'Hi {customer_name}, your office cleaning is scheduled for {scheduled_time}. Please ensure building access. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ],
+    generic: [
+      {
+        id: 'generic-1',
+        name: 'Service Call',
+        template_body: 'Hi {customer_name}, your service call is scheduled for {scheduled_time}. Our technician will arrive within the appointment window. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'generic-2',
+        name: 'Installation',
+        template_body: 'Hi {customer_name}, your installation is scheduled for {scheduled_time}. Please ensure clear access to the work area. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'generic-3',
+        name: 'Maintenance',
+        template_body: 'Hi {customer_name}, your maintenance service is scheduled for {scheduled_time}. Our technician will arrive within the appointment window. Questions? Call {company_phone}.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ],
+  }
+
+  const specificTemplates = tradeSpecificTemplates[tradeType] || tradeSpecificTemplates['generic']
+  return [...baseTemplates, ...specificTemplates]
+}
+
 // Default SMS templates for new accounts
 const defaultTemplates: SmsTemplate[] = [
   {
@@ -484,13 +648,21 @@ export const useStore = create<AppState>()(
           
           set({ currentAdmin: admin, isAdminAuthenticated: true })
           
+          // Get trade type from profile or use generic
+          const tradeType = profile.trade_type || 'generic'
+          
+          // Load trade-specific templates
+          const tradeTemplates = getTradeSpecificTemplates(tradeType)
+          set({ templates: tradeTemplates })
+          
           // Populate company settings from user metadata (available immediately after signup)
-          if (profile.company_name || profile.company_phone) {
+          if (profile.company_name || profile.company_phone || profile.trade_type) {
             set({
               settings: {
                 ...get().settings,
                 company_name: profile.company_name || get().settings.company_name,
                 company_phone: profile.company_phone || get().settings.company_phone,
+                trade_type: profile.trade_type || get().settings.trade_type,
               }
             })
           }
