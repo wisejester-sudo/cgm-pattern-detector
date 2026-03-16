@@ -217,12 +217,13 @@ export function CreateJobModal({
                       <SelectValue placeholder="Select job type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="AC Repair">AC Repair</SelectItem>
-                      <SelectItem value="AC Installation">AC Installation</SelectItem>
-                      <SelectItem value="Furnace Repair">Furnace Repair</SelectItem>
-                      <SelectItem value="Furnace Maintenance">Furnace Maintenance</SelectItem>
-                      <SelectItem value="Duct Cleaning">Duct Cleaning</SelectItem>
-                      <SelectItem value="System Inspection">System Inspection</SelectItem>
+                      <SelectItem value="Service Call">Service Call</SelectItem>
+                      <SelectItem value="Installation">Installation</SelectItem>
+                      <SelectItem value="Repair">Repair</SelectItem>
+                      <SelectItem value="Maintenance">Maintenance</SelectItem>
+                      <SelectItem value="Inspection">Inspection</SelectItem>
+                      <SelectItem value="Emergency">Emergency</SelectItem>
+                      <SelectItem value="Consultation">Consultation</SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>

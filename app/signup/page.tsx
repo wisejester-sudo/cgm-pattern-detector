@@ -33,6 +33,7 @@ export default function SignupPage() {
   const [ownerName, setOwnerName] = useState("")
   const [companyName, setCompanyName] = useState("")
   const [companyPhone, setCompanyPhone] = useState("")
+  const [tradeType, setTradeType] = useState("generic")
 
   // Clear any existing session/store data on signup page
   useEffect(() => {
@@ -70,6 +71,7 @@ export default function SignupPage() {
             full_name: ownerName || email.split('@')[0],
             company_name: companyName,
             company_phone: companyPhone,
+            trade_type: tradeType,
             role: 'admin',
           },
         },
@@ -175,7 +177,7 @@ export default function SignupPage() {
             <Zap className="h-7 w-7 text-primary-foreground" />
           </div>
           <CardTitle className="text-2xl">Create Dispatchly Account</CardTitle>
-          <CardDescription>Set up your HVAC business in minutes</CardDescription>
+          <CardDescription>Set up your field service business in minutes</CardDescription>
         </CardHeader>
         <CardContent>
           {error && (
@@ -228,6 +230,25 @@ export default function SignupPage() {
               </div>
 
               <Field>
+                <FieldLabel htmlFor="tradeType">Trade Type</FieldLabel>
+                <select
+                  id="tradeType"
+                  className="w-full px-3 py-2 border rounded-md bg-background text-sm"
+                  value={tradeType}
+                  onChange={(e) => setTradeType(e.target.value)}
+                >
+                  <option value="generic">General Services</option>
+                  <option value="hvac">HVAC</option>
+                  <option value="plumbing">Plumbing</option>
+                  <option value="electrical">Electrical</option>
+                  <option value="landscaping">Landscaping</option>
+                  <option value="cleaning">Cleaning</option>
+                  <option value="pest_control">Pest Control</option>
+                  <option value="other">Other</option>
+                </select>
+              </Field>
+
+              <Field>
                 <FieldLabel htmlFor="ownerName">Your Name <span className="text-muted-foreground font-normal">(optional)</span></FieldLabel>
                 <Input
                   id="ownerName"
@@ -241,15 +262,14 @@ export default function SignupPage() {
                 <FieldLabel htmlFor="company">Company Name</FieldLabel>
                 <Input
                   id="company"
-                  placeholder="Smith HVAC Services"
+                  placeholder="Smith Services"
                   value={companyName}
                   onChange={(e) => { setCompanyName(e.target.value); setError(null) }}
                   required
                 />
               </Field>
 
-              <Field>
-                <FieldLabel htmlFor="phone">Company Phone</FieldLabel>
+              <Field
                 <Input
                   id="phone"
                   type="tel"

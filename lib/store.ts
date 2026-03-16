@@ -26,6 +26,7 @@ const emptySettings: CompanySettings = {
   id: '',
   company_name: '',
   company_phone: '',
+  trade_type: '',
   default_sms_template_id: null,
   updated_at: new Date().toISOString(),
   logo_url: null,

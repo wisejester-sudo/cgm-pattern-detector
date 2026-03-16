@@ -268,7 +268,7 @@ export default function SettingsPage() {
     template
       .replace(/{customer_name}/g, "Sarah Johnson")
       .replace(/{tech_name}/g, "Mike")
-      .replace(/{job_type}/g, "AC Repair")
+      .replace(/{job_type}/g, "Service Call")
       .replace(/{address}/g, "123 Oak Street")
       .replace(/{company_name}/g, companyName)
       .replace(/{company_phone}/g, companyPhone)
