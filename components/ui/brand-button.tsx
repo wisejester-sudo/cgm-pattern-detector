@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 
 interface BrandButtonProps extends ButtonProps {
   useBrandColor?: boolean
+  children?: React.ReactNode
 }
 
 /**
