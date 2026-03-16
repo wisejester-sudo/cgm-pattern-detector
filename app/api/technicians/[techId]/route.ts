@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
-// DELETE /api/technicians/[id] - Delete technician
+// DELETE /api/technicians/[techId] - Delete technician
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ techId: string }> }
 ) {
   try {
-    const { id } = await params
+    const { techId } = await params
 
     // Check if Supabase is configured
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -31,7 +31,7 @@ export async function DELETE(
     const { error } = await supabase
       .from("technicians")
       .delete()
-      .eq("id", id)
+      .eq("id", techId)
       .eq("admin_id", user.id) // Ensure user can only delete their own technicians
 
     if (error) {
@@ -52,13 +52,13 @@ export async function DELETE(
   }
 }
 
-// PATCH /api/technicians/[id] - Update technician
+// PATCH /api/technicians/[techId] - Update technician
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ techId: string }> }
 ) {
   try {
-    const { id } = await params
+    const { techId } = await params
     const supabase = await createClient()
     if (!supabase) {
       return NextResponse.json({ error: "Database not configured" }, { status: 503 })
@@ -102,7 +102,7 @@ export async function PATCH(
     const { data: technician, error } = await supabase
       .from("technicians")
       .update(updates)
-      .eq("id", id)
+      .eq("id", techId)
       .eq("admin_id", user.id) // Ensure user can only update their own technicians
       .select()
       .single()
