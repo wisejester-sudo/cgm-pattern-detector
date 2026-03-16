@@ -66,6 +66,11 @@ export default function SettingsPage() {
   const [newTemplateBody, setNewTemplateBody] = useState("")
   const [companyName, setCompanyName] = useState(settings.company_name)
   const [companyPhone, setCompanyPhone] = useState(settings.company_phone)
+  const [originalCompanyName, setOriginalCompanyName] = useState(settings.company_name)
+  const [originalCompanyPhone, setOriginalCompanyPhone] = useState(settings.company_phone)
+  const [isEditingCompany, setIsEditingCompany] = useState(false)
+  const [companySaving, setCompanySaving] = useState(false)
+  const [companySaved, setCompanySaved] = useState(false)
   const [ownerName, setOwnerName] = useState("")
   const [ownerPhone, setOwnerPhone] = useState("")
   const [ownerEmail, setOwnerEmail] = useState("")
@@ -161,14 +166,31 @@ export default function SettingsPage() {
     toast.success('Template deleted')
   }
 
-  const handleSaveSettings = () => {
-    updateSettings({
-      company_name: companyName,
-      company_phone: companyPhone,
-    })
-    setSettingsSaved(true)
-    toast.success('Company info saved')
-    setTimeout(() => setSettingsSaved(false), 2000)
+  const handleSaveSettings = async () => {
+    setCompanySaving(true)
+    try {
+      await updateSettings({
+        company_name: companyName,
+        company_phone: companyPhone,
+      })
+      setOriginalCompanyName(companyName)
+      setOriginalCompanyPhone(companyPhone)
+      setCompanySaved(true)
+      setIsEditingCompany(false)
+      toast.success('Company info saved')
+      setTimeout(() => setCompanySaved(false), 2000)
+    } catch (error) {
+      console.error('Failed to save company settings:', error)
+      toast.error('Failed to save company info')
+    } finally {
+      setCompanySaving(false)
+    }
+  }
+
+  const handleCancelCompanyEdit = () => {
+    setCompanyName(originalCompanyName)
+    setCompanyPhone(originalCompanyPhone)
+    setIsEditingCompany(false)
   }
 
   const handleSaveProfile = async () => {
@@ -364,11 +386,22 @@ export default function SettingsPage() {
 
       {/* Company Settings */}
       <Card>
-        <CardHeader>
-          <CardTitle>Company Information</CardTitle>
-          <CardDescription>
-            Update your company details used in SMS messages
-          </CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between">
+          <div>
+            <CardTitle>Company Information</CardTitle>
+            <CardDescription>
+              {isEditingCompany ? 'Edit your company details used in SMS messages' : 'Your company details used in SMS messages'}
+            </CardDescription>
+          </div>
+          {!isEditingCompany && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setIsEditingCompany(true)}
+            >
+              Edit Company
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -378,6 +411,8 @@ export default function SettingsPage() {
                 id="companyName"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
+                disabled={!isEditingCompany}
+                className={!isEditingCompany ? "bg-muted" : ""}
               />
             </Field>
             <Field>
@@ -386,12 +421,28 @@ export default function SettingsPage() {
                 id="companyPhone"
                 value={companyPhone}
                 onChange={(e) => setCompanyPhone(e.target.value)}
+                disabled={!isEditingCompany}
+                className={!isEditingCompany ? "bg-muted" : ""}
               />
             </Field>
           </div>
-          <Button onClick={handleSaveSettings} className="mt-4">
-            {settingsSaved ? "Saved!" : "Save Company Info"}
-          </Button>
+          {isEditingCompany && (
+            <div className="flex gap-2 mt-4">
+              <Button 
+                onClick={handleSaveSettings}
+                disabled={companySaving}
+              >
+                {companySaving ? 'Saving...' : companySaved ? 'Saved!' : 'Save Company Info'}
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={handleCancelCompanyEdit}
+                disabled={companySaving}
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
