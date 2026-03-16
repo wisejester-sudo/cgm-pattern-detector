@@ -45,19 +45,32 @@ export async function GET(request: NextRequest) {
 
 // PATCH /api/auth/user-profile - Update current user profile
 export async function PATCH(request: NextRequest) {
+  console.log('[API] PATCH /api/auth/user-profile called')
   try {
     const supabase = await createClient()
     if (!supabase) {
+      console.error('[API] Supabase client not created')
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
     }
 
+    console.log('[API] Getting current user...')
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
+      console.error('[API] Auth error:', authError)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    console.log('[API] User authenticated:', user.id)
 
-    const body = await request.json()
+    let body
+    try {
+      body = await request.json()
+    } catch (e) {
+      console.error('[API] Failed to parse request body:', e)
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    }
+    
     const { name, phone, email } = body
+    console.log('[API] Update requested:', { name, phone, email: email ? 'provided' : 'not provided' })
 
     // Validate at least one field is provided
     if (!name && !phone && !email) {
@@ -75,6 +88,7 @@ export async function PATCH(request: NextRequest) {
 
     // Update user in Supabase Auth (for email changes)
     if (email && email !== user.email) {
+      console.log('[API] Updating auth email...')
       const { error: authUpdateError } = await supabase.auth.updateUser({
         email: email,
       })
@@ -85,9 +99,49 @@ export async function PATCH(request: NextRequest) {
           { status: 400 }
         )
       }
+      console.log('[API] Auth email updated successfully')
     }
 
-    // Update user profile in database
+    // Check if users table exists and has row for this user
+    console.log('[API] Checking if user exists in users table...')
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user.id)
+      .single()
+
+    if (checkError) {
+      console.log('[API] User not found in users table, creating...', checkError.message)
+      // Insert new user row
+      const { data: newProfile, error: insertError } = await supabase
+        .from('users')
+        .insert({
+          id: user.id,
+          email: user.email,
+          name: name || user.user_metadata?.name || user.email?.split('@')[0],
+          phone: phone || null,
+          role: 'admin',
+          company_name: null,
+          created_at: new Date().toISOString(),
+        })
+        .select()
+        .single()
+
+      if (insertError) {
+        console.error('[API] Error creating user profile:', insertError)
+        return NextResponse.json({ error: `Failed to create profile: ${insertError.message}` }, { status: 500 })
+      }
+
+      console.log('[API] User profile created successfully')
+      return NextResponse.json({
+        success: true,
+        profile: newProfile,
+        message: 'Profile created successfully',
+      })
+    }
+
+    // Update existing user profile
+    console.log('[API] Updating existing user profile...')
     const { data: profile, error } = await supabase
       .from('users')
       .update(updates)
@@ -97,16 +151,20 @@ export async function PATCH(request: NextRequest) {
 
     if (error) {
       console.error('[API] Error updating profile:', error)
-      return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
+      return NextResponse.json({ error: `Failed to update profile: ${error.message}` }, { status: 500 })
     }
 
+    console.log('[API] Profile updated successfully')
     return NextResponse.json({
       success: true,
       profile,
       message: 'Profile updated successfully',
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('[API] Unexpected error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error?.message || 'Unknown error'
+    }, { status: 500 })
   }
 }
