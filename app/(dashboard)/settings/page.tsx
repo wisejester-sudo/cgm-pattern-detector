@@ -165,13 +165,21 @@ export default function SettingsPage() {
         }),
       })
 
+      const data = await response.json()
+      
       if (response.ok) {
         setProfileSaved(true)
         toast.success('Profile updated successfully')
+        // Update local state with returned profile
+        if (data.profile) {
+          setOwnerName(data.profile.name || '')
+          setOwnerEmail(data.profile.email || '')
+          setOwnerPhone(data.profile.phone || '')
+        }
         setTimeout(() => setProfileSaved(false), 2000)
       } else {
-        const data = await response.json()
-        toast.error(data.error || 'Failed to update profile')
+        console.error('[Frontend] Profile update failed:', data)
+        toast.error(`Error: ${data.error || 'Failed to update profile'}${data.details ? ` - ${data.details}` : ''}`)
       }
     } catch (error) {
       console.error('Failed to save profile:', error)
