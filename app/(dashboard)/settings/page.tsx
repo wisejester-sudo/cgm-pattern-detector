@@ -70,6 +70,8 @@ export default function SettingsPage() {
   const [tagline, setTagline] = useState(settings.tagline || '')
   const [businessHours, setBusinessHours] = useState(settings.business_hours || '')
   const [serviceArea, setServiceArea] = useState(settings.service_area || '')
+  const [logoUrl, setLogoUrl] = useState(settings.logo_url || '')
+  const [logoFile, setLogoFile] = useState<File | null>(null)
   const [originalCompanyName, setOriginalCompanyName] = useState(settings.company_name)
   const [originalCompanyPhone, setOriginalCompanyPhone] = useState(settings.company_phone)
   const [originalPrimaryColor, setOriginalPrimaryColor] = useState(settings.primary_color || '#3b82f6')
@@ -177,6 +179,28 @@ export default function SettingsPage() {
   const handleSaveSettings = async () => {
     setCompanySaving(true)
     try {
+      let finalLogoUrl = logoUrl
+      
+      // Upload logo if there's a new file
+      if (logoFile) {
+        const formData = new FormData()
+        formData.append('file', logoFile)
+        
+        const response = await fetch('/api/upload/logo', {
+          method: 'POST',
+          body: formData,
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          finalLogoUrl = data.logoUrl
+          setLogoUrl(finalLogoUrl)
+        } else {
+          console.error('Failed to upload logo')
+          toast.error('Failed to upload logo')
+        }
+      }
+      
       await updateSettings({
         company_name: companyName,
         company_phone: companyPhone,
@@ -184,6 +208,7 @@ export default function SettingsPage() {
         tagline: tagline,
         business_hours: businessHours,
         service_area: serviceArea,
+        logo_url: finalLogoUrl,
       })
       setOriginalCompanyName(companyName)
       setOriginalCompanyPhone(companyPhone)
@@ -444,6 +469,42 @@ export default function SettingsPage() {
                 disabled={!isEditingCompany}
                 className={!isEditingCompany ? "bg-muted" : ""}
               />
+            </Field>
+            <Field className="sm:col-span-2">
+              <FieldLabel>Company Logo</FieldLabel>
+              <div className="flex items-center gap-4">
+                {logoUrl && (
+                  <img
+                    src={logoUrl}
+                    alt="Company logo"
+                    className="h-16 w-16 object-contain border rounded p-1"
+                  />
+                )}
+                {isEditingCompany && (
+                  <div className="flex-1">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          setLogoFile(file)
+                          // Preview
+                          const reader = new FileReader()
+                          reader.onloadend = () => {
+                            setLogoUrl(reader.result as string)
+                          }
+                          reader.readAsDataURL(file)
+                        }
+                      }}
+                      className="cursor-pointer"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Max 2MB, PNG or JPG
+                    </p>
+                  </div>
+                )}
+              </div>
             </Field>
             <Field>
               <FieldLabel htmlFor="primaryColor">Brand Color</FieldLabel>
