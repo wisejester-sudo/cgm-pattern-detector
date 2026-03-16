@@ -269,7 +269,8 @@ export default function SignupPage() {
                 />
               </Field>
 
-              <Field
+              <Field>
+                <FieldLabel htmlFor="phone">Company Phone</FieldLabel>
                 <Input
                   id="phone"
                   type="tel"
