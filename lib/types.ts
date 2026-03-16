@@ -78,6 +78,7 @@ export interface CompanySettings {
   company_name: string
   company_phone: string
   trade_type: string  // 'hvac' | 'plumbing' | 'electrical' | 'landscaping' | 'generic'
+  custom_job_types: string[]
   default_sms_template_id: string | null
   updated_at: string
   // Branding
