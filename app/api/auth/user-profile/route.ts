@@ -3,37 +3,50 @@ import { createClient } from '@/lib/supabase/server'
 
 // GET /api/auth/user-profile - Get current user profile
 export async function GET(request: NextRequest) {
+  console.log('[API] ========== GET /api/auth/user-profile START ==========')
   const startTime = Date.now()
-  console.log('[API] GET /api/auth/user-profile started')
   
   try {
-    console.log('[API] Creating Supabase client...')
+    console.log('[API] Step 1: Creating Supabase client...')
+    const step1Start = Date.now()
     const supabase = await createClient()
+    console.log('[API] Step 1 complete in', Date.now() - step1Start, 'ms')
+    
     if (!supabase) {
-      console.log('[API] Supabase not configured')
+      console.log('[API] ERROR: Supabase not configured')
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
     }
-    console.log('[API] Supabase client created in', Date.now() - startTime, 'ms')
+    console.log('[API] Supabase client created successfully')
 
-    console.log('[API] Getting user from auth...')
+    console.log('[API] Step 2: Getting user from auth...')
+    const step2Start = Date.now()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    console.log('[API] Auth check complete in', Date.now() - startTime, 'ms')
+    console.log('[API] Step 2 complete in', Date.now() - step2Start, 'ms')
     
-    if (authError || !user) {
-      console.log('[API] Unauthorized:', authError?.message)
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (authError) {
+      console.log('[API] ERROR: Auth error:', authError.message)
+      return NextResponse.json({ error: 'Unauthorized', details: authError.message }, { status: 401 })
     }
+    
+    if (!user) {
+      console.log('[API] ERROR: No user found')
+      return NextResponse.json({ error: 'Unauthorized', details: 'No user' }, { status: 401 })
+    }
+    
+    console.log('[API] User authenticated:', user.id)
 
-    // Get user profile from users table
-    console.log('[API] Fetching profile for user:', user.id)
+    console.log('[API] Step 3: Querying users table...')
+    const step3Start = Date.now()
     const { data: profile, error } = await supabase
       .from('users')
       .select('id, full_name, email, phone, role, company_name, created_at')
       .eq('id', user.id)
-      .single()
+      .maybeSingle() // Changed from .single() to .maybeSingle() to avoid errors
+    console.log('[API] Step 3 complete in', Date.now() - step3Start, 'ms')
 
     if (error) {
-      console.log('[API] Profile not found, returning auth user data:', error.message)
+      console.log('[API] WARNING: Profile query error:', error.message)
+      console.log('[API] Returning auth user data as fallback')
       // Return basic user data from auth if no profile row exists
       return NextResponse.json({
         id: user.id,
@@ -46,10 +59,31 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    if (!profile) {
+      console.log('[API] No profile found, returning auth user data')
+      return NextResponse.json({
+        id: user.id,
+        full_name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+        email: user.email,
+        phone: user.user_metadata?.phone || null,
+        role: 'admin',
+        company_name: null,
+        created_at: user.created_at,
+      })
+    }
+
+    console.log('[API] Profile found, returning:', profile.full_name)
+    console.log('[API] ========== COMPLETE in', Date.now() - startTime, 'ms ==========')
     return NextResponse.json(profile)
-  } catch (error) {
-    console.error('[API] Unexpected error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    console.error('[API] ========== UNEXPECTED ERROR ==========')
+    console.error('[API] Error:', error.message)
+    console.error('[API] Stack:', error.stack)
+    console.error('[API] Time elapsed before error:', Date.now() - startTime, 'ms')
+    return NextResponse.json({ 
+      error: 'Internal server error', 
+      details: error.message 
+    }, { status: 500 })
   }
 }
 
@@ -69,7 +103,6 @@ export async function PATCH(request: NextRequest) {
       console.error('[API] Auth error:', authError)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    console.log('[API] User authenticated:', user.id)
 
     let body
     try {
@@ -112,7 +145,7 @@ export async function PATCH(request: NextRequest) {
       console.log('[API] Auth email updated successfully')
     }
 
-    // Check if users table exists and has row for this user
+    // Check if user exists in users table
     console.log('[API] Checking if user exists in users table...')
     const { data: existingUser, error: checkError } = await supabase
       .from('users')
@@ -130,7 +163,7 @@ export async function PATCH(request: NextRequest) {
       // Insert new user row with ALL provided updates
       const insertData: any = {
         id: user.id,
-        email: email || user.email, // Use new email if provided, else keep current
+        email: email || user.email,
         full_name: name || user.user_metadata?.name || user.email?.split('@')[0],
         phone: phone || null,
         role: 'admin',
@@ -151,7 +184,7 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ error: `Failed to create profile: ${insertError.message}` }, { status: 500 })
       }
 
-      console.log('[API] User profile created successfully:', newProfile)
+      console.log('[API] User profile created successfully')
       return NextResponse.json({
         success: true,
         profile: newProfile,
