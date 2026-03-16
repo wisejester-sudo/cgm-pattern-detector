@@ -66,8 +66,16 @@ export default function SettingsPage() {
   const [newTemplateBody, setNewTemplateBody] = useState("")
   const [companyName, setCompanyName] = useState(settings.company_name)
   const [companyPhone, setCompanyPhone] = useState(settings.company_phone)
+  const [primaryColor, setPrimaryColor] = useState(settings.primary_color || '#3b82f6')
+  const [tagline, setTagline] = useState(settings.tagline || '')
+  const [businessHours, setBusinessHours] = useState(settings.business_hours || '')
+  const [serviceArea, setServiceArea] = useState(settings.service_area || '')
   const [originalCompanyName, setOriginalCompanyName] = useState(settings.company_name)
   const [originalCompanyPhone, setOriginalCompanyPhone] = useState(settings.company_phone)
+  const [originalPrimaryColor, setOriginalPrimaryColor] = useState(settings.primary_color || '#3b82f6')
+  const [originalTagline, setOriginalTagline] = useState(settings.tagline || '')
+  const [originalBusinessHours, setOriginalBusinessHours] = useState(settings.business_hours || '')
+  const [originalServiceArea, setOriginalServiceArea] = useState(settings.service_area || '')
   const [isEditingCompany, setIsEditingCompany] = useState(false)
   const [companySaving, setCompanySaving] = useState(false)
   const [companySaved, setCompanySaved] = useState(false)
@@ -172,9 +180,17 @@ export default function SettingsPage() {
       await updateSettings({
         company_name: companyName,
         company_phone: companyPhone,
+        primary_color: primaryColor,
+        tagline: tagline,
+        business_hours: businessHours,
+        service_area: serviceArea,
       })
       setOriginalCompanyName(companyName)
       setOriginalCompanyPhone(companyPhone)
+      setOriginalPrimaryColor(primaryColor)
+      setOriginalTagline(tagline)
+      setOriginalBusinessHours(businessHours)
+      setOriginalServiceArea(serviceArea)
       setCompanySaved(true)
       setIsEditingCompany(false)
       toast.success('Company info saved')
@@ -190,6 +206,10 @@ export default function SettingsPage() {
   const handleCancelCompanyEdit = () => {
     setCompanyName(originalCompanyName)
     setCompanyPhone(originalCompanyPhone)
+    setPrimaryColor(originalPrimaryColor)
+    setTagline(originalTagline)
+    setBusinessHours(originalBusinessHours)
+    setServiceArea(originalServiceArea)
     setIsEditingCompany(false)
   }
 
@@ -423,6 +443,59 @@ export default function SettingsPage() {
                 onChange={(e) => setCompanyPhone(e.target.value)}
                 disabled={!isEditingCompany}
                 className={!isEditingCompany ? "bg-muted" : ""}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="primaryColor">Brand Color</FieldLabel>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  id="primaryColor"
+                  value={primaryColor}
+                  onChange={(e) => setPrimaryColor(e.target.value)}
+                  disabled={!isEditingCompany}
+                  className="w-10 h-10 rounded cursor-pointer disabled:cursor-not-allowed"
+                />
+                <Input
+                  value={primaryColor}
+                  onChange={(e) => setPrimaryColor(e.target.value)}
+                  disabled={!isEditingCompany}
+                  className={!isEditingCompany ? "bg-muted flex-1" : "flex-1"}
+                  placeholder="#3b82f6"
+                />
+              </div>
+            </Field>
+            <Field className="sm:col-span-2">
+              <FieldLabel htmlFor="tagline">Tagline</FieldLabel>
+              <Input
+                id="tagline"
+                value={tagline}
+                onChange={(e) => setTagline(e.target.value)}
+                disabled={!isEditingCompany}
+                className={!isEditingCompany ? "bg-muted" : ""}
+                placeholder="Your company tagline"
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="businessHours">Business Hours</FieldLabel>
+              <Input
+                id="businessHours"
+                value={businessHours}
+                onChange={(e) => setBusinessHours(e.target.value)}
+                disabled={!isEditingCompany}
+                className={!isEditingCompany ? "bg-muted" : ""}
+                placeholder="Mon-Fri 8am-6pm"
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="serviceArea">Service Area</FieldLabel>
+              <Input
+                id="serviceArea"
+                value={serviceArea}
+                onChange={(e) => setServiceArea(e.target.value)}
+                disabled={!isEditingCompany}
+                className={!isEditingCompany ? "bg-muted" : ""}
+                placeholder="City, State or Region"
               />
             </Field>
           </div>
