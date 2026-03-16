@@ -134,8 +134,11 @@ export default function TechniciansPage() {
     updateTechnician(techId, { is_active: !currentActive })
   }
 
-  const handleDelete = (techId: string) => {
-    deleteTechnician(techId)
+  const handleDelete = async (techId: string) => {
+    await deleteTechnician(techId)
+    // Reload from Supabase to ensure deletion is reflected
+    await loadTechniciansFromSupabase()
+    toast.success('Technician deleted')
   }
 
   const togglePinVisibility = (techId: string) => {
