@@ -29,26 +29,14 @@ interface UserProfile {
 export function TopBar() {
   const router = useRouter();
   const { currentAdmin, logoutAdmin, resetStore } = useStore();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const response = await fetch('/api/auth/user-profile');
-        if (response.ok) {
-          const data = await response.json();
-          setUserProfile(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch user profile:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUserProfile();
-  }, []);
+    // Loading is complete once we have admin data
+    if (currentAdmin) {
+      setIsLoading(false);
+    }
+  }, [currentAdmin]);
 
   const handleLogout = async () => {
     // Clear local store
@@ -75,10 +63,10 @@ export function TopBar() {
       .slice(0, 2);
   };
 
-  // Use user profile from API if available, otherwise fall back to store
-  const displayName = userProfile?.full_name || currentAdmin?.name || "Guest";
-  const displayEmail = userProfile?.email || currentAdmin?.email || "";
-  const userRole = userProfile?.role || currentAdmin?.role || "admin";
+  // Use currentAdmin from store (gets refreshed after profile updates)
+  const displayName = currentAdmin?.name || "Guest";
+  const displayEmail = currentAdmin?.email || "";
+  const userRole = currentAdmin?.role || "admin";
 
   return (
     <header className="flex items-center justify-between h-16 px-4 md:px-6 border-b border-border bg-card">
