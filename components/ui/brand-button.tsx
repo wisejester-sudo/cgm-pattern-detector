@@ -6,7 +6,7 @@ import { useBrandColor } from "@/lib/hooks/use-branding"
 import { cn } from "@/lib/utils"
 
 interface BrandButtonProps extends React.ComponentProps<'button'> {
-  useBrandColor?: boolean
+  applyBrandColor?: boolean
 }
 
 /**
@@ -16,12 +16,12 @@ interface BrandButtonProps extends React.ComponentProps<'button'> {
 export function BrandButton({
   className,
   style,
-  useBrandColor = true,
+  applyBrandColor = true,
   ...props
 }: BrandButtonProps) {
   const brandColor = useBrandColor()
 
-  if (!useBrandColor) {
+  if (!applyBrandColor) {
     return <Button className={className} style={style} {...props} />
   }
 
