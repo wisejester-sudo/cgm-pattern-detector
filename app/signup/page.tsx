@@ -11,11 +11,15 @@ import { Zap, AlertCircle, CheckCircle, Mail } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { createBrowserClient } from "@supabase/ssr"
 
-// HARDCODED Supabase client - direct inline to bypass any module caching issues
-const supabaseClient = createBrowserClient(
-  'https://ltyrituojmxhkwetsnyk.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0eXJpdHVvam14aGt3ZXRzbnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNzE2NzYsImV4cCI6MjA4ODg0NzY3Nn0.A9fRHHbuT4w373JeEYFIpwZjCIVa6zb1G6r2M3XiHhs'
-)
+// Create Supabase client using environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY')
+}
+
+const supabaseClient = createBrowserClient(supabaseUrl, supabaseAnonKey)
 
 type SignupStep = "form" | "success" | "confirm_email"
 
