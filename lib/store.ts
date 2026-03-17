@@ -310,6 +310,9 @@ interface AppState {
   // User initialization - fetches user profile and settings from Supabase
   initializeUserFromSupabase: () => Promise<void>
   
+  // Refresh user profile (for updating after profile changes)
+  refreshUserProfile: () => Promise<void>
+  
   // Reset store to empty state (for logout)
   resetStore: () => void
 }
@@ -613,9 +616,45 @@ export const useStore = create<AppState>()(
         }
       },
       
+      // Refresh user profile from Supabase (for updating after profile changes)
+      refreshUserProfile: async () => {
+        try {
+          console.log('[Store] Refreshing user profile...')
+          const response = await fetch('/api/auth/user-profile')
+          if (!response.ok) {
+            console.error('[Store] Failed to refresh profile:', response.status)
+            return
+          }
+          const profile = await response.json()
+          
+          // Skip if demo profile
+          if (profile.id === 'demo') {
+            return
+          }
+          
+          // Update admin data from fresh profile
+          const admin: Admin = {
+            id: profile.id,
+            name: profile.full_name || profile.email?.split('@')[0] || 'User',
+            email: profile.email || '',
+            phone: profile.phone || profile.company_phone || '',
+            role: 'admin',
+            is_active: true,
+            created_at: get().currentAdmin?.created_at || new Date().toISOString(),
+            last_login: new Date().toISOString(),
+            avatar_url: null,
+          }
+          
+          set({ currentAdmin: admin })
+          console.log('[Store] Profile refreshed successfully:', admin.name)
+        } catch (error) {
+          console.error('[Store] Error refreshing profile:', error)
+        }
+      },
+
       // Initialize user from Supabase auth and profile data
       initializeUserFromSupabase: async () => {
-        // Skip if already initialized
+        // Skip if already initialized (use refreshUserProfile for updates)
         if (get().isInitialized) {
           console.log('[Store] Already initialized, skipping...')
           return
@@ -639,7 +678,7 @@ export const useStore = create<AppState>()(
             id: profile.id,
             name: profile.full_name || profile.email?.split('@')[0] || 'User',
             email: profile.email || '',
-            phone: profile.company_phone || '',
+            phone: profile.phone || profile.company_phone || '',
             role: 'admin',
             is_active: true,
             created_at: new Date().toISOString(),

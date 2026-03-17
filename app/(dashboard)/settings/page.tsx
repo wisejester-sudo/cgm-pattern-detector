@@ -54,7 +54,7 @@ const variables = [
 ]
 
 export default function SettingsPage() {
-  const { templates, settings, addTemplate, updateTemplate, deleteTemplate, updateSettings, initializeUserFromSupabase } =
+  const { templates, settings, addTemplate, updateTemplate, deleteTemplate, updateSettings, initializeUserFromSupabase, refreshUserProfile } =
     useStore()
 
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
@@ -278,7 +278,7 @@ export default function SettingsPage() {
           setOwnerPhone(data.profile.phone || '')
         }
         // Refresh store data to update header and navigation
-        await initializeUserFromSupabase()
+        await refreshUserProfile()
         setTimeout(() => setProfileSaved(false), 2000)
       } else {
         console.error('[Frontend] Profile update failed:', data)
