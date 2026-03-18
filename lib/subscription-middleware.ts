@@ -41,6 +41,10 @@ export async function checkSubscription(request: NextRequest) {
 
   try {
     const supabase = await createClient()
+    if (!supabase) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 503 })
+    }
+    
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
