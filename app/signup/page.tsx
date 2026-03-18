@@ -103,8 +103,7 @@ export default function SignupPage() {
     return (
       <div className="relative min-h-screen flex flex-col items-center justify-center p-4">
         <div className="fixed inset-0 -z-10">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]" />
-          <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[400px] w-[400px] rounded-full bg-green-500/20 opacity-20 blur-[100px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-green-500/20 via-background to-background" />
         </div>
 
         <Card className="w-full max-w-md shadow-xl border-border/50">
@@ -129,8 +128,7 @@ export default function SignupPage() {
     return (
       <div className="relative min-h-screen flex flex-col items-center justify-center p-4">
         <div className="fixed inset-0 -z-10">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]" />
-          <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[400px] w-[400px] rounded-full bg-primary/20 opacity-20 blur-[100px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/20 via-background to-background" />
         </div>
 
         <Card className="w-full max-w-md shadow-xl border-border/50">
@@ -157,27 +155,27 @@ export default function SignupPage() {
     <div className="relative min-h-screen flex flex-col items-center justify-center p-4 py-12">
       {/* Background */}
       <div className="fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]" />
-        <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[400px] w-[400px] rounded-full bg-primary/20 opacity-20 blur-[100px]" />
-        <div className="absolute bottom-0 right-0 -z-10 h-[300px] w-[300px] rounded-full bg-primary/10 opacity-20 blur-[100px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/20 via-background to-background" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-primary/10 via-background to-background" />
       </div>
 
       {/* Logo */}
       <Link href="/" className="mb-8 flex items-center gap-2">
-        <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg shadow-primary/25">
+        <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
           <Zap className="w-6 h-6 text-primary-foreground" />
         </div>
-        <span className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-          Dispatchly
-        </span>
+        <span className="text-2xl font-bold">Dispatchly</span>
       </Link>
 
       <Card className="w-full max-w-md shadow-xl border-border/50">
         <CardContent className="p-8">
           <div className="text-center mb-8">
+            <Badge className="mb-4 px-3 py-1 bg-primary/10 text-primary border-primary/20 hover:bg-primary/10">
+              14-Day Free Trial
+            </Badge>
             <h1 className="text-2xl font-bold mb-2">Create your account</h1>
             <p className="text-muted-foreground text-sm">
-              Start your 14-day free trial. No credit card required.
+              Start your free trial. No credit card required.
             </p>
           </div>
 
@@ -265,7 +263,7 @@ export default function SignupPage() {
 
             <Button 
               type="submit" 
-              className="w-full h-12 text-base shadow-lg shadow-primary/25" 
+              className="w-full h-12 text-base shadow-lg shadow-primary/20" 
               disabled={loading}
             >
               {loading ? (

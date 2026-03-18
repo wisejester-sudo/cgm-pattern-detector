@@ -13,13 +13,11 @@ import {
   Users,
   Mail,
   ArrowRight,
-  Sparkles,
   Building2,
-  MessageSquare,
-  Camera,
-  BarChart3,
   Shield,
-  Clock
+  BarChart3,
+  MessageSquare,
+  HelpCircle
 } from "lucide-react"
 import { useStore } from "@/lib/store"
 
@@ -111,48 +109,45 @@ export default function PricingPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-background">
+    <div className="relative min-h-screen bg-background overflow-hidden">
       {/* Background */}
       <div className="fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]" />
-        <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/20 opacity-20 blur-[100px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/20 via-background to-background" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-primary/10 via-background to-background" />
       </div>
 
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 border-b bg-background/80 backdrop-blur-xl">
+      <header className="fixed top-0 w-full z-50 border-b bg-background/80 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg shadow-primary/25">
+              <div className="w-9 h-9 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
                 <Zap className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                Dispatchly
-              </span>
+              <span className="text-xl font-bold">Dispatchly</span>
             </Link>
-            <div className="flex items-center gap-4">
-              <Link href="/login">
-                <Button variant="ghost" size="sm">Sign In</Button>
+            <div className="flex items-center gap-3">
+              <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+                Sign In
+              </Link>
+              <Link href="/signup">
+                <Button size="sm" className="shadow-lg shadow-primary/20">Get Started</Button>
               </Link>
             </div>
           </div>
         </div>
-      </nav>
+      </header>
 
       {/* Header */}
       <section className="pt-32 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
-          <Badge variant="secondary" className="mb-4">
-            <Sparkles className="w-3 h-3 mr-1" />
-            Simple, Transparent Pricing
+          <Badge className="mb-4 px-3 py-1 bg-primary/10 text-primary border-primary/20 hover:bg-primary/10">
+            Simple Pricing
           </Badge>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-            <span className="bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent">
-              One Plan, Everything
-            </span>
-            <br />
-            <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              You Need
+            One plan,{" "}
+            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              everything included
             </span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -161,36 +156,33 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Pricing Cards */}
+      {/* Pricing Card */}
       <section className="pb-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-8 items-start">
-            {/* Main Pricing Card */}
-            <Card className="relative border-primary shadow-xl shadow-primary/10 overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary/80 to-primary" />
-              
-              <CardContent className="p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Zap className="w-6 h-6 text-primary" />
+          <div className="bg-card border rounded-3xl shadow-xl overflow-hidden">
+            <div className="grid lg:grid-cols-2">
+              <div className="p-8 lg:p-12">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <Zap className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold">Starter Plan</h3>
-                    <p className="text-sm text-muted-foreground">Perfect for small HVAC businesses</p>
+                    <h2 className="text-2xl font-bold">Starter Plan</h2>
+                    <p className="text-muted-foreground">Perfect for small HVAC businesses</p>
                   </div>
                 </div>
 
-                <div className="mb-6">
+                <div className="mb-8">
                   <div className="flex items-baseline gap-2">
                     <span className="text-6xl font-bold">$39</span>
                     <span className="text-xl text-muted-foreground">/month</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <p className="text-muted-foreground mt-2">
                     Billed monthly. Cancel anytime.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 mb-6 p-3 bg-primary/5 rounded-lg">
+                <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-xl mb-8">
                   <Users className="h-5 w-5 text-primary" />
                   <span className="font-medium">Up to 5 technicians included</span>
                 </div>
@@ -198,7 +190,7 @@ export default function PricingPage() {
                 <Button
                   onClick={handleSubscribe}
                   disabled={loading || currentPlan === "starter"}
-                  className="w-full h-12 text-base shadow-lg shadow-primary/25 mb-6"
+                  className="w-full h-12 text-base shadow-lg shadow-primary/20"
                   size="lg"
                 >
                   {loading ? (
@@ -216,24 +208,23 @@ export default function PricingPage() {
                   )}
                 </Button>
 
-                <p className="text-xs text-center text-muted-foreground">
+                <p className="text-xs text-center text-muted-foreground mt-4">
                   14-day free trial • No credit card required
                 </p>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Features List */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold mb-4">Everything included:</h3>
-              <div className="grid gap-3">
-                {features.map((feature, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="h-3 w-3 text-primary" />
-                    </div>
-                    <span className="text-muted-foreground">{feature}</span>
-                  </div>
-                ))}
+              <div className="bg-muted/30 p-8 lg:p-12">
+                <h3 className="font-semibold mb-6">Everything included:</h3>
+                <ul className="space-y-4">
+                  {features.map((feature, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Check className="h-3 w-3 text-green-500" />
+                      </div>
+                      <span className="text-muted-foreground">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </div>
@@ -252,25 +243,31 @@ export default function PricingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
             <Card className="border-border/50">
               <CardContent className="p-6 text-center">
-                <Building2 className="h-8 w-8 text-primary mx-auto mb-3" />
-                <h3 className="font-semibold mb-1">Unlimited Techs</h3>
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <Building2 className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">Unlimited Techs</h3>
                 <p className="text-sm text-muted-foreground">Scale to any team size</p>
               </CardContent>
             </Card>
             <Card className="border-border/50">
               <CardContent className="p-6 text-center">
-                <Shield className="h-8 w-8 text-primary mx-auto mb-3" />
-                <h3 className="font-semibold mb-1">Dedicated Support</h3>
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <Shield className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">Dedicated Support</h3>
                 <p className="text-sm text-muted-foreground">Priority help when you need it</p>
               </CardContent>
             </Card>
             <Card className="border-border/50">
               <CardContent className="p-6 text-center">
-                <BarChart3 className="h-8 w-8 text-primary mx-auto mb-3" />
-                <h3 className="font-semibold mb-1">Custom Reporting</h3>
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <BarChart3 className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">Custom Reporting</h3>
                 <p className="text-sm text-muted-foreground">Advanced analytics & insights</p>
               </CardContent>
             </Card>
@@ -317,8 +314,8 @@ export default function PricingPage() {
       {/* CTA Section */}
       <section className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <div className="relative rounded-3xl bg-gradient-to-br from-primary to-primary/80 p-12 text-center overflow-hidden">
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff1a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff1a_1px,transparent_1px)] bg-[size:20px_20px]" />
+          <div className="relative bg-gradient-to-br from-primary to-primary/80 rounded-3xl p-12 md:p-16 text-center overflow-hidden">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPjwvc3ZnPg==')] opacity-50" />
             <div className="relative z-10">
               <h2 className="text-3xl font-bold text-primary-foreground mb-4">
                 Still have questions?
@@ -340,24 +337,26 @@ export default function PricingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t bg-muted/30 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center">
-              <Zap className="w-4 h-4 text-primary-foreground" />
+      <footer className="border-t bg-muted/30 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <Zap className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <span className="text-lg font-bold">Dispatchly</span>
+            </Link>
+            <p className="text-sm text-muted-foreground">
+              © 2026 Dispatchly. All rights reserved.
+            </p>
+            <div className="flex gap-6">
+              <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Home
+              </Link>
+              <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Sign In
+              </Link>
             </div>
-            <span className="font-bold">Dispatchly</span>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            © 2026 Dispatchly. All rights reserved.
-          </p>
-          <div className="flex gap-4">
-            <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Home
-            </Link>
-            <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Sign In
-            </Link>
           </div>
         </div>
       </footer>
