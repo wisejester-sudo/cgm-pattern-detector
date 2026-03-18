@@ -121,8 +121,7 @@ export async function POST(request: NextRequest) {
       console.log('[API] Technician created:', technician.id)
     }
 
-    // Generate magic link
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    // Generate magic link (baseUrl already defined above)
     const magicLink = `${baseUrl}/t/${token}`
 
     // Send via selected method
