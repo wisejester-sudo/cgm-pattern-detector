@@ -34,8 +34,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
     }
 
-    const supabase = await createClient()
-
     // Handle different event types
     switch (event.type) {
       case "checkout.session.completed": {
