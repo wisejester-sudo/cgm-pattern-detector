@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { validateTwilioSignature } from "@/lib/twilio"
+import { checkRateLimit, getClientIdentifier, rateLimitConfigs } from "@/lib/rate-limit"
 
 // GET /api/sms/webhook - Twilio webhook for incoming SMS
 export async function GET(request: NextRequest) {
@@ -14,6 +15,20 @@ export async function POST(request: NextRequest) {
 
 async function handleWebhook(request: NextRequest) {
   try {
+    // Rate limiting: 50 webhook requests per minute per IP
+    const identifier = getClientIdentifier(request)
+    const rateLimit = checkRateLimit(`sms-webhook:${identifier}`, {
+      ...rateLimitConfigs.sms,
+      maxRequests: 50, // Higher limit for webhooks
+    })
+    
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please try again later." },
+        { status: 429 }
+      )
+    }
+
     // Check if Supabase is configured
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       return NextResponse.json(
