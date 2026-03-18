@@ -1,10 +1,33 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
+import { checkRateLimit, getClientIdentifier, rateLimitConfigs } from "@/lib/rate-limit"
 
 // POST /api/auth/login - Login with email and password
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 5 attempts per minute per IP
+    const identifier = getClientIdentifier(request)
+    const rateLimit = checkRateLimit(`login:${identifier}`, rateLimitConfigs.auth)
+    
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { 
+          error: "Too many login attempts. Please try again later.",
+          retryAfter: rateLimit.retryAfter 
+        },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': '5',
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': rateLimit.resetTime.toString(),
+            'Retry-After': rateLimit.retryAfter?.toString() || '60',
+          }
+        }
+      )
+    }
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     
