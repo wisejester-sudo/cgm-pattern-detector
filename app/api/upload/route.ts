@@ -1,10 +1,33 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { compressImage, generateThumbnail, validateImageFile } from "@/lib/image-processing"
+import { checkRateLimit, getClientIdentifier, rateLimitConfigs } from "@/lib/rate-limit"
 
 // POST /api/upload - Upload and process an image
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 10 uploads per minute per user
+    const identifier = getClientIdentifier(request)
+    const rateLimit = checkRateLimit(`upload:${identifier}`, rateLimitConfigs.upload)
+    
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { 
+          error: "Upload rate limit exceeded. Please try again later.",
+          retryAfter: rateLimit.retryAfter 
+        },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': '10',
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': rateLimit.resetTime.toString(),
+            'Retry-After': rateLimit.retryAfter?.toString() || '60',
+          }
+        }
+      )
+    }
+
     // Check if Supabase is configured
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       return NextResponse.json(
