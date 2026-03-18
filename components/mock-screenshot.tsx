@@ -46,7 +46,7 @@ export function MockScreenshot({ type }: MockScreenshotProps) {
             </div>
             <div className="flex-1 text-center">
               <div className="inline-flex items-center gap-2 bg-background px-3 py-1 rounded-full text-xs text-muted-foreground">
-                dispatchly.com/dashboard
+                getdispatchly.co/dashboard
               </div>
             </div>
           </div>
@@ -82,7 +82,7 @@ export function MockScreenshot({ type }: MockScreenshotProps) {
                   <>
                     <div className="bg-gray-200 text-foreground p-3 rounded-2xl rounded-tr-sm text-sm">
                       <div className="font-semibold mb-1">Dispatchly</div>
-                      New job assigned! Johnson Residence - AC Repair. 123 Oak Street. Tap to view: dispatchly.com/t/abc123
+                      New job assigned! Johnson Residence - AC Repair. 123 Oak Street. Tap to view: getdispatchly.co/t/abc123
                       <div className="text-right text-xs text-muted-foreground mt-1">8:30 AM</div>
                     </div>
                     <div className="bg-primary text-white p-3 rounded-2xl rounded-tl-sm text-sm ml-4">
