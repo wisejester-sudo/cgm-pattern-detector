@@ -44,7 +44,7 @@ export default function LandingPage() {
             </Link>
             <nav className="hidden md:flex items-center gap-8">
               <Link href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</Link>
-              <Link href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">How It Works</Link>
+              <Link href="/how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">How It Works</Link>
               <Link href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
               <Link href="/tech" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Technicians</Link>
             </nav>
@@ -87,7 +87,7 @@ export default function LandingPage() {
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
-                <Link href="#features">
+                <Link href="/how-it-works">
                   <Button size="lg" variant="outline" className="text-base px-8">
                     See How It Works
                   </Button>
@@ -240,8 +240,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How It Works */}
-      <section id="how-it-works" className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
+      {/* How It Works Preview */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <Badge variant="outline" className="mb-4">How It Works</Badge>
