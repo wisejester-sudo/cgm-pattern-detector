@@ -44,15 +44,13 @@ export async function POST(request: NextRequest) {
         const planId = session.metadata?.plan_id
 
         if (companyId && session.subscription) {
-          const subscription = await stripe.subscriptions.retrieve(
+          const subscription: any = await stripe.subscriptions.retrieve(
             session.subscription as string
           )
 
-          // @ts-ignore - Stripe types have these properties
           const currentPeriodStart = subscription.current_period_start 
             ? new Date(subscription.current_period_start * 1000) 
             : null
-          // @ts-ignore - Stripe types have these properties
           const currentPeriodEnd = subscription.current_period_end 
             ? new Date(subscription.current_period_end * 1000) 
             : null
@@ -98,16 +96,16 @@ export async function POST(request: NextRequest) {
         const invoice = event.data.object as Stripe.Invoice
         
         // Record payment
-        if (invoice.customer && invoice.amount_due > 0) {
-          const { data: subscription } = await supabase
+        if (invoice.customer && invoice.amount_due > 0 && supabase) {
+          const { data: subscriptionData } = await supabase
             .from("subscriptions")
             .select("company_id")
             .eq("stripe_customer_id", invoice.customer as string)
             .single()
 
-          if (subscription) {
+          if (subscriptionData) {
             await supabase.from("payments").insert({
-              company_id: subscription.company_id,
+              company_id: subscriptionData.company_id,
               stripe_invoice_id: invoice.id,
               stripe_payment_intent_id: invoice.payment_intent as string,
               amount: invoice.amount_due,
@@ -126,54 +124,64 @@ export async function POST(request: NextRequest) {
         const invoice = event.data.object as Stripe.Invoice
         
         // Update subscription status
-        await supabase
-          .from("subscriptions")
-          .update({ status: "past_due" })
-          .eq("stripe_customer_id", invoice.customer as string)
+        if (supabase) {
+          await supabase
+            .from("subscriptions")
+            .update({ status: "past_due" })
+            .eq("stripe_customer_id", invoice.customer as string)
+        }
 
         break
       }
 
       case "customer.subscription.updated": {
-        const subscription = event.data.object as Stripe.Subscription
+        const subscription: any = event.data.object as Stripe.Subscription
         
-        // Update subscription status
-        await supabase
-          .from("subscriptions")
-          .update({
-            status: subscription.status,
-            current_period_start: new Date(subscription.current_period_start * 1000),
-            current_period_end: new Date(subscription.current_period_end * 1000),
-            cancel_at_period_end: subscription.cancel_at_period_end,
-          })
-          .eq("stripe_subscription_id", subscription.id)
+        if (supabase) {
+          // Update subscription status
+          await supabase
+            .from("subscriptions")
+            .update({
+              status: subscription.status,
+              current_period_start: subscription.current_period_start 
+                ? new Date(subscription.current_period_start * 1000) 
+                : null,
+              current_period_end: subscription.current_period_end 
+                ? new Date(subscription.current_period_end * 1000) 
+                : null,
+              cancel_at_period_end: subscription.cancel_at_period_end,
+            })
+            .eq("stripe_subscription_id", subscription.id)
 
-        // Update company status
-        await supabase
-          .from("companies")
-          .update({ subscription_status: subscription.status })
-          .eq("stripe_customer_id", subscription.customer as string)
+          // Update company status
+          await supabase
+            .from("companies")
+            .update({ subscription_status: subscription.status })
+            .eq("stripe_customer_id", subscription.customer as string)
+        }
 
         break
       }
 
       case "customer.subscription.deleted": {
-        const subscription = event.data.object as Stripe.Subscription
+        const subscription: any = event.data.object as Stripe.Subscription
         
-        // Mark subscription as canceled
-        await supabase
-          .from("subscriptions")
-          .update({ 
-            status: "canceled",
-            canceled_at: new Date(),
-          })
-          .eq("stripe_subscription_id", subscription.id)
+        if (supabase) {
+          // Mark subscription as canceled
+          await supabase
+            .from("subscriptions")
+            .update({ 
+              status: "canceled",
+              canceled_at: new Date(),
+            })
+            .eq("stripe_subscription_id", subscription.id)
 
-        // Update company status
-        await supabase
-          .from("companies")
-          .update({ subscription_status: "canceled" })
-          .eq("stripe_customer_id", subscription.customer as string)
+          // Update company status
+          await supabase
+            .from("companies")
+            .update({ subscription_status: "canceled" })
+            .eq("stripe_customer_id", subscription.customer as string)
+        }
 
         break
       }
