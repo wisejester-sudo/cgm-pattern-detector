@@ -76,7 +76,7 @@ const plans = [
 export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null)
   const [currentPlan, setCurrentPlan] = useState<string | null>(null)
-  const { user } = useStore()
+  const { currentAdmin: user } = useStore()
 
   useEffect(() => {
     // Fetch current subscription
