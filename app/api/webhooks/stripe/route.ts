@@ -4,7 +4,7 @@ import Stripe from "stripe"
 import { headers } from "next/headers"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2024-12-18.acacia",
+  apiVersion: "2026-02-25.clover",
 })
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
@@ -12,8 +12,14 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 // POST /api/webhooks/stripe - Handle Stripe webhooks
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient()
+    if (!supabase) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 503 })
+    }
+    
     const payload = await request.text()
-    const signature = headers().get("stripe-signature")
+    const headersList = await headers()
+    const signature = headersList.get("stripe-signature")
 
     if (!signature || !webhookSecret) {
       return NextResponse.json({ error: "Missing signature" }, { status: 400 })
@@ -44,20 +50,31 @@ export async function POST(request: NextRequest) {
             session.subscription as string
           )
 
+          // @ts-ignore - Stripe types have these properties
+          const currentPeriodStart = subscription.current_period_start 
+            ? new Date(subscription.current_period_start * 1000) 
+            : null
+          // @ts-ignore - Stripe types have these properties
+          const currentPeriodEnd = subscription.current_period_end 
+            ? new Date(subscription.current_period_end * 1000) 
+            : null
+          const trialStart = subscription.trial_start 
+            ? new Date(subscription.trial_start * 1000) 
+            : null
+          const trialEnd = subscription.trial_end 
+            ? new Date(subscription.trial_end * 1000) 
+            : null
+
           await supabase.from("subscriptions").upsert({
             company_id: companyId,
             stripe_customer_id: session.customer as string,
             stripe_subscription_id: subscription.id,
             stripe_price_id: subscription.items.data[0]?.price.id,
             status: subscription.status,
-            current_period_start: new Date(subscription.current_period_start * 1000),
-            current_period_end: new Date(subscription.current_period_end * 1000),
-            trial_start: subscription.trial_start 
-              ? new Date(subscription.trial_start * 1000) 
-              : null,
-            trial_end: subscription.trial_end 
-              ? new Date(subscription.trial_end * 1000) 
-              : null,
+            current_period_start: currentPeriodStart,
+            current_period_end: currentPeriodEnd,
+            trial_start: trialStart,
+            trial_end: trialEnd,
             plan_name: planId,
           }, {
             onConflict: "company_id"
