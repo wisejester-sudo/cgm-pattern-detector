@@ -42,6 +42,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check environment - prevent cross-environment token usage
+    const currentEnvironment = process.env.VERCEL_ENV || 'development'
+    const currentBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    
+    if (technician.environment && technician.environment !== currentEnvironment) {
+      console.error('[API] Environment mismatch:', {
+        tokenEnv: technician.environment,
+        currentEnv: currentEnvironment,
+        tokenBaseUrl: technician.base_url,
+        currentBaseUrl: currentBaseUrl
+      })
+      
+      return NextResponse.json(
+        { 
+          valid: false, 
+          error: `This link was generated for ${technician.base_url || 'another environment'}. Please use the correct environment URL.` 
+        },
+        { status: 401 }
+      )
+    }
+
     // Check expiration - try both column names for compatibility
     const expiresAt = technician.token_expires_at || technician.magic_link_expires_at
     if (expiresAt && new Date(expiresAt) < new Date()) {

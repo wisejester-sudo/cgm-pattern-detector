@@ -35,21 +35,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate magic link token
+    // Generate magic link token with environment context
     const token = crypto.randomBytes(32).toString('hex')
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+    
+    // Capture environment context for multi-environment safety
+    const environment = process.env.VERCEL_ENV || 'development'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    
+    console.log('[API] Generating magic link for environment:', environment, 'baseUrl:', baseUrl)
 
     let technician: any
 
     if (technicianId) {
       console.log('[API] Updating existing technician:', technicianId)
       
-      // Update existing technician with magic link token
+      // Update existing technician with magic link token and environment
       const { error: updateError } = await supabase
         .from('technicians')
         .update({
           magic_link_token: token,
-          token_expires_at: expiresAt.toISOString(),
+          magic_link_expires_at: expiresAt.toISOString(),
+          environment: environment,
+          base_url: baseUrl,
           invited_at: new Date().toISOString(),
           invited_by: user.id,
         })
@@ -82,7 +90,7 @@ export async function POST(request: NextRequest) {
     } else {
       console.log('[API] Creating new technician:', { name, email, phone })
       
-      // Create new technician with magic link token
+      // Create new technician with magic link token and environment
       const { data: newTech, error: createError } = await supabase
         .from('technicians')
         .insert({
@@ -91,7 +99,9 @@ export async function POST(request: NextRequest) {
           email: email || null,
           phone,
           magic_link_token: token,
-          token_expires_at: expiresAt.toISOString(),
+          magic_link_expires_at: expiresAt.toISOString(),
+          environment: environment,
+          base_url: baseUrl,
           invited_at: new Date().toISOString(),
           invited_by: user.id,
           is_active: true,
