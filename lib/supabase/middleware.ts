@@ -65,14 +65,11 @@ export async function updateSession(request: NextRequest) {
       return supabaseResponse
     }
 
-    // Allow all routes in demo mode (no user but public-ish access)
-    // This lets the app work for demonstration without requiring signup
+    // Enforce authentication - redirect to login if not authenticated
     if (!user && !isPublicRoute) {
-      // For now, allow dashboard access in demo mode
-      // In production, uncomment to enforce auth:
-      // const url = request.nextUrl.clone()
-      // url.pathname = "/login"
-      // return NextResponse.redirect(url)
+      const url = request.nextUrl.clone()
+      url.pathname = "/login"
+      return NextResponse.redirect(url)
     }
 
     return supabaseResponse

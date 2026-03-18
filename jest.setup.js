@@ -101,6 +101,32 @@ global.fetch = jest.fn(() =>
   })
 )
 
+// Mock Request class for Node.js environment
+class MockHeaders {
+  constructor(init = {}) {
+    this._headers = new Map()
+    for (const [key, value] of Object.entries(init)) {
+      this._headers.set(key.toLowerCase(), value)
+    }
+  }
+
+  get(name) {
+    return this._headers.get(name.toLowerCase()) || null
+  }
+
+  set(name, value) {
+    this._headers.set(name.toLowerCase(), value)
+  }
+}
+
+global.Request = class Request {
+  constructor(url, init = {}) {
+    this.url = url
+    this.method = init.method || 'GET'
+    this.headers = new MockHeaders(init.headers || {})
+  }
+}
+
 // Suppress console errors during tests
 const originalError = console.error
 beforeAll(() => {
