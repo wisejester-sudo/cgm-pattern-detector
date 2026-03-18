@@ -123,7 +123,7 @@ async function handleIncomingSMS(request: NextRequest) {
     // Normalize phone number for lookup
     const normalizedPhone = from.replace(/\D/g, "")
     
-    console.log("[SMS Incoming] Received message from:", normalizedPhone, "Body:", body)
+    // Message received - processing
 
     // STEP 1: Look up technician by phone number
     const { data: technician, error: techError } = await supabase
@@ -133,7 +133,7 @@ async function handleIncomingSMS(request: NextRequest) {
       .single()
 
     if (techError || !technician) {
-      console.log("[SMS Incoming] No technician found for phone:", normalizedPhone)
+      // No technician found with this phone number
       // Store message but don't process as status update
       await logIncomingMessage(supabase, {
         from,
@@ -150,7 +150,7 @@ async function handleIncomingSMS(request: NextRequest) {
       )
     }
 
-    console.log("[SMS Incoming] Found technician:", technician.name)
+    // Technician found - checking for active job
 
     // STEP 2: Find technician's most recent active job
     const { data: activeJob, error: jobError } = await supabase
@@ -163,7 +163,7 @@ async function handleIncomingSMS(request: NextRequest) {
       .single()
 
     if (jobError || !activeJob) {
-      console.log("[SMS Incoming] No active job found for technician:", technician.name)
+      // No active job assigned to this technician
       // Send reply: No active job
       await sendSMSReply(normalizedPhone, 
         `Hi ${technician.name}, you don't have any active jobs. Contact your dispatcher if you think this is an error.`)
@@ -183,7 +183,7 @@ async function handleIncomingSMS(request: NextRequest) {
       )
     }
 
-    console.log("[SMS Incoming] Found active job:", activeJob.id, "Current status:", activeJob.status)
+    // Active job found - processing status update
 
     // STEP 3: Parse the message body for keywords
     const trimmedBody = body.trim().toUpperCase()
@@ -204,13 +204,13 @@ async function handleIncomingSMS(request: NextRequest) {
 
     // STEP 4: If keyword found, update job status
     if (newStatus) {
-      console.log("[SMS Incoming] Keyword matched:", keywordMatched, "→ Status:", newStatus)
+      // Keyword matched - updating job status
       
       // Validate status transition
       const validTransition = isValidStatusTransition(activeJob.status, newStatus)
       
       if (!validTransition) {
-        console.log("[SMS Incoming] Invalid status transition:", activeJob.status, "→", newStatus)
+        // Invalid status transition - notify technician
         await sendSMSReply(normalizedPhone,
           `Your job is already "${STATUS_LABELS[activeJob.status]}". Current status: ${activeJob.status.toUpperCase()}`)
         
@@ -281,11 +281,11 @@ async function handleIncomingSMS(request: NextRequest) {
         keyword: keywordMatched
       })
 
-      console.log("[SMS Incoming] Status updated successfully to:", newStatus)
+      // Status updated successfully
 
     } else {
       // No keyword matched - treat as a note/comment
-      console.log("[SMS Incoming] No keyword matched, storing as note")
+      // No keyword matched - storing message as note
       
       // Store as an update note
       await supabase
@@ -368,7 +368,7 @@ async function sendSMSReply(to: string, body: string): Promise<void> {
     const fromNumber = process.env.TWILIO_PHONE_NUMBER
 
     if (!accountSid || !authToken || !fromNumber) {
-      console.log("[SMS Reply] Twilio not configured, would send:", body)
+      // Twilio not configured - would send: body
       return
     }
 
@@ -392,7 +392,7 @@ async function sendSMSReply(to: string, body: string): Promise<void> {
       const errorData = await twilioResponse.text()
       console.error("[SMS Reply] Twilio error:", errorData)
     } else {
-      console.log("[SMS Reply] Sent to:", to)
+      // SMS reply sent successfully
     }
   } catch (error) {
     console.error("[SMS Reply] Error sending SMS:", error)
@@ -412,7 +412,7 @@ async function notifyCustomerOfStatusChange(
     const fromNumber = process.env.TWILIO_PHONE_NUMBER
 
     if (!accountSid || !authToken || !fromNumber) {
-      console.log("[Customer Notify] Twilio not configured")
+      // Customer notification skipped - Twilio not configured
       return
     }
 
@@ -453,7 +453,7 @@ async function notifyCustomerOfStatusChange(
       const errorData = await twilioResponse.text()
       console.error("[Customer Notify] Twilio error:", errorData)
     } else {
-      console.log("[Customer Notify] Customer notified of status change:", newStatus)
+      // Customer notification sent
     }
 
     // Store in SMS logs

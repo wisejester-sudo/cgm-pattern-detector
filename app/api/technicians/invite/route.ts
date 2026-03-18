@@ -156,21 +156,10 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Send Email if method is 'email' and email exists
+    // Email sending - currently SMS-only mode
     if (method === 'email' && technician.email) {
-      console.log('[API] Sending Email invite to:', technician.email)
-      // TODO: Integrate with email service (SendGrid, AWS SES, etc.)
-      // For now, mark as not sent but indicate it would be sent
       results.email.sent = false
       results.email.error = 'Email service not configured. Please use SMS instead.'
-      
-      // When email service is added:
-      // const emailResult = await sendEmail({
-      //   to: technician.email,
-      //   subject: 'Your Dispatchly Invitation',
-      //   body: `Click here to access your jobs: ${magicLink}`,
-      // })
-      // results.email.sent = emailResult.success
     }
 
     const response = {
@@ -186,7 +175,7 @@ export async function POST(request: NextRequest) {
       requestedMethod: method,
     }
     
-    console.log('[API] Invite successful:', response)
+    // Invite sent successfully
     return NextResponse.json(response)
   } catch (error: any) {
     console.error('[API] Unexpected error:', error)
