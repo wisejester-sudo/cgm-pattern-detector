@@ -5,101 +5,63 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
+import { Separator } from "@/components/ui/separator"
 import { 
   Check, 
   Loader2, 
   Zap,
   Users,
-  Shield,
+  Mail,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Building2,
+  MessageSquare,
+  Camera,
+  BarChart3,
+  Shield,
+  Clock
 } from "lucide-react"
 import { useStore } from "@/lib/store"
 
-const plans = [
-  {
-    id: "starter",
-    name: "Starter",
-    description: "Perfect for small HVAC businesses just getting started",
-    monthlyPrice: 39,
-    yearlyPrice: 390,
-    priceId: "price_starter",
-    features: [
-      "Up to 3 technicians",
-      "Unlimited jobs",
-      "SMS messaging",
-      "Photo uploads",
-      "Basic reporting",
-      "Email support",
-    ],
-    icon: Zap,
-    popular: false,
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    description: "For growing businesses with multiple technicians",
-    monthlyPrice: 79,
-    yearlyPrice: 790,
-    priceId: "price_pro",
-    features: [
-      "Up to 10 technicians",
-      "Unlimited jobs",
-      "SMS messaging",
-      "Photo uploads",
-      "Advanced reporting",
-      "Priority support",
-      "Custom templates",
-    ],
-    icon: Users,
-    popular: true,
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    description: "For large operations with custom needs",
-    monthlyPrice: 199,
-    yearlyPrice: 1990,
-    priceId: "price_enterprise",
-    features: [
-      "Unlimited technicians",
-      "Unlimited jobs",
-      "SMS messaging",
-      "Photo uploads",
-      "Custom reporting",
-      "Dedicated support",
-      "API access",
-      "Custom integrations",
-    ],
-    icon: Shield,
-    popular: false,
-  },
+const features = [
+  "Up to 5 technicians",
+  "Unlimited jobs",
+  "Unlimited SMS messaging",
+  "Photo uploads & storage",
+  "Real-time status tracking",
+  "Customer notifications",
+  "Basic reporting & analytics",
+  "Email support",
+  "Magic link authentication",
+  "Mobile-friendly dashboard",
 ]
 
 const faqs = [
   {
-    question: "Can I change plans later?",
-    answer: "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately."
+    question: "What happens after the 14-day trial?",
+    answer: "After your trial ends, you'll be prompted to enter payment details to continue using Dispatchly. If you choose not to continue, your account will be paused but your data will be saved for 30 days."
   },
   {
-    question: "What happens after the 14-day trial?",
-    answer: "After your trial ends, you'll be prompted to enter payment details to continue using Dispatchly."
+    question: "Can I add more than 5 technicians?",
+    answer: "Our standard plan includes up to 5 technicians. If you need more, please contact us for a custom enterprise plan tailored to your business needs."
+  },
+  {
+    question: "Is there a contract or commitment?",
+    answer: "No long-term contracts. Dispatchly is month-to-month. You can cancel anytime and your subscription will remain active until the end of your current billing period."
+  },
+  {
+    question: "What payment methods do you accept?",
+    answer: "We accept all major credit cards (Visa, Mastercard, American Express) through our secure Stripe integration."
   },
   {
     question: "Do you offer refunds?",
-    answer: "Yes, we offer a 30-day money-back guarantee if you're not satisfied with Dispatchly."
-  },
-  {
-    question: "Can I add more technicians later?",
-    answer: "Absolutely! You can upgrade to a higher plan anytime to add more technicians."
+    answer: "Yes, we offer a 30-day money-back guarantee. If you're not satisfied with Dispatchly within your first 30 days, contact us for a full refund."
   },
 ]
 
 export default function PricingPage() {
-  const [loading, setLoading] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
   const [currentPlan, setCurrentPlan] = useState<string | null>(null)
-  const [isYearly, setIsYearly] = useState(false)
   const { currentAdmin: user } = useStore()
 
   useEffect(() => {
@@ -115,19 +77,22 @@ export default function PricingPage() {
     }
   }, [user])
 
-  const handleSubscribe = async (planId: string, priceId: string) => {
+  const handleSubscribe = async () => {
     if (!user) {
       window.location.href = "/signup"
       return
     }
 
-    setLoading(planId)
+    setLoading(true)
 
     try {
       const response = await fetch("/api/billing/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, planId }),
+        body: JSON.stringify({ 
+          priceId: "price_starter", 
+          planId: "starter" 
+        }),
       })
 
       const data = await response.json()
@@ -141,7 +106,7 @@ export default function PricingPage() {
       console.error("Subscribe error:", error)
       alert("Failed to start checkout. Please try again.")
     } finally {
-      setLoading(null)
+      setLoading(false)
     }
   }
 
@@ -179,122 +144,157 @@ export default function PricingPage() {
         <div className="max-w-4xl mx-auto text-center">
           <Badge variant="secondary" className="mb-4">
             <Sparkles className="w-3 h-3 mr-1" />
-            Simple Pricing
+            Simple, Transparent Pricing
           </Badge>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
             <span className="bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Choose Your Plan
+              One Plan, Everything
+            </span>
+            <br />
+            <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              You Need
             </span>
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Start free for 14 days. No credit card required. Upgrade or downgrade anytime.
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Start free for 14 days. No credit card required. Simple $39/month for up to 5 technicians.
           </p>
-
-          {/* Billing Toggle */}
-          <div className="flex items-center justify-center gap-3">
-            <span className={`text-sm ${!isYearly ? "text-foreground font-medium" : "text-muted-foreground"}`}>
-              Monthly
-            </span>
-            <Switch checked={isYearly} onCheckedChange={setIsYearly} />
-            <span className={`text-sm ${isYearly ? "text-foreground font-medium" : "text-muted-foreground"}`}>
-              Yearly
-            </span>
-            {isYearly && (
-              <Badge variant="secondary" className="ml-2 text-xs">
-                Save 17%
-              </Badge>
-            )}
-          </div>
         </div>
       </section>
 
       {/* Pricing Cards */}
       <section className="pb-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-3 gap-6">
-            {plans.map((plan) => {
-              const Icon = plan.icon
-              const isCurrentPlan = currentPlan === plan.id
-              const price = isYearly ? plan.yearlyPrice : plan.monthlyPrice
+        <div className="max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 items-start">
+            {/* Main Pricing Card */}
+            <Card className="relative border-primary shadow-xl shadow-primary/10 overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary/80 to-primary" />
+              
+              <CardContent className="p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Zap className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold">Starter Plan</h3>
+                    <p className="text-sm text-muted-foreground">Perfect for small HVAC businesses</p>
+                  </div>
+                </div>
 
-              return (
-                <Card 
-                  key={plan.id}
-                  className={`relative flex flex-col ${
-                    plan.popular 
-                      ? "border-primary shadow-xl shadow-primary/10 scale-105 z-10" 
-                      : "border-border/50 shadow-sm"
-                  }`}
+                <div className="mb-6">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-6xl font-bold">$39</span>
+                    <span className="text-xl text-muted-foreground">/month</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Billed monthly. Cancel anytime.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 mb-6 p-3 bg-primary/5 rounded-lg">
+                  <Users className="h-5 w-5 text-primary" />
+                  <span className="font-medium">Up to 5 technicians included</span>
+                </div>
+
+                <Button
+                  onClick={handleSubscribe}
+                  disabled={loading || currentPlan === "starter"}
+                  className="w-full h-12 text-base shadow-lg shadow-primary/25 mb-6"
+                  size="lg"
                 >
-                  {plan.popular && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-primary text-primary-foreground shadow-lg">
-                        Most Popular
-                      </Badge>
-                    </div>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : currentPlan === "starter" ? (
+                    "Current Plan"
+                  ) : (
+                    <>
+                      Start Free Trial
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
                   )}
+                </Button>
 
-                  <CardContent className="p-6 flex flex-col h-full">
-                    <div className="mb-6">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${
-                        plan.popular ? "bg-primary/10" : "bg-muted"
-                      }`}>
-                        <Icon className={`w-6 h-6 ${plan.popular ? "text-primary" : "text-muted-foreground"}`} />
-                      </div>
-                      <h3 className="text-xl font-semibold mb-1">{plan.name}</h3>
-                      <p className="text-sm text-muted-foreground">{plan.description}</p>
+                <p className="text-xs text-center text-muted-foreground">
+                  14-day free trial • No credit card required
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Features List */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold mb-4">Everything included:</h3>
+              <div className="grid gap-3">
+                {features.map((feature, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Check className="h-3 w-3 text-primary" />
                     </div>
+                    <span className="text-muted-foreground">{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-                    <div className="mb-6">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-bold">${price}</span>
-                        <span className="text-muted-foreground">/{isYearly ? "year" : "month"}</span>
-                      </div>
-                      {isYearly && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          ${Math.round(plan.yearlyPrice / 12)}/mo billed annually
-                        </p>
-                      )}
-                    </div>
+      {/* Enterprise Section */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30 border-y">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <Badge variant="outline" className="mb-4">Enterprise</Badge>
+            <h2 className="text-3xl font-bold mb-4">Need More Than 5 Technicians?</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              We offer custom enterprise plans for larger operations. 
+              Get dedicated support, advanced features, and unlimited technicians.
+            </p>
+          </div>
 
-                    <ul className="space-y-3 mb-6 flex-grow">
-                      {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm">
-                          <Check className={`h-4 w-4 mt-0.5 flex-shrink-0 ${
-                            plan.popular ? "text-primary" : "text-green-500"
-                          }`} />
-                          <span className="text-muted-foreground">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <Card className="border-border/50">
+              <CardContent className="p-6 text-center">
+                <Building2 className="h-8 w-8 text-primary mx-auto mb-3" />
+                <h3 className="font-semibold mb-1">Unlimited Techs</h3>
+                <p className="text-sm text-muted-foreground">Scale to any team size</p>
+              </CardContent>
+            </Card>
+            <Card className="border-border/50">
+              <CardContent className="p-6 text-center">
+                <Shield className="h-8 w-8 text-primary mx-auto mb-3" />
+                <h3 className="font-semibold mb-1">Dedicated Support</h3>
+                <p className="text-sm text-muted-foreground">Priority help when you need it</p>
+              </CardContent>
+            </Card>
+            <Card className="border-border/50">
+              <CardContent className="p-6 text-center">
+                <BarChart3 className="h-8 w-8 text-primary mx-auto mb-3" />
+                <h3 className="font-semibold mb-1">Custom Reporting</h3>
+                <p className="text-sm text-muted-foreground">Advanced analytics & insights</p>
+              </CardContent>
+            </Card>
+          </div>
 
-                    <Button
-                      onClick={() => handleSubscribe(plan.id, plan.priceId)}
-                      disabled={loading === plan.id || isCurrentPlan}
-                      variant={plan.popular ? "default" : "outline"}
-                      className="w-full"
-                    >
-                      {loading === plan.id ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Loading...
-                        </>
-                      ) : isCurrentPlan ? (
-                        "Current Plan"
-                      ) : (
-                        <>Get Started <ArrowRight className="ml-2 h-4 w-4" /></>
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              )
-            })}
+          <div className="text-center">
+            <Link href="mailto:enterprise@dispatchly.co">
+              <Button size="lg" variant="outline" className="border-2">
+                <Mail className="mr-2 h-4 w-4" />
+                Contact Sales
+              </Button>
+            </Link>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Or email us at{" "}
+              <a href="mailto:enterprise@dispatchly.co" className="text-primary hover:underline">
+                enterprise@dispatchly.co
+              </a>
+            </p>
           </div>
         </div>
       </section>
 
       {/* FAQ Section */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30 border-y">
+      <section className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <Badge variant="outline" className="mb-4">FAQ</Badge>
@@ -329,6 +329,7 @@ export default function PricingPage() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="mailto:support@dispatchly.co">
                   <Button size="lg" variant="secondary">
+                    <Mail className="mr-2 h-4 w-4" />
                     Contact Support
                   </Button>
                 </Link>
@@ -350,6 +351,14 @@ export default function PricingPage() {
           <p className="text-sm text-muted-foreground">
             © 2026 Dispatchly. All rights reserved.
           </p>
+          <div className="flex gap-4">
+            <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Home
+            </Link>
+            <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Sign In
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

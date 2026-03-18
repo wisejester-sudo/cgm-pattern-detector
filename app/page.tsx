@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -14,7 +16,10 @@ import {
   Smartphone,
   Workflow,
   Bell,
-  Star
+  Star,
+  Mail,
+  Phone,
+  MapPin
 } from "lucide-react"
 
 export default function LandingPage() {
@@ -85,9 +90,9 @@ export default function LandingPage() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link href="/login">
+              <Link href="/pricing">
                 <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2">
-                  Sign In
+                  View Pricing
                 </Button>
               </Link>
             </div>
@@ -348,13 +353,13 @@ export default function LandingPage() {
       {/* Pricing Teaser */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-muted/30 to-background">
         <div className="max-w-4xl mx-auto text-center">
-          <Badge variant="outline" className="mb-4">Pricing</Badge>
-          <h2 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
+          <Badge variant="outline" className="mb-4">Simple Pricing</Badge>
+          <h2 className="text-4xl font-bold mb-4">One Plan, Everything You Need</h2>
           <p className="text-lg text-muted-foreground mb-8">
             Start free for 14 days. No credit card required.
           </p>
           
-          <div className="inline-flex items-center gap-8 p-8 rounded-3xl bg-card border shadow-xl">
+          <div className="inline-flex flex-col sm:flex-row items-center gap-8 p-8 rounded-3xl bg-card border shadow-xl">
             <div className="text-left">
               <div className="text-sm text-muted-foreground mb-1">Starter Plan</div>
               <div className="flex items-baseline gap-1">
@@ -362,11 +367,11 @@ export default function LandingPage() {
                 <span className="text-muted-foreground">/month</span>
               </div>
             </div>
-            <div className="h-12 w-px bg-border" />
+            <div className="hidden sm:block h-12 w-px bg-border" />
             <div className="text-left">
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <span className="text-sm">Up to 3 technicians</span>
+                <span className="text-sm">Up to 5 technicians</span>
               </div>
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -379,11 +384,16 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="mt-8">
-            <Link href="/pricing">
-              <Button size="lg" variant="outline" className="border-2">
-                View Full Pricing
+          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/signup">
+              <Button size="lg" className="shadow-lg shadow-primary/25">
+                Start Free Trial
                 <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href="/pricing">
+              <Button size="lg" variant="outline">
+                View Full Details
               </Button>
             </Link>
           </div>
