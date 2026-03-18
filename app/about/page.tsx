@@ -151,34 +151,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Team */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <Badge variant="outline" className="mb-4">Our Team</Badge>
-            <h2 className="text-3xl font-bold mb-4">Meet the people behind Dispatchly</h2>
-            <p className="text-muted-foreground">
-              A small but mighty team passionate about helping field service businesses succeed.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { name: "Mike Johnson", role: "Founder & CEO", bio: "Former HVAC technician turned software builder." },
-              { name: "Sarah Chen", role: "Head of Product", bio: "10+ years building tools people love to use." },
-              { name: "David Park", role: "Lead Engineer", bio: "Full-stack developer obsessed with performance." },
-            ].map((member, i) => (
-              <div key={i} className="bg-card border rounded-2xl p-6 text-center shadow-sm">
-                <div className="w-20 h-20 bg-muted rounded-full mx-auto mb-4" />
-                <h3 className="text-lg font-semibold">{member.name}</h3>
-                <p className="text-sm text-primary mb-2">{member.role}</p>
-                <p className="text-sm text-muted-foreground">{member.bio}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">

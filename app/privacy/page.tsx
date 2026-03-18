@@ -127,7 +127,7 @@ export default function PrivacyPage() {
               If you have questions about this Privacy Policy, please contact us at:
             </p>
             <p className="text-muted-foreground">
-              Email: <a href="mailto:privacy@dispatchly.co" className="text-primary hover:underline">privacy@dispatchly.co</a>
+              Email: <a href="mailto:privacy@getdispatchly.co" className="text-primary hover:underline">privacy@getdispatchly.co</a>
             </p>
           </div>
         </div>

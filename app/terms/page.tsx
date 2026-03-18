@@ -146,7 +146,7 @@ export default function TermsPage() {
               For questions about these Terms of Service, please contact us at:
             </p>
             <p className="text-muted-foreground">
-              Email: <a href="mailto:legal@dispatchly.co" className="text-primary hover:underline">legal@dispatchly.co</a>
+              Email: <a href="mailto:legal@getdispatchly.co" className="text-primary hover:underline">legal@getdispatchly.co</a>
             </p>
             <p className="text-muted-foreground mt-2">
               Address: Dispatchly Inc., 123 Tech Street, Suite 100, Wilmington, DE 19801

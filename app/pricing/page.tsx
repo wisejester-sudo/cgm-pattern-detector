@@ -274,7 +274,7 @@ export default function PricingPage() {
           </div>
 
           <div className="text-center">
-            <Link href="mailto:enterprise@dispatchly.co">
+            <Link href="mailto:enterprise@getdispatchly.co">
               <Button size="lg" variant="outline" className="border-2">
                 <Mail className="mr-2 h-4 w-4" />
                 Contact Sales
@@ -282,8 +282,8 @@ export default function PricingPage() {
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">
               Or email us at{" "}
-              <a href="mailto:enterprise@dispatchly.co" className="text-primary hover:underline">
-                enterprise@dispatchly.co
+              <a href="mailto:enterprise@getdispatchly.co" className="text-primary hover:underline">
+                enterprise@getdispatchly.co
               </a>
             </p>
           </div>
@@ -324,7 +324,7 @@ export default function PricingPage() {
                 Our team is here to help. Reach out and we'll get back to you within 24 hours.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="mailto:support@dispatchly.co">
+                <Link href="mailto:support@getdispatchly.co">
                   <Button size="lg" variant="secondary">
                     <Mail className="mr-2 h-4 w-4" />
                     Contact Support

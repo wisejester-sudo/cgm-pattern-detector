@@ -410,7 +410,7 @@ export default function LandingPage() {
             <p className="text-muted-foreground mb-4">
               Need more than 5 technicians? Contact us for enterprise pricing.
             </p>
-            <Link href="mailto:enterprise@dispatchly.co">
+            <Link href="mailto:enterprise@getdispatchly.co">
               <Button variant="outline">
                 <Mail className="mr-2 h-4 w-4" />
                 Contact Sales

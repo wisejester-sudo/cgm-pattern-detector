@@ -100,8 +100,8 @@ export default function ContactPage() {
                     <p className="text-sm text-muted-foreground mb-1">
                       For general inquiries and support
                     </p>
-                    <a href="mailto:support@dispatchly.co" className="text-primary hover:underline">
-                      support@dispatchly.co
+                    <a href="mailto:support@getdispatchly.co" className="text-primary hover:underline">
+                      support@getdispatchly.co
                     </a>
                   </div>
                 </div>
@@ -139,8 +139,8 @@ export default function ContactPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Contact our sales team for custom pricing and dedicated support options.
                 </p>
-                <a href="mailto:enterprise@dispatchly.co" className="text-primary font-medium hover:underline">
-                  enterprise@dispatchly.co
+                <a href="mailto:enterprise@getdispatchly.co" className="text-primary font-medium hover:underline">
+                  enterprise@getdispatchly.co
                 </a>
               </div>
             </div>
@@ -265,7 +265,7 @@ export default function ContactPage() {
               },
               {
                 question: "Can I schedule a demo?",
-                answer: "Absolutely! Contact our sales team at enterprise@dispatchly.co to schedule a personalized demo of Dispatchly for your business."
+                answer: "Absolutely! Contact our sales team at enterprise@getdispatchly.co to schedule a personalized demo of Dispatchly for your business."
               },
             ].map((faq, i) => (
               <Card key={i} className="border-border/50">
