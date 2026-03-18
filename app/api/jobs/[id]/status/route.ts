@@ -123,7 +123,7 @@ export async function PATCH(
           .single()
         
         if (template && settings) {
-          const photoLink = generatePhotoLink(id)
+          const photoLink = generatePhotoLink('job-photos', id)
           const techName = jobDetails.technicians?.name || 'Your technician'
           
           const messageBody = template.template_body

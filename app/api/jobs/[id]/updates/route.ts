@@ -90,7 +90,7 @@ export async function POST(
     if (send_sms && job.customer_phone) {
       // Generate public viewer token
       const token = randomBytes(16).toString("hex")
-      const photoLink = generatePhotoLink(token)
+      const photoLink = generatePhotoLink(token, id)
 
       // Store the public token
       await supabase
