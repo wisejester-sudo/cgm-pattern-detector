@@ -139,3 +139,74 @@ export async function sendSMS(
     return false
   }
 }
+
+/**
+ * Generate a magic link for photo access
+ * @param photoId - The photo ID
+ * @param jobId - The job ID
+ * @param expiresInHours - How long the link is valid (default: 24 hours)
+ * @returns string - The magic link URL
+ */
+export function generatePhotoLink(
+  photoId: string,
+  jobId: string,
+  expiresInHours: number = 24
+): string {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://getdispatchly.co"
+  
+  // Generate a simple token (in production, use a proper JWT or signed URL)
+  const timestamp = Date.now()
+  const expiry = timestamp + (expiresInHours * 60 * 60 * 1000)
+  const data = `${photoId}:${jobId}:${expiry}`
+  
+  // Create a simple hash (in production, use a proper HMAC with secret)
+  const hash = crypto
+    .createHash("sha256")
+    .update(data + (process.env.PHOTO_LINK_SECRET || "default-secret"))
+    .digest("hex")
+    .slice(0, 16)
+  
+  // Build the URL
+  const params = new URLSearchParams({
+    photo: photoId,
+    job: jobId,
+    expires: expiry.toString(),
+    token: hash,
+  })
+  
+  return `${baseUrl}/photos/view?${params.toString()}`
+}
+
+/**
+ * Generate a magic link for technician job access
+ * @param jobId - The job ID
+ * @param technicianId - The technician ID
+ * @param expiresInHours - How long the link is valid (default: 72 hours)
+ * @returns string - The magic link URL
+ */
+export function generateTechnicianJobLink(
+  jobId: string,
+  technicianId: string,
+  expiresInHours: number = 72
+): string {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://getdispatchly.co"
+  
+  const timestamp = Date.now()
+  const expiry = timestamp + (expiresInHours * 60 * 60 * 1000)
+  const data = `${jobId}:${technicianId}:${expiry}`
+  
+  const hash = crypto
+    .createHash("sha256")
+    .update(data + (process.env.MAGIC_LINK_SECRET || "default-secret"))
+    .digest("hex")
+    .slice(0, 16)
+  
+  const params = new URLSearchParams({
+    job: jobId,
+    tech: technicianId,
+    expires: expiry.toString(),
+    token: hash,
+  })
+  
+  return `${baseUrl}/t/${jobId}?${params.toString()}`
+}
