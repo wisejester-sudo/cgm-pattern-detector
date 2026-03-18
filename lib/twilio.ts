@@ -95,28 +95,69 @@ interface SMSResult {
   error?: string
 }
 
+interface SendSMSOptions {
+  to: string
+  body: string
+  from?: string
+  mediaUrls?: string[]
+}
+
 /**
  * Send SMS via Twilio
- * @param to - Recipient phone number
- * @param body - Message body
- * @param from - Sender phone number (optional, uses env var)
+ * @param options - SendSMSOptions object or separate arguments
  * @returns Promise<SMSResult> - Result with success status and messageId
  */
+export async function sendSMS(options: SendSMSOptions): Promise<SMSResult>
+export async function sendSMS(to: string, body: string, from?: string): Promise<SMSResult>
 export async function sendSMS(
-  to: string,
-  body: string,
-  from?: string
+  arg1: string | SendSMSOptions,
+  arg2?: string,
+  arg3?: string
 ): Promise<SMSResult> {
   const accountSid = process.env.TWILIO_ACCOUNT_SID
   const authToken = process.env.TWILIO_AUTH_TOKEN
-  const fromNumber = from || process.env.TWILIO_PHONE_NUMBER
+  const fromNumber = process.env.TWILIO_PHONE_NUMBER
 
   if (!accountSid || !authToken || !fromNumber) {
     console.error("[Twilio] Missing configuration")
     return { success: false, error: "Missing Twilio configuration" }
   }
 
+  // Handle both object and separate argument formats
+  let to: string
+  let body: string
+  let from: string | undefined
+  let mediaUrls: string[] | undefined
+
+  if (typeof arg1 === 'object') {
+    // Object format: { to, body, from?, mediaUrls? }
+    to = arg1.to
+    body = arg1.body
+    from = arg1.from
+    mediaUrls = arg1.mediaUrls
+  } else {
+    // Separate arguments: (to, body, from?)
+    to = arg1
+    body = arg2 || ''
+    from = arg3
+  }
+
+  const senderNumber = from || fromNumber
+
   try {
+    const params = new URLSearchParams({
+      To: formatPhoneNumber(to),
+      From: senderNumber,
+      Body: body,
+    })
+
+    // Add media URLs if provided (for MMS)
+    if (mediaUrls && mediaUrls.length > 0) {
+      mediaUrls.forEach((url, index) => {
+        params.append(`MediaUrl`, url)
+      })
+    }
+
     const response = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
       {
@@ -125,11 +166,7 @@ export async function sendSMS(
           "Authorization": "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64"),
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: new URLSearchParams({
-          To: formatPhoneNumber(to),
-          From: fromNumber,
-          Body: body,
-        }),
+        body: params,
       }
     )
 
