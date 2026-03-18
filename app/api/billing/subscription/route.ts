@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
         status: company.subscription_status || "trialing",
         planId: company.plan_id || "starter",
         trialEndsAt: company.trial_ends_at,
-        trialDaysRemaining: trialDaysRemaining > 0 ? trialDaysRemaining : 0,
+        trialDaysRemaining: trialDaysRemaining && trialDaysRemaining > 0 ? trialDaysRemaining : 0,
         isTrialing: company.subscription_status === "trialing",
         isActive: ["trialing", "active"].includes(company.subscription_status || ""),
       },
