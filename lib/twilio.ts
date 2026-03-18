@@ -1,143 +1,11 @@
-import twilio from "twilio"
-
-export interface SendSMSOptions {
-  to: string
-  body: string
-  mediaUrls?: string[]
-}
-
-export interface SMSResult {
-  success: boolean
-  messageId?: string
-  error?: string
-  status?: string
-}
-
-/**
- * Send an SMS message via Twilio
- */
-export async function sendSMS({ to, body, mediaUrls }: SendSMSOptions): Promise<SMSResult> {
-  // Get credentials inside function to ensure they're loaded
-  const accountSid = process.env.TWILIO_ACCOUNT_SID
-  const authToken = process.env.TWILIO_AUTH_TOKEN
-  const fromNumber = process.env.TWILIO_PHONE_NUMBER
-
-  console.log("[Twilio] Environment check:", {
-    hasAccountSid: !!accountSid,
-    hasAuthToken: !!authToken,
-    hasFromNumber: !!fromNumber,
-    accountSidPrefix: accountSid?.substring(0, 4),
-    fromNumber,
-  })
-
-  // Check if credentials look valid (real Twilio SIDs start with "AC")
-  const hasValidCredentials = accountSid?.startsWith("AC") && authToken && authToken.length > 10
-
-  if (!hasValidCredentials || !fromNumber) {
-    console.error("[Twilio] Missing or invalid Twilio credentials:", {
-      hasValidCredentials,
-      fromNumber,
-      accountSidPrefix: accountSid?.substring(0, 4),
-    })
-    return { success: false, error: "Twilio not configured - check env vars" }
-  }
-
-  // Initialize Twilio client
-  const client = twilio(accountSid, authToken)
-
-  try {
-    // Normalize phone number (remove non-digits, add +1 if needed)
-    const normalizedTo = normalizePhoneNumber(to)
-    
-    console.log("[Twilio] Sending SMS:", {
-      to: normalizedTo,
-      from: fromNumber,
-      bodyLength: body.length,
-    })
-    
-    const messageOptions: {
-      to: string
-      from: string
-      body: string
-      mediaUrl?: string[]
-    } = {
-      to: normalizedTo,
-      from: fromNumber,
-      body,
-    }
-
-    // Add media URLs if provided (for MMS with photos)
-    if (mediaUrls && mediaUrls.length > 0) {
-      messageOptions.mediaUrl = mediaUrls
-    }
-
-    const message = await client.messages.create(messageOptions)
-    
-    console.log("[Twilio] SMS API response:", {
-      messageId: message.sid,
-      status: message.status,
-      to: message.to,
-      from: message.from,
-      errorCode: message.errorCode,
-      errorMessage: message.errorMessage,
-      price: message.price,
-    })
-    
-    // Check if message was actually accepted
-    const isAccepted = ['queued', 'sent', 'delivered', 'accepted'].includes(message.status)
-    
-    if (!isAccepted) {
-      return {
-        success: false,
-        error: `Twilio status: ${message.status}. Error: ${message.errorMessage || 'Unknown'}`,
-      }
-    }
-    
-    return {
-      success: true,
-      messageId: message.sid,
-      status: message.status,
-    }
-  } catch (error) {
-    console.error("[Twilio] Error sending SMS:", error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    }
-  }
-}
-
-/**
- * Normalize phone number to E.164 format
- */
-function normalizePhoneNumber(phone: string): string {
-  // Remove all non-digit characters
-  const digits = phone.replace(/\D/g, "")
-  
-  // If 10 digits, assume US number and add +1
-  if (digits.length === 10) {
-    return `+1${digits}`
-  }
-  
-  // If 11 digits starting with 1, add +
-  if (digits.length === 11 && digits.startsWith("1")) {
-    return `+${digits}`
-  }
-  
-  // Otherwise return as-is with + prefix
-  return digits.startsWith("+") ? phone : `+${digits}`
-}
-
-/**
- * Generate a public photo viewer link
- */
-export function generatePhotoLink(token: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-  return `${baseUrl}/j/${token}`
-}
+import crypto from "crypto"
 
 /**
  * Validate Twilio webhook signature
+ * @param signature - X-Twilio-Signature header
+ * @param url - Request URL
+ * @param params - Request body params
+ * @returns boolean - Whether signature is valid
  */
 export function validateTwilioSignature(
   signature: string,
@@ -145,8 +13,129 @@ export function validateTwilioSignature(
   params: Record<string, string>
 ): boolean {
   const authToken = process.env.TWILIO_AUTH_TOKEN
-  if (!authToken || authToken.length < 10) return false
   
-  const twilioLib = require("twilio")
-  return twilioLib.validateRequest(authToken, signature, url, params)
+  if (!authToken) {
+    console.warn("[Twilio] No auth token configured, skipping signature validation")
+    return true // Allow in development
+  }
+
+  try {
+    // Sort params alphabetically and create string
+    const sortedKeys = Object.keys(params).sort()
+    let data = url
+    
+    for (const key of sortedKeys) {
+      data += key
+      data += params[key]
+    }
+
+    // Calculate expected signature
+    const expectedSignature = crypto
+      .createHmac("sha1", authToken)
+      .update(Buffer.from(data, "utf-8"))
+      .digest("base64")
+
+    // Compare signatures (constant time comparison)
+    const signatureBuffer = Buffer.from(signature, "base64")
+    const expectedBuffer = Buffer.from(expectedSignature, "base64")
+    
+    if (signatureBuffer.length !== expectedBuffer.length) {
+      return false
+    }
+
+    let result = 0
+    for (let i = 0; i < signatureBuffer.length; i++) {
+      result |= signatureBuffer[i] ^ expectedBuffer[i]
+    }
+
+    return result === 0
+  } catch (error) {
+    console.error("[Twilio] Error validating signature:", error)
+    return false
+  }
+}
+
+/**
+ * Format phone number to E.164 format
+ * @param phone - Phone number in any format
+ * @returns string - Formatted phone number
+ */
+export function formatPhoneNumber(phone: string): string {
+  // Remove all non-numeric characters
+  const cleaned = phone.replace(/\D/g, "")
+  
+  // If starts with 1, return as is
+  if (cleaned.startsWith("1") && cleaned.length === 11) {
+    return `+${cleaned}`
+  }
+  
+  // Otherwise assume US number and add +1
+  if (cleaned.length === 10) {
+    return `+1${cleaned}`
+  }
+  
+  // Return original if doesn't match expected patterns
+  return phone
+}
+
+/**
+ * Normalize phone number for lookup
+ * @param phone - Phone number in any format
+ * @returns string - Normalized phone number (last 10 digits)
+ */
+export function normalizePhoneNumber(phone: string): string {
+  const cleaned = phone.replace(/\D/g, "")
+  // Return last 10 digits for US numbers
+  return cleaned.slice(-10)
+}
+
+/**
+ * Send SMS via Twilio
+ * @param to - Recipient phone number
+ * @param body - Message body
+ * @param from - Sender phone number (optional, uses env var)
+ * @returns Promise<boolean> - Whether message was sent successfully
+ */
+export async function sendSMS(
+  to: string,
+  body: string,
+  from?: string
+): Promise<boolean> {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID
+  const authToken = process.env.TWILIO_AUTH_TOKEN
+  const fromNumber = from || process.env.TWILIO_PHONE_NUMBER
+
+  if (!accountSid || !authToken || !fromNumber) {
+    console.error("[Twilio] Missing configuration")
+    return false
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64"),
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          To: formatPhoneNumber(to),
+          From: fromNumber,
+          Body: body,
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.text()
+      console.error("[Twilio] Error sending SMS:", error)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error("[Twilio] Exception sending SMS:", error)
+    return false
+  }
 }

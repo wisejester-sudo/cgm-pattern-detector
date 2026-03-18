@@ -159,24 +159,36 @@ export interface Database {
           id: string
           created_at: string
           job_id: string | null
+          technician_id: string | null
           direction: 'inbound' | 'outbound'
           body: string
           from_number: string
           to_number: string
           twilio_sid: string | null
+          parsed_keyword: string | null
+          parsed_result: string | null
+          message_type: 'general' | 'status_update' | 'status_notification' | 'note' | 'approval'
         }
         Insert: {
           id?: string
           created_at?: string
           job_id?: string | null
+          technician_id?: string | null
           direction: 'inbound' | 'outbound'
           body: string
           from_number: string
           to_number: string
           twilio_sid?: string | null
+          parsed_keyword?: string | null
+          parsed_result?: string | null
+          message_type?: 'general' | 'status_update' | 'status_notification' | 'note' | 'approval'
         }
         Update: {
           id?: string
+          technician_id?: string | null
+          parsed_keyword?: string | null
+          parsed_result?: string | null
+          message_type?: 'general' | 'status_update' | 'status_notification' | 'note' | 'approval'
           created_at?: string
           job_id?: string | null
           direction?: 'inbound' | 'outbound'
