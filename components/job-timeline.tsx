@@ -268,13 +268,13 @@ export function JobTimeline({ jobId }: JobTimelineProps) {
                         )}
                       </div>
                       <time className="text-sm text-muted-foreground">
-                        {formatDistanceToNow(new Date(item.data.date), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(item.date), { addSuffix: true })}
                       </time>
                     </div>
 
                     {/* Time detail */}
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(item.data.date), "MMM d, yyyy 'at' h:mm a")}
+                      {format(new Date(item.date), "MMM d, yyyy 'at' h:mm a")}
                     </p>
 
                     {/* Notes */}
@@ -310,12 +310,12 @@ export function JobTimeline({ jobId }: JobTimelineProps) {
                         </Badge>
                       </div>
                       <time className="text-sm text-muted-foreground">
-                        {formatDistanceToNow(new Date(item.data.date), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(item.date), { addSuffix: true })}
                       </time>
                     </div>
 
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(item.data.date), "MMM d, yyyy 'at' h:mm a")}
+                      {format(new Date(item.date), "MMM d, yyyy 'at' h:mm a")}
                     </p>
 
                     <div className="mt-2 p-3 bg-blue-50 rounded-lg text-sm">
