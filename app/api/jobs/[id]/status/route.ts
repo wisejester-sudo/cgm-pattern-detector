@@ -136,10 +136,7 @@ export async function PATCH(
             .replace(/\{eta\}/g, new Date(jobDetails.scheduled_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
             .replace(/\{link\}/g, photoLink)
           
-          smsResult = await sendSMS({
-            to: jobDetails.customer_phone,
-            body: messageBody,
-          })
+          smsResult = await sendSMS(jobDetails.customer_phone, messageBody)
           
           // Log SMS
           await supabase.from('sms_logs').insert({

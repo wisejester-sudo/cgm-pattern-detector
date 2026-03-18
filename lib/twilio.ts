@@ -89,25 +89,31 @@ export function normalizePhoneNumber(phone: string): string {
   return cleaned.slice(-10)
 }
 
+interface SMSResult {
+  success: boolean
+  messageId?: string
+  error?: string
+}
+
 /**
  * Send SMS via Twilio
  * @param to - Recipient phone number
  * @param body - Message body
  * @param from - Sender phone number (optional, uses env var)
- * @returns Promise<boolean> - Whether message was sent successfully
+ * @returns Promise<SMSResult> - Result with success status and messageId
  */
 export async function sendSMS(
   to: string,
   body: string,
   from?: string
-): Promise<boolean> {
+): Promise<SMSResult> {
   const accountSid = process.env.TWILIO_ACCOUNT_SID
   const authToken = process.env.TWILIO_AUTH_TOKEN
   const fromNumber = from || process.env.TWILIO_PHONE_NUMBER
 
   if (!accountSid || !authToken || !fromNumber) {
     console.error("[Twilio] Missing configuration")
-    return false
+    return { success: false, error: "Missing Twilio configuration" }
   }
 
   try {
@@ -128,15 +134,20 @@ export async function sendSMS(
     )
 
     if (!response.ok) {
-      const error = await response.text()
-      console.error("[Twilio] Error sending SMS:", error)
-      return false
+      const errorText = await response.text()
+      console.error("[Twilio] Error sending SMS:", errorText)
+      return { success: false, error: errorText }
     }
 
-    return true
+    // Parse the response to get the message SID
+    const responseData = await response.json()
+    return { 
+      success: true, 
+      messageId: responseData.sid 
+    }
   } catch (error) {
     console.error("[Twilio] Exception sending SMS:", error)
-    return false
+    return { success: false, error: String(error) }
   }
 }
 
