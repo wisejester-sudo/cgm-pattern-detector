@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useCallback } from "react"
+import * as Sentry from "@sentry/nextjs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertTriangle, RefreshCw, Home } from "lucide-react"
@@ -14,7 +15,11 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
+    // Log error to console
     console.error("[Dispatchly Error]", error)
+    
+    // Report error to Sentry
+    Sentry.captureException(error)
   }, [error])
 
   const handleReset = useCallback(() => {
