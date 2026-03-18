@@ -71,26 +71,26 @@ export default function HowItWorksPage() {
             From job creation to completion, every step explained with screenshots.
           </p>
 
-          {/* Workflow Toggle */}
-          <Tabs defaultValue="owner" className="w-full max-w-3xl mx-auto mt-12">
-            <TabsList className="grid w-full grid-cols-2 h-14">
-              <TabsTrigger value="owner" className="text-base">
-                <Briefcase className="w-4 h-4 mr-2" />
-                For Business Owners
-              </TabsTrigger>
-              <TabsTrigger value="technician" className="text-base">
-                <User className="w-4 h-4 mr-2" />
-                For Technicians
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
       </section>
 
-      {/* Owner Workflow */}
+      {/* Workflow Tabs */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-muted/30">
         <div className="max-w-7xl mx-auto">
           <Tabs defaultValue="owner" className="w-full">
+            <div className="flex justify-center mb-12">
+              <TabsList className="grid w-full max-w-md grid-cols-2 h-14">
+                <TabsTrigger value="owner" className="text-base">
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  For Business Owners
+                </TabsTrigger>
+                <TabsTrigger value="technician" className="text-base">
+                  <User className="w-4 h-4 mr-2" />
+                  For Technicians
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
             <TabsContent value="owner" className="mt-0">
               <div className="space-y-24">
                 {/* Step 1 */}
