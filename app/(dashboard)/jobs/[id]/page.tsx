@@ -41,6 +41,7 @@ import { useStore, getTechnicianById, getPhotosByJobId, renderTemplate } from "@
 import type { JobStatus } from "@/lib/types"
 import { statusConfig } from "@/components/job-card"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
+import { JobTimeline } from "@/components/job-timeline"
 
 export default function JobDetailPage({
   params,
@@ -420,6 +421,9 @@ export default function JobDetailPage({
           </CardContent>
         </Card>
       </div>
+
+      {/* Job Timeline */}
+      <JobTimeline jobId={id} />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
