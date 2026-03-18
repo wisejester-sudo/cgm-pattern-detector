@@ -29,7 +29,6 @@ const STATUS_KEYWORDS: Record<string, string> = {
   "DONE": "complete",
   "FINISHED": "complete",
   "FIN": "complete",
-  "COMPLETE": "complete",
   "WRAP": "complete",
 }
 
