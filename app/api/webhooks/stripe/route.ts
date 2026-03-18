@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       }
 
       case "invoice.paid": {
-        const invoice = event.data.object as Stripe.Invoice
+        const invoice: any = event.data.object as Stripe.Invoice
         
         // Record payment
         if (invoice.customer && invoice.amount_due > 0 && supabase) {
