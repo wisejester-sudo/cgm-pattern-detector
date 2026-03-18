@@ -1,0 +1,178 @@
+import { NextRequest, NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase/server"
+import Stripe from "stripe"
+import { headers } from "next/headers"
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+  apiVersion: "2024-12-18.acacia",
+})
+
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+// POST /api/webhooks/stripe - Handle Stripe webhooks
+export async function POST(request: NextRequest) {
+  try {
+    const payload = await request.text()
+    const signature = headers().get("stripe-signature")
+
+    if (!signature || !webhookSecret) {
+      return NextResponse.json({ error: "Missing signature" }, { status: 400 })
+    }
+
+    let event: Stripe.Event
+
+    try {
+      event = stripe.webhooks.constructEvent(payload, signature, webhookSecret)
+    } catch (err: any) {
+      console.error("[Stripe Webhook] Invalid signature:", err.message)
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
+    }
+
+    const supabase = await createClient()
+
+    // Handle different event types
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session
+        
+        // Update subscription in database
+        const companyId = session.metadata?.company_id
+        const planId = session.metadata?.plan_id
+
+        if (companyId && session.subscription) {
+          const subscription = await stripe.subscriptions.retrieve(
+            session.subscription as string
+          )
+
+          await supabase.from("subscriptions").upsert({
+            company_id: companyId,
+            stripe_customer_id: session.customer as string,
+            stripe_subscription_id: subscription.id,
+            stripe_price_id: subscription.items.data[0]?.price.id,
+            status: subscription.status,
+            current_period_start: new Date(subscription.current_period_start * 1000),
+            current_period_end: new Date(subscription.current_period_end * 1000),
+            trial_start: subscription.trial_start 
+              ? new Date(subscription.trial_start * 1000) 
+              : null,
+            trial_end: subscription.trial_end 
+              ? new Date(subscription.trial_end * 1000) 
+              : null,
+            plan_name: planId,
+          }, {
+            onConflict: "company_id"
+          })
+
+          // Update company subscription status
+          await supabase
+            .from("companies")
+            .update({
+              subscription_status: subscription.status,
+              plan_id: planId,
+              stripe_customer_id: session.customer as string,
+              trial_ends_at: subscription.trial_end 
+                ? new Date(subscription.trial_end * 1000) 
+                : null,
+            })
+            .eq("id", companyId)
+        }
+        break
+      }
+
+      case "invoice.paid": {
+        const invoice = event.data.object as Stripe.Invoice
+        
+        // Record payment
+        if (invoice.customer && invoice.amount_due > 0) {
+          const { data: subscription } = await supabase
+            .from("subscriptions")
+            .select("company_id")
+            .eq("stripe_customer_id", invoice.customer as string)
+            .single()
+
+          if (subscription) {
+            await supabase.from("payments").insert({
+              company_id: subscription.company_id,
+              stripe_invoice_id: invoice.id,
+              stripe_payment_intent_id: invoice.payment_intent as string,
+              amount: invoice.amount_due,
+              currency: invoice.currency,
+              status: "succeeded",
+              billing_reason: invoice.billing_reason,
+              description: invoice.description,
+              paid_at: new Date(),
+            })
+          }
+        }
+        break
+      }
+
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice
+        
+        // Update subscription status
+        await supabase
+          .from("subscriptions")
+          .update({ status: "past_due" })
+          .eq("stripe_customer_id", invoice.customer as string)
+
+        break
+      }
+
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as Stripe.Subscription
+        
+        // Update subscription status
+        await supabase
+          .from("subscriptions")
+          .update({
+            status: subscription.status,
+            current_period_start: new Date(subscription.current_period_start * 1000),
+            current_period_end: new Date(subscription.current_period_end * 1000),
+            cancel_at_period_end: subscription.cancel_at_period_end,
+          })
+          .eq("stripe_subscription_id", subscription.id)
+
+        // Update company status
+        await supabase
+          .from("companies")
+          .update({ subscription_status: subscription.status })
+          .eq("stripe_customer_id", subscription.customer as string)
+
+        break
+      }
+
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription
+        
+        // Mark subscription as canceled
+        await supabase
+          .from("subscriptions")
+          .update({ 
+            status: "canceled",
+            canceled_at: new Date(),
+          })
+          .eq("stripe_subscription_id", subscription.id)
+
+        // Update company status
+        await supabase
+          .from("companies")
+          .update({ subscription_status: "canceled" })
+          .eq("stripe_customer_id", subscription.customer as string)
+
+        break
+      }
+
+      default:
+        console.log(`[Stripe Webhook] Unhandled event type: ${event.type}`)
+    }
+
+    return NextResponse.json({ received: true })
+  } catch (error: any) {
+    console.error("[Stripe Webhook] Error:", error)
+    return NextResponse.json(
+      { error: error.message || "Webhook handler failed" },
+      { status: 500 }
+    )
+  }
+}
