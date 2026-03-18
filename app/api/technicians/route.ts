@@ -82,6 +82,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check technician limit (10 max, including deactivated)
+    const { count, error: countError } = await supabase
+      .from("technicians")
+      .select("*", { count: "exact", head: true })
+      .eq("admin_id", user.id)
+
+    if (countError) {
+      console.error("[API] Error counting technicians:", countError)
+      return NextResponse.json(
+        { error: "Failed to verify technician limit" },
+        { status: 500 }
+      )
+    }
+
+    if (count && count >= 10) {
+      return NextResponse.json(
+        { error: "Technician limit reached. You can have up to 10 technicians total (including deactivated). Contact sales@getdispatchly.co for enterprise options." },
+        { status: 403 }
+      )
+    }
+
     const { data: technician, error } = await supabase
       .from("technicians")
       .insert({

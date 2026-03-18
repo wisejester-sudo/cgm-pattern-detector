@@ -22,7 +22,7 @@ import {
 import { useStore } from "@/lib/store"
 
 const features = [
-  "Up to 5 technicians",
+  "Up to 10 technicians",
   "Unlimited jobs",
   "Unlimited SMS messaging",
   "Photo uploads & storage",
@@ -40,8 +40,8 @@ const faqs = [
     answer: "After your trial ends, you'll be prompted to enter payment details to continue using Dispatchly. If you choose not to continue, your account will be paused but your data will be saved for 30 days."
   },
   {
-    question: "Can I add more than 5 technicians?",
-    answer: "Our standard plan includes up to 5 technicians. If you need more, please contact us for a custom enterprise plan tailored to your business needs."
+    question: "Can I add more than 10 technicians?",
+    answer: "Our standard plan includes up to 10 technicians. If you need more, please contact us for a custom enterprise plan tailored to your business needs."
   },
   {
     question: "Is there a contract or commitment?",
@@ -151,7 +151,7 @@ export default function PricingPage() {
             </span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Start free for 14 days. No credit card required. Simple $39/month for up to 5 technicians.
+            Start free for 14 days. No credit card required. Simple $39/month for up to 10 technicians.
           </p>
         </div>
       </section>
@@ -184,7 +184,7 @@ export default function PricingPage() {
 
                 <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-xl mb-8">
                   <Users className="h-5 w-5 text-primary" />
-                  <span className="font-medium">Up to 5 technicians included</span>
+                  <span className="font-medium">Up to 10 technicians included</span>
                 </div>
 
                 <Button

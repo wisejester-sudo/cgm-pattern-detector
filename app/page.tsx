@@ -387,7 +387,7 @@ export default function LandingPage() {
                 <p className="font-semibold mb-4">Everything included:</p>
                 <ul className="space-y-3">
                   {[
-                    "Up to 5 technicians",
+                    "Up to 10 technicians",
                     "Unlimited jobs",
                     "Unlimited SMS messaging",
                     "Photo uploads & storage",
@@ -408,7 +408,7 @@ export default function LandingPage() {
 
           <div className="mt-12 text-center">
             <p className="text-muted-foreground mb-4">
-              Need more than 5 technicians? Contact us for enterprise pricing.
+              Need more than 10 technicians? Contact us for enterprise pricing.
             </p>
             <Link href="mailto:enterprise@getdispatchly.co">
               <Button variant="outline">
