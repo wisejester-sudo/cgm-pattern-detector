@@ -2,21 +2,21 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
-import { Zap, Eye, EyeOff, AlertCircle } from "lucide-react"
+import { Zap, Eye, EyeOff, AlertCircle, ArrowRight } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { createBrowserClient } from "@supabase/ssr"
 
-// Create Supabase client using environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY')
+  throw new Error('Missing required environment variables')
 }
 
 const supabaseClient = createBrowserClient(supabaseUrl, supabaseAnonKey)
@@ -31,7 +31,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
 
-  // Clear old store data on login page visit
   useEffect(() => {
     resetStore()
   }, [resetStore])
@@ -42,16 +41,12 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      // Use hardcoded Supabase client directly
-      const supabase = supabaseClient
-
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
+      const { data, error: authError } = await supabaseClient.auth.signInWithPassword({
         email,
         password,
       })
 
       if (authError) {
-        console.error("[v0] Login auth error:", authError)
         setError(authError.message || "Invalid email or password")
         setLoading(false)
         return
@@ -63,11 +58,9 @@ export default function LoginPage() {
         return
       }
 
-      // Navigate to dashboard — session cookie is now set by the browser client
       router.push("/")
       router.refresh()
     } catch (error) {
-      console.error("[v0] Login error:", error)
       const errorMessage = error instanceof Error ? error.message : "An error occurred. Please try again."
       setError(errorMessage)
       setLoading(false)
@@ -75,105 +68,122 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-sidebar flex flex-col items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex items-center justify-center w-12 h-12 rounded-lg bg-primary">
-            <Zap className="h-7 w-7 text-primary-foreground" />
+    <div className="relative min-h-screen flex flex-col items-center justify-center p-4">
+      {/* Background */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]" />
+        <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[400px] w-[400px] rounded-full bg-primary/20 opacity-20 blur-[100px]" />
+        <div className="absolute bottom-0 right-0 -z-10 h-[300px] w-[300px] rounded-full bg-primary/10 opacity-20 blur-[100px]" />
+      </div>
+
+      {/* Logo */}
+      <Link href="/" className="mb-8 flex items-center gap-2">
+        <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg shadow-primary/25">
+          <Zap className="w-6 h-6 text-primary-foreground" />
+        </div>
+        <span className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+          Dispatchly
+        </span>
+      </Link>
+
+      <Card className="w-full max-w-md shadow-xl border-border/50">
+        <CardContent className="p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold mb-2">Welcome back</h1>
+            <p className="text-muted-foreground text-sm">
+              Sign in to your admin account to manage your business
+            </p>
           </div>
-          <CardTitle className="text-2xl">Welcome to Dispatchly</CardTitle>
-          <CardDescription>
-            Sign in to your admin account to manage your business
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+            <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleLogin}>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="email">Email Address</FieldLabel>
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setError(null)
+                }}
+                disabled={loading}
+                autoComplete="email"
+                required
+                className="h-12"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@company.com"
-                  value={email}
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
                   onChange={(e) => {
-                    setEmail(e.target.value)
+                    setPassword(e.target.value)
                     setError(null)
                   }}
                   disabled={loading}
-                  autoComplete="email"
+                  autoComplete="current-password"
                   required
+                  className="h-12 pr-12"
                 />
-              </Field>
-              <Field>
-                <div className="flex items-center justify-between mb-2">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
-                </div>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value)
-                      setError(null)
-                    }}
-                    disabled={loading}
-                    autoComplete="current-password"
-                    required
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-              </Field>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+            </div>
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={!email || !password || loading}
-              >
-                {loading ? "Signing in..." : "Sign In"}
-              </Button>
-            </FieldGroup>
+            <Button 
+              type="submit" 
+              className="w-full h-12 text-base shadow-lg shadow-primary/25" 
+              disabled={loading}
+            >
+              {loading ? (
+                "Signing in..."
+              ) : (
+                <>
+                  Sign In
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              {"Don't have an account? "}
-              <Link href="/signup" className="text-primary hover:underline font-medium">
-                Sign up for free
+          <div className="mt-6">
+            <Separator className="my-6" />
+            <p className="text-center text-sm text-muted-foreground">
+              Don't have an account?{" "}
+              <Link href="/signup" className="text-primary font-medium hover:underline">
+                Get started
               </Link>
             </p>
           </div>
         </CardContent>
       </Card>
 
-      <div className="mt-6 text-center">
-        <Link
-          href="/tech"
-          className="text-sm text-sidebar-muted hover:text-sidebar-foreground"
-        >
-          Are you a technician? Sign in here
-        </Link>
-      </div>
+      {/* Footer */}
+      <p className="mt-8 text-sm text-muted-foreground">
+        © 2026 Dispatchly. All rights reserved.
+      </p>
     </div>
   )
 }

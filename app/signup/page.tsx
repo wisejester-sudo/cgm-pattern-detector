@@ -2,21 +2,22 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { Zap, AlertCircle, CheckCircle, Mail } from "lucide-react"
+import { Zap, AlertCircle, CheckCircle, Mail, ArrowRight } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { createBrowserClient } from "@supabase/ssr"
 
-// Create Supabase client using environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY')
+  throw new Error('Missing required environment variables')
 }
 
 const supabaseClient = createBrowserClient(supabaseUrl, supabaseAnonKey)
@@ -36,10 +37,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [ownerName, setOwnerName] = useState("")
   const [companyName, setCompanyName] = useState("")
-  const [companyPhone, setCompanyPhone] = useState("")
-  const [tradeType, setTradeType] = useState("generic")
 
-  // Clear any existing session/store data on signup page
   useEffect(() => {
     resetStore()
   }, [resetStore])
@@ -60,29 +58,20 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      // Use hardcoded Supabase client directly
-      const supabase = supabaseClient
-
-      // Sign up directly via browser client — this correctly sets the session cookie
-      const { data, error: authError } = await supabase.auth.signUp({
+      const { data, error: authError } = await supabaseClient.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
-            `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             full_name: ownerName || email.split('@')[0],
             company_name: companyName,
-            company_phone: companyPhone,
-            trade_type: tradeType,
             role: 'admin',
           },
         },
       })
 
       if (authError) {
-        console.error("[v0] Signup auth error:", authError)
         setError(authError.message || "Signup failed")
         setLoading(false)
         return
@@ -94,7 +83,6 @@ export default function SignupPage() {
         return
       }
 
-      // If a session was returned, email confirmation is disabled — go straight to dashboard
       if (data.session) {
         setStep("success")
         setTimeout(() => {
@@ -102,71 +90,63 @@ export default function SignupPage() {
           router.refresh()
         }, 1500)
       } else {
-        // Email confirmation required
         setStep("confirm_email")
       }
     } catch (error) {
-      console.error("[v0] Signup error:", error)
       const errorMessage = error instanceof Error ? error.message : "An error occurred. Please try again."
       setError(errorMessage)
       setLoading(false)
     }
   }
 
-  if (step === "confirm_email") {
+  if (step === "success") {
     return (
-      <div className="min-h-screen bg-sidebar flex flex-col items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex items-center justify-center w-12 h-12 rounded-full bg-blue-100">
-              <Mail className="h-7 w-7 text-blue-600" />
+      <div className="relative min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]" />
+          <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[400px] w-[400px] rounded-full bg-green-500/20 opacity-20 blur-[100px]" />
+        </div>
+
+        <Card className="w-full max-w-md shadow-xl border-border/50">
+          <CardContent className="p-8 text-center">
+            <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="h-8 w-8 text-green-500" />
             </div>
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
-            <CardDescription>
-              We sent a confirmation link to{" "}
-              <span className="font-medium text-foreground">{email}</span>
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Click the link in your email to verify your account, then log in to start using Dispatchly.
+            <h1 className="text-2xl font-bold mb-2">Account Created!</h1>
+            <p className="text-muted-foreground mb-6">
+              Welcome to Dispatchly. Redirecting you to your dashboard...
             </p>
-            <div className="bg-muted p-4 rounded-lg">
-              <p className="text-xs text-muted-foreground mb-1">Company registered</p>
-              <p className="font-semibold">{companyName}</p>
+            <div className="animate-pulse text-sm text-muted-foreground">
+              Setting up your account...
             </div>
-            <Link href="/login">
-              <Button className="w-full">Go to Login</Button>
-            </Link>
-            <p className="text-xs text-muted-foreground">
-              {"Didn't receive the email? Check your spam folder."}
-            </p>
           </CardContent>
         </Card>
       </div>
     )
   }
 
-  if (step === "success") {
-    const displayName = ownerName || email.split('@')[0]
+  if (step === "confirm_email") {
     return (
-      <div className="min-h-screen bg-sidebar flex flex-col items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex items-center justify-center w-12 h-12 rounded-full bg-green-100">
-              <CheckCircle className="h-7 w-7 text-green-600" />
+      <div className="relative min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]" />
+          <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[400px] w-[400px] rounded-full bg-primary/20 opacity-20 blur-[100px]" />
+        </div>
+
+        <Card className="w-full max-w-md shadow-xl border-border/50">
+          <CardContent className="p-8 text-center">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Mail className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle className="text-2xl">Welcome, {displayName}!</CardTitle>
-            <CardDescription>Your account has been created.</CardDescription>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <div className="bg-muted p-4 rounded-lg space-y-1">
-              <p className="text-xs text-muted-foreground">Company</p>
-              <p className="font-semibold">{companyName}</p>
-              <p className="text-xs text-muted-foreground mt-1">Phone</p>
-              <p className="font-semibold">{companyPhone}</p>
-            </div>
-            <p className="text-sm text-muted-foreground">Taking you to your dashboard...</p>
+            <h1 className="text-2xl font-bold mb-2">Check Your Email</h1>
+            <p className="text-muted-foreground mb-6">
+              We've sent a confirmation link to <strong>{email}</strong>. Click the link to activate your account.
+            </p>
+            <Link href="/login">
+              <Button variant="outline" className="w-full">
+                Back to Login
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
@@ -174,137 +154,147 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-sidebar flex flex-col items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex items-center justify-center w-12 h-12 rounded-lg bg-primary">
-            <Zap className="h-7 w-7 text-primary-foreground" />
+    <div className="relative min-h-screen flex flex-col items-center justify-center p-4 py-12">
+      {/* Background */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]" />
+        <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[400px] w-[400px] rounded-full bg-primary/20 opacity-20 blur-[100px]" />
+        <div className="absolute bottom-0 right-0 -z-10 h-[300px] w-[300px] rounded-full bg-primary/10 opacity-20 blur-[100px]" />
+      </div>
+
+      {/* Logo */}
+      <Link href="/" className="mb-8 flex items-center gap-2">
+        <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg shadow-primary/25">
+          <Zap className="w-6 h-6 text-primary-foreground" />
+        </div>
+        <span className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+          Dispatchly
+        </span>
+      </Link>
+
+      <Card className="w-full max-w-md shadow-xl border-border/50">
+        <CardContent className="p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold mb-2">Create your account</h1>
+            <p className="text-muted-foreground text-sm">
+              Start your 14-day free trial. No credit card required.
+            </p>
           </div>
-          <CardTitle className="text-2xl">Create Dispatchly Account</CardTitle>
-          <CardDescription>Set up your field service business in minutes</CardDescription>
-        </CardHeader>
-        <CardContent>
+
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+            <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSignup}>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="email">Email Address</FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@company.com"
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); setError(null) }}
-                  required
-                />
-              </Field>
+          <form onSubmit={handleSignup} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="ownerName">Your Name</Label>
+              <Input
+                id="ownerName"
+                placeholder="John Smith"
+                value={ownerName}
+                onChange={(e) => setOwnerName(e.target.value)}
+                disabled={loading}
+                required
+                className="h-12"
+              />
+            </div>
 
-              <Field>
-                <FieldLabel htmlFor="password">Password</FieldLabel>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Min 8 characters"
-                  value={password}
-                  onChange={(e) => { setPassword(e.target.value); setError(null) }}
-                  required
-                />
-              </Field>
+            <div className="space-y-2">
+              <Label htmlFor="companyName">Company Name</Label>
+              <Input
+                id="companyName"
+                placeholder="Cool Air HVAC"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                disabled={loading}
+                required
+                className="h-12"
+              />
+            </div>
 
-              <Field>
-                <FieldLabel htmlFor="confirm">Confirm Password</FieldLabel>
-                <Input
-                  id="confirm"
-                  type="password"
-                  placeholder="Confirm password"
-                  value={confirmPassword}
-                  onChange={(e) => { setConfirmPassword(e.target.value); setError(null) }}
-                  required
-                />
-              </Field>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                autoComplete="email"
+                required
+                className="h-12"
+              />
+            </div>
 
-              <div className="border-t pt-4 mt-2">
-                <p className="text-sm font-medium text-muted-foreground mb-3">Company Details</p>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Create a secure password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                autoComplete="new-password"
+                required
+                className="h-12"
+              />
+              <p className="text-xs text-muted-foreground">
+                Must be at least 8 characters
+              </p>
+            </div>
 
-              <Field>
-                <FieldLabel htmlFor="tradeType">Trade Type</FieldLabel>
-                <select
-                  id="tradeType"
-                  className="w-full px-3 py-2 border rounded-md bg-background text-sm"
-                  value={tradeType}
-                  onChange={(e) => setTradeType(e.target.value)}
-                >
-                  <option value="generic">General Services</option>
-                  <option value="hvac">HVAC</option>
-                  <option value="plumbing">Plumbing</option>
-                  <option value="electrical">Electrical</option>
-                  <option value="landscaping">Landscaping</option>
-                  <option value="cleaning">Cleaning</option>
-                  <option value="pest_control">Pest Control</option>
-                  <option value="other">Other</option>
-                </select>
-              </Field>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={loading}
+                autoComplete="new-password"
+                required
+                className="h-12"
+              />
+            </div>
 
-              <Field>
-                <FieldLabel htmlFor="ownerName">Your Name <span className="text-muted-foreground font-normal">(optional)</span></FieldLabel>
-                <Input
-                  id="ownerName"
-                  placeholder="John Smith"
-                  value={ownerName}
-                  onChange={(e) => setOwnerName(e.target.value)}
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="company">Company Name</FieldLabel>
-                <Input
-                  id="company"
-                  placeholder="Smith Services"
-                  value={companyName}
-                  onChange={(e) => { setCompanyName(e.target.value); setError(null) }}
-                  required
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="phone">Company Phone</FieldLabel>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="(555) 123-4567"
-                  value={companyPhone}
-                  onChange={(e) => { setCompanyPhone(e.target.value); setError(null) }}
-                  required
-                />
-              </Field>
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={!email || !password || !confirmPassword || !companyName || !companyPhone || loading}
-              >
-                {loading ? "Creating Account..." : "Create Account"}
-              </Button>
-            </FieldGroup>
+            <Button 
+              type="submit" 
+              className="w-full h-12 text-base shadow-lg shadow-primary/25" 
+              disabled={loading}
+            >
+              {loading ? (
+                "Creating account..."
+              ) : (
+                <>
+                  Create Account
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
+          <div className="mt-6">
+            <Separator className="my-6" />
+            <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link href="/login" className="text-primary hover:underline font-medium">
-                Log in
+              <Link href="/login" className="text-primary font-medium hover:underline">
+                Sign in
               </Link>
             </p>
           </div>
         </CardContent>
       </Card>
+
+      {/* Footer */}
+      <p className="mt-8 text-sm text-muted-foreground">
+        © 2026 Dispatchly. All rights reserved.
+      </p>
     </div>
   )
 }

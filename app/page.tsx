@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { 
   MessageSquare, 
   Users, 
@@ -7,35 +8,46 @@ import {
   Clock, 
   CheckCircle2, 
   ArrowRight,
-  Phone,
-  MapPin,
   Zap,
   Shield,
-  BarChart3
+  BarChart3,
+  Smartphone,
+  Workflow,
+  Bell,
+  Star
 } from "lucide-react"
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="relative min-h-screen bg-background">
+      {/* Animated Background */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]" />
+        <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/20 opacity-20 blur-[100px]" />
+        <div className="absolute right-0 top-1/4 -z-10 h-[400px] w-[400px] rounded-full bg-primary/10 opacity-20 blur-[120px]" />
+      </div>
+
       {/* Navigation */}
-      <nav className="border-b bg-white/80 backdrop-blur-md fixed w-full z-50">
+      <nav className="fixed top-0 w-full z-50 border-b bg-background/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" />
+              <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg shadow-primary/25">
+                <Zap className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold text-slate-900">Dispatchly</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                Dispatchly
+              </span>
             </div>
             <div className="flex items-center gap-4">
-              <Link href="/tech" className="text-sm text-slate-600 hover:text-slate-900">
+              <Link href="/tech" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Technician Portal
               </Link>
               <Link href="/login">
                 <Button variant="ghost" size="sm">Sign In</Button>
               </Link>
               <Link href="/signup">
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">Get Started</Button>
+                <Button size="sm" className="shadow-lg shadow-primary/25">Get Started</Button>
               </Link>
             </div>
           </div>
@@ -46,27 +58,35 @@ export default function LandingPage() {
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 mb-8">
-              <span className="flex h-2 w-2 rounded-full bg-blue-600"></span>
-              <span className="text-sm font-medium text-blue-900">Now with AI-Powered Dispatch</span>
-            </div>
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-slate-900 tracking-tight mb-8">
-              Field Service Management
-              <span className="text-blue-600 block mt-2">Made Simple</span>
+            <Badge variant="secondary" className="mb-8 px-4 py-1.5 text-sm font-medium">
+              <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse" />
+              Now with AI-Powered Dispatch
+            </Badge>
+            
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-8">
+              <span className="bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent">
+                Field Service Management
+              </span>
+              <br />
+              <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                Made Simple
+              </span>
             </h1>
-            <p className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
+            
+            <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
               Dispatchly helps HVAC and field service companies manage jobs, dispatch technicians, 
               and communicate with customers—all through simple SMS. No apps to download.
             </p>
+            
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
               <Link href="/signup">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-6">
+                <Button size="lg" className="text-lg px-8 py-6 shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-shadow">
                   Start Free Trial
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
               <Link href="/login">
-                <Button size="lg" variant="outline" className="text-lg px-8 py-6">
+                <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2">
                   Sign In
                 </Button>
               </Link>
@@ -74,453 +94,380 @@ export default function LandingPage() {
 
             {/* Hero Image / Dashboard Preview */}
             <div className="relative mx-auto max-w-5xl">
-              <div className="rounded-2xl bg-slate-900 p-2 shadow-2xl">
-                <div className="rounded-xl bg-slate-800 p-6 text-left">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="h-3 w-3 rounded-full bg-red-400"></div>
-                    <div className="h-3 w-3 rounded-full bg-yellow-400"></div>
-                    <div className="h-3 w-3 rounded-full bg-green-400"></div>
-                    <div className="ml-4 text-slate-400 text-sm">dispatchly.co/dashboard</div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-2xl blur-xl opacity-70" />
+              <div className="relative rounded-2xl bg-card border shadow-2xl overflow-hidden">
+                <div className="border-b bg-muted/50 px-4 py-3 flex items-center gap-2">
+                  <div className="flex gap-1.5">
+                    <div className="h-3 w-3 rounded-full bg-red-400/80" />
+                    <div className="h-3 w-3 rounded-full bg-yellow-400/80" />
+                    <div className="h-3 w-3 rounded-full bg-green-400/80" />
                   </div>
+                  <div className="ml-4 text-muted-foreground text-sm font-mono">dispatchly.co/dashboard</div>
+                </div>
+                <div className="p-6 bg-gradient-to-br from-card to-muted/30">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-slate-700 rounded-lg p-4">
-                      <div className="text-slate-400 text-xs mb-1">Active Jobs</div>
-                      <div className="text-2xl font-bold text-white">12</div>
+                    <div className="bg-background/80 backdrop-blur rounded-xl p-4 border shadow-sm">
+                      <div className="text-muted-foreground text-xs mb-1 font-medium uppercase tracking-wider">Active Jobs</div>
+                      <div className="text-3xl font-bold text-foreground">12</div>
+                      <div className="text-xs text-green-500 mt-1 flex items-center gap-1">
+                        <ArrowRight className="h-3 w-3 rotate-[-45deg]" /> +3 today
+                      </div>
                     </div>
-                    <div className="bg-slate-700 rounded-lg p-4">
-                      <div className="text-slate-400 text-xs mb-1">Technicians</div>
-                      <div className="text-2xl font-bold text-white">5</div>
+                    <div className="bg-background/80 backdrop-blur rounded-xl p-4 border shadow-sm">
+                      <div className="text-muted-foreground text-xs mb-1 font-medium uppercase tracking-wider">Technicians</div>
+                      <div className="text-3xl font-bold text-foreground">5</div>
+                      <div className="text-xs text-blue-500 mt-1 flex items-center gap-1">
+                        <ArrowRight className="h-3 w-3 rotate-[-45deg]" /> 2 on route
+                      </div>
                     </div>
-                    <div className="bg-slate-700 rounded-lg p-4">
-                      <div className="text-slate-400 text-xs mb-1">Completed Today</div>
-                      <div className="text-2xl font-bold text-green-400">8</div>
+                    <div className="bg-background/80 backdrop-blur rounded-xl p-4 border shadow-sm">
+                      <div className="text-muted-foreground text-xs mb-1 font-medium uppercase tracking-wider">Completed Today</div>
+                      <div className="text-3xl font-bold text-green-500">8</div>
+                      <div className="text-xs text-muted-foreground mt-1">94% satisfaction</div>
                     </div>
                   </div>
-                  <div className="mt-4 bg-slate-700 rounded-lg p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">JD</div>
-                      <div>
-                        <div className="text-white text-sm font-medium">AC Repair - John Doe</div>
-                        <div className="text-slate-400 text-xs">En Route • 123 Main St</div>
-                      </div>
-                      <div className="ml-auto text-green-400 text-xs">Active</div>
+                  <div className="mt-4 bg-background/80 backdrop-blur rounded-xl p-4 border shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-semibold">Recent Jobs</span>
+                      <Badge variant="outline" className="text-xs">Live</Badge>
+                    </div>
+                    <div className="space-y-2">
+                      {[
+                        { status: "En Route", color: "bg-blue-500", time: "10:30 AM" },
+                        { status: "Working", color: "bg-yellow-500", time: "11:15 AM" },
+                        { status: "Complete", color: "bg-green-500", time: "9:45 AM" },
+                      ].map((job, i) => (
+                        <div key={i} className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className={`h-2 w-2 rounded-full ${job.color}`} />
+                            <span className="text-sm font-medium">AC Repair - {job.status}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">{job.time}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
               </div>
-              {/* Decorative elements */}
-              <div className="absolute -top-4 -right-4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-              <div className="absolute -bottom-4 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-24 bg-white">
+      {/* Social Proof */}
+      <section className="py-12 border-y bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-center text-sm font-medium text-muted-foreground uppercase tracking-wider mb-8">
+            Trusted by HVAC companies across the country
+          </p>
+          <div className="flex justify-center items-center gap-12 opacity-50 grayscale">
+            {['Cool Air HVAC', 'Summit Heating', 'FrostGuard', 'ClimatePro', 'Apex Air'].map((company) => (
+              <span key={company} className="text-lg font-semibold">{company}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features Bento Grid */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
-              Everything You Need to Run Your Field Service Business
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              From job creation to technician tracking to customer communication—Dispatchly handles it all.
+            <Badge variant="outline" className="mb-4">Features</Badge>
+            <h2 className="text-4xl font-bold mb-4">Everything You Need</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Powerful features designed specifically for field service businesses.
+              No fluff, just what works.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <div className="group p-8 rounded-2xl bg-slate-50 hover:bg-blue-50 transition-colors duration-300">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <MessageSquare className="w-6 h-6 text-blue-600" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-[180px]">
+            {/* Job Management */}
+            <div className="row-span-2 rounded-3xl bg-card border p-6 shadow-sm hover:shadow-md transition-shadow group">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Workflow className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-3">SMS-First Communication</h3>
-              <p className="text-slate-600 leading-relaxed">
-                Technicians and customers communicate via text—no apps to download. Automatic updates sent to customers.
+              <h3 className="text-xl font-semibold mb-2">Job Management</h3>
+              <p className="text-muted-foreground text-sm mb-4">
+                Create, assign, and track jobs from start to finish. See status updates in real-time.
+              </p>
+              <div className="space-y-2">
+                {['Scheduled', 'En Route', 'Working', 'Complete'].map((status, i) => (
+                  <div key={status} className="flex items-center gap-2 text-sm">
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                    <span>{status}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* SMS Communication */}
+            <div className="rounded-3xl bg-gradient-to-br from-primary/5 to-primary/10 border p-6 shadow-sm hover:shadow-md transition-shadow group">
+              <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <MessageSquare className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">SMS Communication</h3>
+              <p className="text-muted-foreground text-sm">
+                Two-way texting with customers and techs. No apps needed.
               </p>
             </div>
 
-            {/* Feature 2 */}
-            <div className="group p-8 rounded-2xl bg-slate-50 hover:bg-blue-50 transition-colors duration-300">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Users className="w-6 h-6 text-green-600" />
+            {/* Photo Management */}
+            <div className="rounded-3xl bg-card border p-6 shadow-sm hover:shadow-md transition-shadow group">
+              <div className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Camera className="w-6 h-6 text-secondary-foreground" />
               </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-3">Smart Dispatch</h3>
-              <p className="text-slate-600 leading-relaxed">
-                Assign jobs to technicians instantly. Track status in real-time: scheduled, en route, working, complete.
+              <h3 className="text-xl font-semibold mb-2">Photo Management</h3>
+              <p className="text-muted-foreground text-sm">
+                Techs upload photos from the field. Customers view via web link.
               </p>
             </div>
 
-            {/* Feature 3 */}
-            <div className="group p-8 rounded-2xl bg-slate-50 hover:bg-blue-50 transition-colors duration-300">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Camera className="w-6 h-6 text-purple-600" />
+            {/* Team Management */}
+            <div className="rounded-3xl bg-card border p-6 shadow-sm hover:shadow-md transition-shadow group">
+              <div className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Users className="w-6 h-6 text-secondary-foreground" />
               </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-3">Photo Documentation</h3>
-              <p className="text-slate-600 leading-relaxed">
-                Technicians upload before/after photos directly via SMS. Automatic compression and cloud storage.
+              <h3 className="text-xl font-semibold mb-2">Team Management</h3>
+              <p className="text-muted-foreground text-sm">
+                Invite technicians with magic links. No passwords needed.
               </p>
             </div>
 
-            {/* Feature 4 */}
-            <div className="group p-8 rounded-2xl bg-slate-50 hover:bg-blue-50 transition-colors duration-300">
-              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Clock className="w-6 h-6 text-orange-600" />
+            {/* Real-time Updates */}
+            <div className="md:col-span-2 rounded-3xl bg-gradient-to-br from-foreground/5 to-foreground/10 border p-6 shadow-sm hover:shadow-md transition-shadow group">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Bell className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">Real-time Updates</h3>
+                  <p className="text-muted-foreground text-sm max-w-md">
+                    Instant notifications when jobs are updated. Customers receive SMS alerts 
+                    when techs are en route, working, and complete.
+                  </p>
+                </div>
+                <div className="hidden md:flex gap-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="w-3 h-3 rounded-full bg-primary/30 animate-pulse" style={{ animationDelay: `${i * 200}ms` }} />
+                  ))}
+                </div>
               </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-3">Real-Time Updates</h3>
-              <p className="text-slate-600 leading-relaxed">
-                Customers receive automatic SMS updates when technicians are en route, working, or job is complete.
-              </p>
-            </div>
-
-            {/* Feature 5 */}
-            <div className="group p-8 rounded-2xl bg-slate-50 hover:bg-blue-50 transition-colors duration-300">
-              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Phone className="w-6 h-6 text-red-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-3">Two-Way SMS</h3>
-              <p className="text-slate-600 leading-relaxed">
-                Customers can reply to texts with questions or updates. All communication captured in the job log.
-              </p>
-            </div>
-
-            {/* Feature 6 */}
-            <div className="group p-8 rounded-2xl bg-slate-50 hover:bg-blue-50 transition-colors duration-300">
-              <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <BarChart3 className="w-6 h-6 text-teal-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-3">Reports & Analytics</h3>
-              <p className="text-slate-600 leading-relaxed">
-                Track job completion rates, technician performance, and customer satisfaction over time.
-              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="py-24 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* How It Works */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
-              How Dispatchly Works
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Get your team up and running in minutes, not months.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-12">
-            {/* Step 1 */}
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl font-bold shadow-lg shadow-blue-200">
-                1
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-3">Create a Job</h3>
-              <p className="text-slate-600">
-                Enter customer details, job type, and location. Assign to a technician or leave unassigned.
-              </p>
-            </div>
-
-            {/* Step 2 */}
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl font-bold shadow-lg shadow-blue-200">
-                2
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-3">Technician Gets SMS</h3>
-              <p className="text-slate-600">
-                Technician receives a magic link via text. No app download needed—just tap and go.
-              </p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl font-bold shadow-lg shadow-blue-200">
-                3
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-3">Track in Real-Time</h3>
-              <p className="text-slate-600">
-                Watch job progress, view photos, and communicate—all from your dashboard.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Screenshots Section */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
-              Built for the Field
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Simple, intuitive interfaces for admins and technicians.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* Admin Dashboard Preview */}
-            <div className="order-2 md:order-1">
-              <h3 className="text-2xl font-bold text-slate-900 mb-4">Admin Dashboard</h3>
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-slate-600">See all jobs at a glance with color-coded status</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-slate-600">Track technician locations and availability</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-slate-600">View photos uploaded from the field instantly</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-slate-600">Full SMS conversation history for every job</span>
-                </li>
-              </ul>
-            </div>
-            <div className="order-1 md:order-2">
-              <div className="rounded-xl bg-slate-900 p-4 shadow-2xl">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="h-3 w-3 rounded-full bg-red-400"></div>
-                  <div className="h-3 w-3 rounded-full bg-yellow-400"></div>
-                  <div className="h-3 w-3 rounded-full bg-green-400"></div>
-                </div>
-                <div className="space-y-3">
-                  <div className="h-8 bg-slate-700 rounded"></div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="h-20 bg-slate-700 rounded"></div>
-                    <div className="h-20 bg-slate-700 rounded"></div>
-                    <div className="h-20 bg-slate-700 rounded"></div>
-                  </div>
-                  <div className="h-32 bg-slate-700 rounded"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-12 items-center mt-20">
-            {/* Technician Mobile View */}
-            <div>
-              <div className="rounded-xl bg-slate-900 p-4 shadow-2xl max-w-sm mx-auto">
-                <div className="bg-slate-800 rounded-lg p-4">
-                  <div className="text-center mb-4">
-                    <div className="text-white font-semibold">Your Jobs</div>
-                    <div className="text-slate-400 text-xs">3 Active</div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="bg-slate-700 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-2 h-2 rounded-full bg-green-400"></div>
-                        <span className="text-white text-sm">AC Repair</span>
-                      </div>
-                      <div className="text-slate-400 text-xs">123 Main St</div>
-                    </div>
-                    <div className="bg-slate-700 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
-                        <span className="text-white text-sm">HVAC Install</span>
-                      </div>
-                      <div className="text-slate-400 text-xs">456 Oak Ave</div>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex gap-2">
-                    <div className="flex-1 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm">
-                      Update Status
-                    </div>
-                    <div className="w-10 h-10 bg-slate-600 rounded-lg flex items-center justify-center">
-                      <Camera className="w-5 h-5 text-white" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-4">Technician Mobile View</h3>
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-slate-600">No app download—works in any web browser</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-slate-600">One-tap status updates: En Route → Working → Complete</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-slate-600">Upload photos directly from phone camera</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-slate-600">See job details, customer info, and navigation</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Social Proof Section */}
-      <section className="py-24 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
-              Trusted by Field Service Teams
-            </h2>
-            <p className="text-lg text-slate-600">
-              See what our customers have to say
+            <Badge variant="outline" className="mb-4">How It Works</Badge>
+            <h2 className="text-4xl font-bold mb-4">Simple as SMS</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              No apps to download. No training needed. Just simple text messaging.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-2xl shadow-sm">
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
+            {[
+              {
+                step: "01",
+                title: "Create a Job",
+                description: "Enter customer details and assign a technician. Takes less than 60 seconds."
+              },
+              {
+                step: "02",
+                title: "Tech Gets SMS",
+                description: "Technician receives a text with job details and a magic link to update status."
+              },
+              {
+                step: "03",
+                title: "Customer Stays Informed",
+                description: "Automatic SMS updates keep customers informed every step of the way."
+              }
+            ].map((item, i) => (
+              <div key={i} className="relative">
+                <div className="text-6xl font-bold text-primary/10 mb-4">{item.step}</div>
+                <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
+                <p className="text-muted-foreground">{item.description}</p>
+                {i < 2 && (
+                  <div className="hidden md:block absolute top-8 left-full w-full h-px bg-gradient-to-r from-border to-transparent" />
+                )}
               </div>
-              <p className="text-slate-600 mb-6">
-                "Dispatchly cut our administrative time in half. Technicians love the simple text-based updates, and customers appreciate the real-time notifications."
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold">
-                  MK
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-900">Mike K.</div>
-                  <div className="text-sm text-slate-500">HVAC Pro Services</div>
-                </div>
-              </div>
-            </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            <div className="bg-white p-8 rounded-2xl shadow-sm">
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-slate-600 mb-6">
-                "We tried three other dispatch software solutions. Dispatchly was the only one our technicians actually wanted to use. The SMS magic links are genius."
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-semibold">
-                  SJ
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-900">Sarah J.</div>
-                  <div className="text-sm text-slate-500">Quick Fix Plumbing</div>
-                </div>
-              </div>
-            </div>
+      {/* Testimonials */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <Badge variant="outline" className="mb-4">Testimonials</Badge>
+            <h2 className="text-4xl font-bold mb-4">Loved by HVAC Pros</h2>
+          </div>
 
-            <div className="bg-white p-8 rounded-2xl shadow-sm">
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-slate-600 mb-6">
-                "Setup took 10 minutes. Now we can finally track job completion rates and identify our top performers. Game changer for our business."
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-semibold">
-                  DR
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                quote: "Dispatchly cut our scheduling time by 80%. No more phone tag with technicians.",
+                author: "Mike Johnson",
+                role: "Owner, Cool Air HVAC",
+                rating: 5
+              },
+              {
+                quote: "Our customers love the text updates. They know exactly when we're arriving.",
+                author: "Sarah Chen",
+                role: "Dispatch Manager, Summit Heating",
+                rating: 5
+              },
+              {
+                quote: "We tried 3 other systems. Dispatchly was the only one our techs actually used.",
+                author: "David Park",
+                role: "Operations, FrostGuard",
+                rating: 5
+              }
+            ].map((testimonial, i) => (
+              <div key={i} className="rounded-2xl bg-card border p-6 shadow-sm">
+                <div className="flex gap-1 mb-4">
+                  {[...Array(testimonial.rating)].map((_, j) => (
+                    <Star key={j} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  ))}
                 </div>
+                <p className="text-foreground mb-6">"{testimonial.quote}"</p>
                 <div>
-                  <div className="font-semibold text-slate-900">David R.</div>
-                  <div className="text-sm text-slate-500">Elite Electric Co.</div>
+                  <div className="font-semibold">{testimonial.author}</div>
+                  <div className="text-sm text-muted-foreground">{testimonial.role}</div>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Teaser */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-muted/30 to-background">
+        <div className="max-w-4xl mx-auto text-center">
+          <Badge variant="outline" className="mb-4">Pricing</Badge>
+          <h2 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
+          <p className="text-lg text-muted-foreground mb-8">
+            Start free for 14 days. No credit card required.
+          </p>
+          
+          <div className="inline-flex items-center gap-8 p-8 rounded-3xl bg-card border shadow-xl">
+            <div className="text-left">
+              <div className="text-sm text-muted-foreground mb-1">Starter Plan</div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-5xl font-bold">$39</span>
+                <span className="text-muted-foreground">/month</span>
               </div>
             </div>
+            <div className="h-12 w-px bg-border" />
+            <div className="text-left">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span className="text-sm">Up to 3 technicians</span>
+              </div>
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span className="text-sm">Unlimited jobs</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span className="text-sm">SMS messaging</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8">
+            <Link href="/pricing">
+              <Button size="lg" variant="outline" className="border-2">
+                View Full Pricing
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-blue-600">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-            Ready to Streamline Your Field Service Business?
-          </h2>
-          <p className="text-xl text-blue-100 mb-10">
-            Join hundreds of contractors who've simplified their dispatch with Dispatchly. 
-            Start your free trial today.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/signup">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 text-lg px-8 py-6">
-                Start Free Trial
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-blue-700 text-lg px-8 py-6">
-                Sign In
-              </Button>
-            </Link>
+      <section className="py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="relative rounded-3xl bg-gradient-to-br from-primary to-primary/80 p-12 text-center overflow-hidden">
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff1a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff1a_1px,transparent_1px)] bg-[size:20px_20px]" />
+            <div className="relative z-10">
+              <h2 className="text-4xl font-bold text-primary-foreground mb-4">
+                Ready to simplify your dispatch?
+              </h2>
+              <p className="text-xl text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
+                Join hundreds of HVAC companies saving hours every week with Dispatchly.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/signup">
+                  <Button size="lg" variant="secondary" className="text-lg px-8 py-6">
+                    Start Free Trial
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
+              <p className="mt-4 text-sm text-primary-foreground/60">
+                14-day free trial • No credit card required
+              </p>
+            </div>
           </div>
-          <p className="mt-8 text-sm text-blue-200">
-            No credit card required. 14-day free trial.
-          </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-slate-300 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
+      <footer className="border-t bg-muted/30 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-white" />
+                <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-primary-foreground" />
                 </div>
-                <span className="text-xl font-bold text-white">Dispatchly</span>
+                <span className="font-bold">Dispatchly</span>
               </div>
-              <p className="text-sm text-slate-400">
-                SMS-first dispatch software for field service teams. No apps. No hassle.
+              <p className="text-sm text-muted-foreground">
+                Field service management made simple.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold text-white mb-4">Product</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link href="#features" className="hover:text-white">Features</Link></li>
-                <li><Link href="#pricing" className="hover:text-white">Pricing</Link></li>
-                <li><Link href="/tech" className="hover:text-white">Technician Portal</Link></li>
+              <h4 className="font-semibold mb-4">Product</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
+                <li><Link href="#" className="hover:text-foreground transition-colors">Features</Link></li>
+                <li><Link href="#" className="hover:text-foreground transition-colors">Integrations</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-white mb-4">Company</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link href="#about" className="hover:text-white">About</Link></li>
-                <li><Link href="#contact" className="hover:text-white">Contact</Link></li>
-                <li><Link href="#privacy" className="hover:text-white">Privacy</Link></li>
+              <h4 className="font-semibold mb-4">Company</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link href="#" className="hover:text-foreground transition-colors">About</Link></li>
+                <li><Link href="#" className="hover:text-foreground transition-colors">Blog</Link></li>
+                <li><Link href="#" className="hover:text-foreground transition-colors">Contact</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-white mb-4">Support</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link href="/login" className="hover:text-white">Sign In</Link></li>
-                <li><Link href="/signup" className="hover:text-white">Get Started</Link></li>
-                <li><Link href="/tech" className="hover:text-white">Technician Help</Link></li>
+              <h4 className="font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link href="#" className="hover:text-foreground transition-colors">Privacy</Link></li>
+                <li><Link href="#" className="hover:text-foreground transition-colors">Terms</Link></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-slate-400">
+          <div className="border-t pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-muted-foreground">
               © 2026 Dispatchly. All rights reserved.
             </p>
-            <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-slate-500" />
-              <span className="text-sm text-slate-500">Secure, encrypted, and reliable</span>
+            <div className="flex gap-4">
+              <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Sign In
+              </Link>
+              <Link href="/tech" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Technician Portal
+              </Link>
             </div>
           </div>
         </div>
