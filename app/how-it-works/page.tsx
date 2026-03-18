@@ -21,6 +21,7 @@ import {
   Shield,
   Users
 } from "lucide-react"
+import { MockScreenshot } from "@/components/mock-screenshot"
 
 export default function HowItWorksPage() {
   return (
