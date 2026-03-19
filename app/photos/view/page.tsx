@@ -1,5 +1,8 @@
 "use client"
 
+// Force dynamic rendering to prevent prerender errors with search params
+export const dynamic = 'force-dynamic'
+
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
