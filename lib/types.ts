@@ -143,3 +143,51 @@ export interface PublicJobToken {
   expires_at: string
   created_at: string
 }
+
+// API update interfaces
+export interface ProfileUpdateData {
+  full_name?: string
+  phone?: string
+  email?: string
+}
+
+export interface UserProfileInsertData {
+  id: string
+  email: string
+  full_name: string
+  phone: string | null
+  role: 'admin'
+  company_name: string | null
+  created_at: string
+}
+
+// Database row types for Supabase
+export interface DatabaseJobUpdate {
+  job_id: string
+  status: JobStatus
+  notes?: string | null
+  photos?: string[]
+  created_by_tech_id?: string | null
+  created_at?: string
+}
+
+// SMS webhook types
+export interface IncomingSMSParams {
+  From: string
+  Body: string
+  MessageSid: string
+  NumMedia?: string
+}
+
+export interface SMSLogEntry {
+  job_id: string | null
+  technician_id: string | null
+  from_number: string
+  to_number: string
+  body: string
+  twilio_sid: string | null
+  direction: 'inbound' | 'outbound'
+  parsed_keyword: string | null
+  parsed_result: string
+  message_type: string
+}

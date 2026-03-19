@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import type { ProfileUpdateData, UserProfileInsertData } from '@/lib/types'
 
 // GET /api/auth/user-profile - Get current user profile
 export async function GET(request: NextRequest) {
