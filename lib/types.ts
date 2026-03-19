@@ -1,4 +1,4 @@
-export type JobStatus = 'scheduled' | 'en_route' | 'working' | 'complete'
+export type JobStatus = 'available' | 'scheduled' | 'en_route' | 'working' | 'on_hold' | 'complete'
 
 export type UserRole = 'admin' | 'technician'
 
@@ -42,7 +42,8 @@ export interface Job {
   status: JobStatus
   scheduled_time: string
   notes: string | null
-  assigned_tech_id: string | null
+  assigned_tech_ids: string[] | null  // Changed from assigned_tech_id (string) to support multiple techs
+  on_hold_reason: string | null      // Reason why job is on hold
   created_at: string
   updated_at: string
 }

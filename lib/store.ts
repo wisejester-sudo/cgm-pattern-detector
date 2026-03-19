@@ -766,6 +766,22 @@ export const getTechnicianById = (technicians: Technician[], id: string | null) 
   return technicians.find((t) => t.id === id) || null
 }
 
+// Helper to get multiple technicians by IDs
+export const getTechniciansByIds = (technicians: Technician[], ids: string[] | null) => {
+  if (!ids || ids.length === 0) return []
+  return technicians.filter((t) => ids.includes(t.id))
+}
+
+// Helper to get jobs assigned to a technician (now checks array)
+export const getTechnicianJobs = (jobs: Job[], techId: string) => {
+  return jobs.filter((j) => j.assigned_tech_ids?.includes(techId) ?? false)
+}
+
+// Helper to get available jobs (status === 'available')
+export const getAvailableJobs = (jobs: Job[]) => {
+  return jobs.filter((j) => j.status === 'available')
+}
+
 // Helper to get photos by job ID
 export const getPhotosByJobId = (photos: JobPhoto[], jobId: string) => {
   return photos.filter((p) => p.job_id === jobId)
@@ -796,9 +812,4 @@ export const maskPhoneNumber = (phone: string) => {
     return `(${match[1]}) ***-****`
   }
   return '***-***-****'
-}
-
-// Helper to get jobs assigned to a technician
-export const getTechnicianJobs = (jobs: Job[], techId: string) => {
-  return jobs.filter((j) => j.assigned_tech_id === techId)
 }

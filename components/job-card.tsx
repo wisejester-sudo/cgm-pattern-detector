@@ -10,11 +10,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Phone, MapPin, ChevronDown, Clock, User } from "lucide-react"
+import { Phone, MapPin, ChevronDown, Clock, User, PauseCircle } from "lucide-react"
 import Link from "next/link"
 import type { Job, JobStatus, Technician } from "@/lib/types"
 
-const statusConfig: Record<JobStatus, { label: string; className: string }> = {
+const statusConfig: Record<JobStatus, { label: string; className: string; icon?: React.ComponentType<{ className?: string }> }> = {
+  available: {
+    label: "Available",
+    className: "bg-blue-100 text-blue-800 border-blue-200",
+  },
   scheduled: {
     label: "Scheduled",
     className: "bg-status-scheduled text-foreground",
@@ -27,6 +31,11 @@ const statusConfig: Record<JobStatus, { label: string; className: string }> = {
     label: "Working",
     className: "bg-status-working text-foreground",
   },
+  on_hold: {
+    label: "On Hold",
+    className: "bg-amber-100 text-amber-800 border-amber-200",
+    icon: PauseCircle,
+  },
   complete: {
     label: "Complete",
     className: "bg-status-complete text-primary-foreground",
@@ -35,11 +44,13 @@ const statusConfig: Record<JobStatus, { label: string; className: string }> = {
 
 interface JobCardProps {
   job: Job
-  technician?: Technician | null
+  technicians?: Technician[]  // Support multiple technicians
   onStatusChange?: (jobId: string, newStatus: JobStatus) => void
+  onAcceptJob?: (jobId: string) => void  // For techs to accept available jobs
+  showAcceptButton?: boolean  // Show accept button for available jobs
 }
 
-export function JobCard({ job, technician, onStatusChange }: JobCardProps) {
+export function JobCard({ job, technicians = [], onStatusChange, onAcceptJob, showAcceptButton }: JobCardProps) {
   const status = statusConfig[job.status]
   const scheduledDate = new Date(job.scheduled_time)
   const [formattedTime, setFormattedTime] = useState<string>("")
@@ -78,10 +89,22 @@ export function JobCard({ job, technician, onStatusChange }: JobCardProps) {
               <Clock className="h-4 w-4" />
               <span>{formattedTime || "Loading..."}</span>
             </div>
-            {technician && (
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span>{technician.name}</span>
+            {/* Show assigned technicians */}
+            {technicians.length > 0 && (
+              <div className="flex items-start gap-2">
+                <User className="h-4 w-4 mt-0.5 shrink-0" />
+                <span>
+                  {technicians.length === 1 
+                    ? technicians[0].name 
+                    : `${technicians.length} techs: ${technicians.map(t => t.name).join(', ')}`}
+                </span>
+              </div>
+            )}
+            {/* Show on-hold reason */}
+            {job.status === 'on_hold' && job.on_hold_reason && (
+              <div className="flex items-start gap-2 text-amber-700">
+                <PauseCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                <span className="line-clamp-2">{job.on_hold_reason}</span>
               </div>
             )}
           </div>

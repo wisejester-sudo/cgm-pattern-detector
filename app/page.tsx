@@ -19,8 +19,12 @@ import {
   MapPin,
   Clock,
   Calendar,
-  ChevronRight
+  ChevronRight,
+  Wrench,
+  Thermometer,
+  Truck
 } from "lucide-react"
+import Image from "next/image"
 
 export default function LandingPage() {
   return (
@@ -65,6 +69,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
             <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+                <Wrench className="h-4 w-4" />
+                Built for HVAC Companies
+              </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
                 Field service management{" "}
                 <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
@@ -109,46 +117,25 @@ export default function LandingPage() {
             {/* Hero Image */}
             <div className="relative lg:pl-8">
               <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-primary/5 rounded-3xl blur-3xl opacity-50" />
-              <div className="relative bg-card border rounded-2xl shadow-2xl overflow-hidden">
-                <div className="bg-muted/50 px-4 py-3 border-b flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <div className="h-3 w-3 rounded-full bg-red-400" />
-                    <div className="h-3 w-3 rounded-full bg-yellow-400" />
-                    <div className="h-3 w-3 rounded-full bg-green-400" />
-                  </div>
-                </div>
-                <div className="p-6 space-y-4">
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-muted rounded-lg p-3">
-                      <div className="text-xs text-muted-foreground mb-1">Active Jobs</div>
-                      <div className="text-2xl font-bold">12</div>
+              <div className="relative rounded-2xl shadow-2xl overflow-hidden">
+                <Image
+                  src="https://images.unsplash.com/photo-1621905251189-08b45d6a1f4d?w=800&q=80"
+                  alt="HVAC technician working on air conditioning unit"
+                  width={600}
+                  height={400}
+                  className="w-full h-auto object-cover"
+                  priority
+                />
+                <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                      <CheckCircle2 className="h-5 w-5 text-white" />
                     </div>
-                    <div className="bg-muted rounded-lg p-3">
-                      <div className="text-xs text-muted-foreground mb-1">Technicians</div>
-                      <div className="text-2xl font-bold">5</div>
+                    <div>
+                      <p className="font-semibold text-sm">Job Completed</p>
+                      <p className="text-xs text-muted-foreground">AC repair - Johnson Residence</p>
                     </div>
-                    <div className="bg-muted rounded-lg p-3">
-                      <div className="text-xs text-muted-foreground mb-1">Completed</div>
-                      <div className="text-2xl font-bold text-green-500">8</div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    {[
-                      { name: "Mike Smith", status: "En Route", time: "10:30 AM", color: "bg-blue-500" },
-                      { name: "Sarah Johnson", status: "Working", time: "11:15 AM", color: "bg-yellow-500" },
-                      { name: "David Park", status: "Complete", time: "9:45 AM", color: "bg-green-500" },
-                    ].map((tech, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className={`h-2 w-2 rounded-full ${tech.color}`} />
-                          <span className="text-sm font-medium">{tech.name}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-muted-foreground">{tech.status}</span>
-                          <span className="text-xs text-muted-foreground">{tech.time}</span>
-                        </div>
-                      </div>
-                    ))}
+                    <div className="ml-auto text-xs text-muted-foreground">2 min ago</div>
                   </div>
                 </div>
               </div>
@@ -196,48 +183,127 @@ export default function LandingPage() {
               {
                 icon: Workflow,
                 title: "Job Management",
-                description: "Create, assign, and track jobs from start to finish. Real-time status updates keep everyone informed."
+                description: "Create, assign, and track jobs from start to finish. Real-time status updates keep everyone informed.",
+                image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&q=80"
               },
               {
                 icon: MessageSquare,
                 title: "SMS Communication",
-                description: "Two-way texting with customers and technicians. No apps to download or install."
+                description: "Two-way texting with customers and technicians. No apps to download or install.",
+                image: "https://images.unsplash.com/photo-1611746872915-64382b5c6143?w=400&q=80"
               },
               {
                 icon: Camera,
                 title: "Photo Management",
-                description: "Technicians upload photos from the field. Customers view them instantly via web link."
+                description: "Technicians upload photos from the field. Customers view them instantly via web link.",
+                image: "https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=400&q=80"
               },
               {
                 icon: Users,
                 title: "Team Management",
-                description: "Invite technicians with magic links. No passwords to remember or manage."
+                description: "Invite technicians with magic links. No passwords to remember or manage.",
+                image: "https://images.unsplash.com/photo-1560479284-50c53a4669f9?w=400&q=80"
               },
               {
                 icon: Bell,
                 title: "Real-time Updates",
-                description: "Automatic notifications when jobs are updated. Customers know exactly when you arrive."
+                description: "Automatic notifications when jobs are updated. Customers know exactly when you arrive.",
+                image: "https://images.unsplash.com/photo-1556155092-490a1ba16284?w=400&q=80"
               },
               {
                 icon: BarChart3,
                 title: "Reporting & Analytics",
-                description: "Track performance metrics, completion rates, and customer satisfaction over time."
+                description: "Track performance metrics, completion rates, and customer satisfaction over time.",
+                image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&q=80"
               },
             ].map((feature, i) => (
-              <div key={i} className="group relative p-6 bg-card border rounded-2xl hover:shadow-lg transition-all">
-                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                  <feature.icon className="h-6 w-6 text-primary" />
+              <div key={i} className="group relative bg-card border rounded-2xl hover:shadow-lg transition-all overflow-hidden">
+                <div className="h-40 overflow-hidden">
+                  <Image
+                    src={feature.image}
+                    alt={feature.title}
+                    width={400}
+                    height={160}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
+                <div className="p-6">
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                    <feature.icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                  <p className="text-muted-foreground">{feature.description}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How It Works Preview */}
+      {/* HVAC Work Showcase */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <Badge variant="outline" className="mb-4">Field Operations</Badge>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Built for the field, not the office
+              </h2>
+              <p className="text-lg text-muted-foreground mb-6">
+                Your technicians are out in the field, not sitting at desks. Dispatchly works on any phone with SMS—no apps to install or learn.
+              </p>
+              <ul className="space-y-4">
+                {[
+                  { icon: Truck, text: "Track technician locations and job status in real-time" },
+                  { icon: Thermometer, text: "Manage heating and cooling jobs with custom workflows" },
+                  { icon: Smartphone, text: "Simple text-based updates from any mobile device" },
+                  { icon: Wrench, text: "Service van inventory and equipment tracking" },
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <item.icon className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="text-muted-foreground">{item.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Image
+                src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=400&q=80"
+                alt="HVAC service van"
+                width={300}
+                height={200}
+                className="rounded-2xl shadow-lg object-cover w-full h-48"
+              />
+              <Image
+                src="https://images.unsplash.com/photo-1631545308772-81a0e0a3a6b4?w=400&q=80"
+                alt="HVAC technician at work"
+                width={300}
+                height={200}
+                className="rounded-2xl shadow-lg object-cover w-full h-48 mt-8"
+              />
+              <Image
+                src="https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&q=80"
+                alt="Air conditioning unit"
+                width={300}
+                height={200}
+                className="rounded-2xl shadow-lg object-cover w-full h-48"
+              />
+              <Image
+                src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&q=80"
+                alt="HVAC tools and equipment"
+                width={300}
+                height={200}
+                className="rounded-2xl shadow-lg object-cover w-full h-48 mt-8"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Preview */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <Badge variant="outline" className="mb-4">How It Works</Badge>
@@ -254,25 +320,37 @@ export default function LandingPage() {
               {
                 step: "01",
                 title: "Create a Job",
-                description: "Enter customer details and assign a technician. Takes less than 60 seconds."
+                description: "Enter customer details and assign a technician. Takes less than 60 seconds.",
+                image: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=400&q=80"
               },
               {
                 step: "02",
                 title: "Tech Gets Notified",
-                description: "Technician receives an SMS with job details and a magic link to update status."
+                description: "Technician receives an SMS with job details and a magic link to update status.",
+                image: "https://images.unsplash.com/photo-1512428559087-560fa5ce7d62?w=400&q=80"
               },
               {
                 step: "03",
                 title: "Everyone Stays Informed",
-                description: "Customers get automatic updates when techs are en route, working, and complete."
+                description: "Customers get automatic updates when techs are en route, working, and complete.",
+                image: "https://images.unsplash.com/photo-1556157382-97eda2d62296?w=400&q=80"
               },
             ].map((item, i) => (
               <div key={i} className="relative">
-                <div className="text-7xl font-bold text-primary/10 leading-none mb-4">{item.step}</div>
+                <div className="rounded-2xl overflow-hidden mb-4 shadow-lg">
+                  <Image
+                    src={item.image}
+                    alt={item.title}
+                    width={400}
+                    height={250}
+                    className="w-full h-48 object-cover"
+                  />
+                </div>
+                <div className="text-5xl font-bold text-primary/10 leading-none mb-2">{item.step}</div>
                 <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
                 <p className="text-muted-foreground">{item.description}</p>
                 {i < 2 && (
-                  <div className="hidden md:block absolute top-8 left-full w-full h-px bg-gradient-to-r from-border to-transparent" />
+                  <div className="hidden md:block absolute top-24 left-full w-full h-px bg-gradient-to-r from-border to-transparent" />
                 )}
               </div>
             ))}
@@ -281,7 +359,7 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8">
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <Badge variant="outline" className="mb-4">Testimonials</Badge>
@@ -299,19 +377,22 @@ export default function LandingPage() {
                 quote: "Dispatchly cut our scheduling time by 80%. No more phone tag with technicians trying to figure out where they are.",
                 author: "Mike Johnson",
                 role: "Owner, Cool Air HVAC",
-                rating: 5
+                rating: 5,
+                image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80"
               },
               {
                 quote: "Our customers love the text updates. They know exactly when we're arriving and what to expect.",
                 author: "Sarah Chen",
                 role: "Dispatch Manager, Summit Heating",
-                rating: 5
+                rating: 5,
+                image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80"
               },
               {
                 quote: "We tried 3 other systems. Dispatchly was the only one our technicians actually used without complaining.",
                 author: "David Park",
                 role: "Operations Director, FrostGuard",
-                rating: 5
+                rating: 5,
+                image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80"
               },
             ].map((testimonial, i) => (
               <div key={i} className="bg-card border rounded-2xl p-6 shadow-sm">
@@ -321,9 +402,18 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <p className="text-foreground mb-6">"{testimonial.quote}"</p>
-                <div>
-                  <div className="font-semibold">{testimonial.author}</div>
-                  <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                <div className="flex items-center gap-3">
+                  <Image
+                    src={testimonial.image}
+                    alt={testimonial.author}
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover"
+                  />
+                  <div>
+                    <div className="font-semibold">{testimonial.author}</div>
+                    <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -332,7 +422,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
+      <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <Badge variant="outline" className="mb-4">Pricing</Badge>
@@ -418,27 +508,49 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className="py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="relative bg-gradient-to-br from-primary to-primary/80 rounded-3xl p-12 md:p-16 text-center overflow-hidden">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPjwvc3ZnPg==')] opacity-50" />
-            <div className="relative z-10">
-              <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
-                Ready to simplify your dispatch?
-              </h2>
-              <p className="text-lg text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-                Join hundreds of HVAC companies saving hours every week with Dispatchly. Start your free trial today.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/signup">
-                  <Button size="lg" variant="secondary" className="text-base px-8">
-                    Start Free Trial
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
+        <div className="max-w-6xl mx-auto">
+          <div className="relative bg-gradient-to-br from-primary to-primary/80 rounded-3xl overflow-hidden">
+            <div className="absolute inset-0">
+              <Image
+                src="https://images.unsplash.com/photo-1621905251189-08b45d6a1f4d?w=1200&q=80"
+                alt="HVAC technician background"
+                width={1200}
+                height={500}
+                className="w-full h-full object-cover opacity-20"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/95 to-primary/80" />
+            </div>
+            <div className="relative z-10 grid md:grid-cols-2 gap-8 p-12 md:p-16 items-center">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
+                  Ready to simplify your dispatch?
+                </h2>
+                <p className="text-lg text-primary-foreground/80 mb-8 max-w-lg">
+                  Join hundreds of HVAC companies saving hours every week with Dispatchly. Start your free trial today.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link href="/signup">
+                    <Button size="lg" variant="secondary" className="text-base px-8">
+                      Start Free Trial
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+                <p className="mt-4 text-sm text-primary-foreground/60">
+                  14-day free trial • No credit card required • Cancel anytime
+                </p>
               </div>
-              <p className="mt-4 text-sm text-primary-foreground/60">
-                14-day free trial • No credit card required • Cancel anytime
-              </p>
+              <div className="hidden md:block">
+                <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+                  <Image
+                    src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80"
+                    alt="HVAC team"
+                    width={500}
+                    height={350}
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
