@@ -1,9 +1,6 @@
 "use client"
 
-// Force dynamic rendering to prevent prerender errors with search params
-export const dynamic = 'force-dynamic'
-
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -37,7 +34,33 @@ interface JobDetails {
   company_name?: string
 }
 
+// Loading fallback for Suspense
+function PhotoViewerLoading() {
+  return (
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-4xl mx-auto">
+        <Skeleton className="h-12 w-full mb-4" />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="aspect-square" />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Main page component with Suspense
 export default function PhotoViewerPage() {
+  return (
+    <Suspense fallback={<PhotoViewerLoading />}>
+      <PhotoViewerContent />
+    </Suspense>
+  )
+}
+
+// Content component that uses search params
+function PhotoViewerContent() {
   const searchParams = useSearchParams()
   const [photos, setPhotos] = useState<Photo[]>([])
   const [jobDetails, setJobDetails] = useState<JobDetails | null>(null)
