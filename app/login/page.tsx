@@ -58,7 +58,7 @@ export default function LoginPage() {
         return
       }
 
-      router.push("/dashboard")
+      router.push("/jobs")
       router.refresh()
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An error occurred. Please try again."
