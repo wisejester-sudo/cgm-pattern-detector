@@ -2,9 +2,16 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import Stripe from "stripe"
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2026-02-25.clover",
-})
+// Lazy initialization of Stripe - only create when needed
+let stripeInstance: Stripe | null = null
+function getStripe(): Stripe | null {
+  if (!stripeInstance && process.env.STRIPE_SECRET_KEY) {
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2026-02-25.clover",
+    })
+  }
+  return stripeInstance
+}
 
 // POST /api/billing/portal - Create Stripe billing portal session
 export async function POST(request: NextRequest) {
@@ -13,6 +20,12 @@ export async function POST(request: NextRequest) {
     if (!supabase) {
       return NextResponse.json({ error: "Database not configured" }, { status: 503 })
     }
+
+    const stripe = getStripe()
+    if (!stripe) {
+      return NextResponse.json({ error: "Stripe not configured" }, { status: 503 })
+    }
+
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
