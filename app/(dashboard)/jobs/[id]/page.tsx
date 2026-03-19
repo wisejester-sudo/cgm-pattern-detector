@@ -24,6 +24,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
   ArrowLeft,
   Phone,
   MapPin,
@@ -38,7 +46,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { useStore, getTechnicianById, getPhotosByJobId, renderTemplate } from "@/lib/store"
+import { useStore, getTechniciansByIds, getPhotosByJobId, renderTemplate } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
 import { statusConfig } from "@/components/job-card"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
@@ -88,19 +96,36 @@ export default function JobDetailPage({
     )
   }
 
-  const technician = getTechnicianById(technicians, job.assigned_tech_id)
+  const assignedTechnicians = getTechniciansByIds(technicians, job.assigned_tech_ids)
+  const primaryTechnician = assignedTechnicians[0] || null
   const jobPhotos = getPhotosByJobId(photos, job.id)
   const scheduledDate = new Date(job.scheduled_time)
+  
+  // State for managing technician assignment
+  const [selectedTechIds, setSelectedTechIds] = useState<string[]>(job.assigned_tech_ids || [])
+  const [showTechDialog, setShowTechDialog] = useState(false)
 
   const handleStatusChange = (newStatus: JobStatus) => {
     updateJobStatus(job.id, newStatus)
     toast.success(`Status updated to ${statusConfig[newStatus].label}`)
   }
 
-  const handleTechChange = (techId: string) => {
-    updateJob(job.id, { assigned_tech_id: techId || null })
-    const tech = technicians.find(t => t.id === techId)
-    toast.success(tech ? `Assigned to ${tech.name}` : 'Technician unassigned')
+  const handleAddTech = (techId: string) => {
+    if (!selectedTechIds.includes(techId)) {
+      const newTechIds = [...selectedTechIds, techId]
+      setSelectedTechIds(newTechIds)
+    }
+  }
+
+  const handleRemoveTech = (techId: string) => {
+    const newTechIds = selectedTechIds.filter(id => id !== techId)
+    setSelectedTechIds(newTechIds)
+  }
+
+  const handleSaveTechs = () => {
+    updateJob(job.id, { assigned_tech_ids: selectedTechIds.length > 0 ? selectedTechIds : null })
+    setShowTechDialog(false)
+    toast.success(`Technicians updated`)
   }
 
   const handleSaveNotes = () => {
@@ -130,7 +155,7 @@ export default function JobDetailPage({
     if (!template) return
 
     setSmsSending(true)
-    const message = renderTemplate(template.template_body, job, technician, settings)
+    const message = renderTemplate(template.template_body, job, primaryTechnician, settings)
 
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
@@ -251,15 +276,23 @@ export default function JobDetailPage({
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-start gap-3">
               <div className="p-2 rounded-lg bg-muted">
                 <User className="h-4 w-4 text-muted-foreground" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Assigned Technician</p>
-                <p className="font-medium">
-                  {technician?.name || "Unassigned"}
-                </p>
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">Assigned Technicians</p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {assignedTechnicians.length > 0 ? (
+                    assignedTechnicians.map(tech => (
+                      <Badge key={tech.id} variant="secondary" className="text-xs">
+                        {tech.name}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="font-medium text-muted-foreground">Unassigned</span>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -380,25 +413,31 @@ export default function JobDetailPage({
                 </Select>
               </Field>
 
+              {/* On Hold Reason - only shown when status is on_hold */}
+              {job.status === 'on_hold' && (
+                <Field className="sm:col-span-2 lg:col-span-2">
+                  <FieldLabel>On Hold Reason</FieldLabel>
+                  <Textarea
+                    value={job.on_hold_reason || ''}
+                    onChange={(e) => updateJob(job.id, { on_hold_reason: e.target.value || null })}
+                    placeholder="Why is this job on hold? (e.g., waiting for parts, customer rescheduled, etc.)"
+                    rows={2}
+                  />
+                </Field>
+              )}
+
               <Field>
-                <FieldLabel>Assign Technician</FieldLabel>
-                <Select
-                  value={job.assigned_tech_id || ""}
-                  onValueChange={handleTechChange}
+                <FieldLabel>Manage Technicians</FieldLabel>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => setShowTechDialog(true)}
                 >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select technician" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {technicians
-                      .filter((t) => t.is_active)
-                      .map((tech) => (
-                        <SelectItem key={tech.id} value={tech.id}>
-                          {tech.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                  <User className="mr-2 h-4 w-4" />
+                  {assignedTechnicians.length > 0 
+                    ? `${assignedTechnicians.length} technician(s) assigned` 
+                    : 'Assign Technicians'}
+                </Button>
               </Field>
 
               <Field>
@@ -462,6 +501,57 @@ export default function JobDetailPage({
           </AlertDialogAction>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Technician Management Dialog */}
+      <Dialog open={showTechDialog} onOpenChange={setShowTechDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage Technicians</DialogTitle>
+            <DialogDescription>
+              Select technicians to assign to this job.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {technicians
+              .filter((t) => t.is_active)
+              .map((tech) => (
+                <div key={tech.id} className="flex items-center space-x-3">
+                  <Checkbox
+                    id={`tech-${tech.id}`}
+                    checked={selectedTechIds.includes(tech.id)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        handleAddTech(tech.id)
+                      } else {
+                        handleRemoveTech(tech.id)
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor={`tech-${tech.id}`}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1"
+                  >
+                    {tech.name}
+                  </label>
+                </div>
+              ))}
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={handleSaveTechs} className="flex-1">
+              Save Changes
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelectedTechIds(job.assigned_tech_ids || [])
+                setShowTechDialog(false)
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

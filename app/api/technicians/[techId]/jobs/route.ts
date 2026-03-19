@@ -36,11 +36,11 @@ export async function GET(
       )
     }
 
-    // Get jobs assigned to this technician
+    // Get jobs assigned to this technician (check if techId is in assigned_tech_ids array)
     const { data: jobs, error: jobsError } = await supabase
       .from('jobs')
       .select('*')
-      .eq('assigned_tech_id', techId)
+      .contains('assigned_tech_ids', [techId])
       .order('scheduled_time', { ascending: true })
 
     if (jobsError) {

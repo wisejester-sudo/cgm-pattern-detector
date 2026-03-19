@@ -103,9 +103,11 @@ export async function PATCH(
       "customer_phone", 
       "customer_address",
       "job_type",
-      "assigned_tech_id",
+      "assigned_tech_ids",  // Changed from assigned_tech_id
       "scheduled_time",
       "notes",
+      "status",
+      "on_hold_reason",    // New field
     ]
 
     // Filter to only allowed fields
