@@ -34,6 +34,7 @@ import {
   Camera,
   Trash2,
   X,
+  Download,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -156,6 +157,16 @@ export default function JobDetailPage({
         caption: null,
       })
     }
+  }
+
+  const handleDownloadPhoto = (photoUrl: string, photoId: string) => {
+    const link = document.createElement("a")
+    link.href = photoUrl
+    link.download = `photo-${photoId}.jpg`
+    link.target = "_blank"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   return (
@@ -315,8 +326,16 @@ export default function JobDetailPage({
                     className="rounded-lg object-cover w-[150px] h-[150px]"
                   />
                   <button
+                    onClick={() => handleDownloadPhoto(photo.photo_url, photo.id)}
+                    className="absolute top-2 left-2 p-1.5 bg-primary text-primary-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Download photo"
+                  >
+                    <Download className="h-3 w-3" />
+                  </button>
+                  <button
                     onClick={() => deletePhoto(photo.id)}
                     className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Delete photo"
                   >
                     <X className="h-3 w-3" />
                   </button>
