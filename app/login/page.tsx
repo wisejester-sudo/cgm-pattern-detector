@@ -33,7 +33,17 @@ export default function LoginPage() {
 
   useEffect(() => {
     resetStore()
-  }, [resetStore])
+    
+    // Check if user is already logged in, redirect to dashboard
+    const checkSession = async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      if (session) {
+        router.push("/dashboard")
+        router.refresh()
+      }
+    }
+    checkSession()
+  }, [resetStore, router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
