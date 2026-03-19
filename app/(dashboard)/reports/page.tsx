@@ -108,7 +108,7 @@ export default function ReportsPage() {
     return technicians
       .filter((tech) => tech.is_active)
       .map((tech) => {
-        const techJobs = filteredJobs.filter((j) => j.assigned_tech_id === tech.id)
+        const techJobs = filteredJobs.filter((j) => j.assigned_tech_ids?.includes(tech.id))
         const completedJobs = techJobs.filter((j) => j.status === "complete").length
         const avgTime = techJobs.length > 0 ? Math.floor(Math.random() * 60) + 30 : 0 // Simulated
         
@@ -145,7 +145,7 @@ export default function ReportsPage() {
     // Create CSV content
     const headers = ["Job ID", "Customer", "Type", "Status", "Technician", "Scheduled", "Created"]
     const rows = filteredJobs.map((job) => {
-      const tech = getTechnicianById(technicians, job.assigned_tech_id)
+      const tech = getTechnicianById(technicians, job.assigned_tech_ids?.[0] ?? null)
       return [
         job.id,
         job.customer_name,
@@ -361,7 +361,7 @@ export default function ReportsPage() {
             </TableHeader>
             <TableBody>
               {recentJobs.map((job) => {
-                const tech = getTechnicianById(technicians, job.assigned_tech_id)
+                const tech = getTechnicianById(technicians, job.assigned_tech_ids?.[0] ?? null)
                 return (
                   <TableRow key={job.id}>
                     <TableCell className="font-medium">{job.customer_name}</TableCell>

@@ -40,7 +40,7 @@ interface CreateJobModalProps {
     job_type: string
     scheduled_time: string
     notes: string | null
-    assigned_tech_id: string | null
+    assigned_tech_ids: string[] | null
   }) => void
 }
 
@@ -86,7 +86,7 @@ export function CreateJobModal({
     scheduled_date: "",
     scheduled_time: "",
     notes: "",
-    assigned_tech_id: "",
+    assigned_tech_ids: [] as string[],
   })
 
   // Normalize phone number to E.164 format
@@ -111,7 +111,7 @@ export function CreateJobModal({
         scheduled_date: formData.scheduled_date,
         scheduled_time: formData.scheduled_time,
         notes: formData.notes || null,
-        assigned_tech_id: formData.assigned_tech_id || null,
+        assigned_tech_ids: formData.assigned_tech_ids.length > 0 ? formData.assigned_tech_ids : null,
       }
 
       // Try to create via API first (Supabase)
@@ -138,7 +138,7 @@ export function CreateJobModal({
           job_type: formData.job_type,
           scheduled_time: scheduledDateTime,
           notes: formData.notes || null,
-          assigned_tech_id: formData.assigned_tech_id || null,
+          assigned_tech_ids: formData.assigned_tech_ids.length > 0 ? formData.assigned_tech_ids : null,
           status: "scheduled" as const,
         })
         toast.success(`Job for ${formData.customer_name} created locally`)
@@ -152,7 +152,7 @@ export function CreateJobModal({
         scheduled_date: "",
         scheduled_time: "",
         notes: "",
-        assigned_tech_id: "",
+        assigned_tech_ids: [] as string[],
       })
       setOpen(false)
     } catch {
@@ -275,11 +275,11 @@ export function CreateJobModal({
                   </Select>
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="assigned_tech_id">Assign Technician</FieldLabel>
+                  <FieldLabel htmlFor="assigned_tech_ids">Assign Technician</FieldLabel>
                   <Select
-                    value={formData.assigned_tech_id}
+                    value={formData.assigned_tech_ids[0] || ""}
                     onValueChange={(value) =>
-                      setFormData({ ...formData, assigned_tech_id: value })
+                      setFormData({ ...formData, assigned_tech_ids: value ? [value] : [] })
                     }
                   >
                     <SelectTrigger className="w-full">

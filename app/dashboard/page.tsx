@@ -168,7 +168,7 @@ export default function DashboardPage() {
             {todaysJobs.length > 0 ? (
               <div className="space-y-3">
                 {todaysJobs.slice(0, 5).map((job) => {
-                  const tech = getTechnicianById(technicians, job.assigned_tech_id)
+                  const tech = getTechnicianById(technicians, job.assigned_tech_ids?.[0] ?? null)
                   const scheduledTime = new Date(job.scheduled_time)
                   return (
                     <Link key={job.id} href={`/jobs/${job.id}`}>
@@ -226,8 +226,8 @@ export default function DashboardPage() {
               {technicians
                 .filter((t) => t.is_active)
                 .map((tech) => {
-                  const techJobs = jobs.filter((j) => j.assigned_tech_id === tech.id && j.status !== "complete")
-                  const currentJob = jobs.find((j) => j.assigned_tech_id === tech.id && (j.status === "en_route" || j.status === "working"))
+                  const techJobs = jobs.filter((j) => j.assigned_tech_ids?.includes(tech.id) && j.status !== "complete")
+                  const currentJob = jobs.find((j) => j.assigned_tech_ids?.includes(tech.id) && (j.status === "en_route" || j.status === "working"))
                   return (
                     <div key={tech.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                       <div className="flex items-center gap-3">

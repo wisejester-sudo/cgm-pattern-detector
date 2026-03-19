@@ -194,7 +194,7 @@ export default function TechniciansPage() {
 
   const getAssignedJobCount = (techId: string) => {
     return jobs.filter(
-      (j) => j.assigned_tech_id === techId && j.status !== "complete"
+      (j) => j.assigned_tech_ids?.includes(techId) && j.status !== "complete"
     ).length
   }
 

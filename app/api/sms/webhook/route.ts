@@ -92,7 +92,7 @@ async function handleWebhook(request: NextRequest) {
     // Find the most recent job for this phone number
     const { data: recentJob } = await supabase
       .from("jobs")
-      .select("id, customer_name, assigned_tech_id")
+      .select("id, customer_name, assigned_tech_ids")
       .or(`customer_phone.ilike.%${normalizedPhone}%`)
       .order("updated_at", { ascending: false })
       .limit(1)
@@ -127,7 +127,7 @@ async function handleWebhook(request: NextRequest) {
           status: "working",
           notes: "Customer approved work via SMS",
           photos: [],
-          created_by_tech_id: recentJob.assigned_tech_id,
+          created_by_tech_id: recentJob.assigned_tech_ids?.[0] ?? null,
         })
 
       // Update job status to working if needed

@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       customer_phone, 
       customer_address, 
       job_type, 
-      assigned_tech_id,
+      assigned_tech_ids,
       scheduled_date,
       scheduled_time,
       notes 
@@ -50,8 +50,10 @@ export async function POST(request: NextRequest) {
       : new Date()
 
     // Create job in database
-    // Convert single tech_id to array for backward compatibility
-    const techIds = assigned_tech_id ? [assigned_tech_id] : null
+    // Handle both single tech_id (backward compatibility) and array
+    const techIds = assigned_tech_ids 
+      ? (Array.isArray(assigned_tech_ids) ? assigned_tech_ids : [assigned_tech_ids]) 
+      : null
     
     const { data: job, error } = await supabase
       .from("jobs")

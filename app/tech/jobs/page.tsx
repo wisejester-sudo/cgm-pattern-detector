@@ -45,7 +45,7 @@ export default function TechJobsPage() {
   const myJobs = useMemo(() => {
     if (!currentTechId) return []
     return jobs
-      .filter((j) => j.assigned_tech_id === currentTechId)
+      .filter((j) => j.assigned_tech_ids?.includes(currentTechId))
       .sort((a, b) => {
         const statusOrder: Record<JobStatus, number> = {
           working: 0,

@@ -47,7 +47,7 @@ export async function PATCH(
     // Get current job to check transition
     const { data: currentJob, error: fetchError } = await supabase
       .from("jobs")
-      .select("status, assigned_tech_id")
+      .select("status, assigned_tech_ids")
       .eq("id", id)
       .single()
 
@@ -85,7 +85,7 @@ export async function PATCH(
         status,
         notes: notes || `Status changed from ${currentJob.status} to ${status}`,
         photos: [],
-        created_by_tech_id: currentJob.assigned_tech_id,
+        created_by_tech_id: currentJob.assigned_tech_ids?.[0] ?? null,
       })
       .select()
       .single()

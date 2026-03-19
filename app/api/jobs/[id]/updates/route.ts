@@ -72,7 +72,7 @@ export async function POST(
         status: status || job.status,
         notes: notes || null,
         photos: photos,
-        created_by_tech_id: job.assigned_tech_id,
+        created_by_tech_id: job.assigned_tech_ids?.[0] ?? null,
       })
       .select()
       .single()

@@ -86,7 +86,7 @@ export default function JobsPage() {
           <JobCard
             key={job.id}
             job={job}
-            technician={getTechnicianById(technicians, job.assigned_tech_id)}
+            technician={getTechnicianById(technicians, job.assigned_tech_ids?.[0] ?? null)}
             onStatusChange={handleStatusChange}
           />
         ))}

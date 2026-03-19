@@ -62,7 +62,7 @@ export default function CustomerTrackPage({
     )
   }
 
-  const technician = getTechnicianById(technicians, job.assigned_tech_id)
+  const technician = getTechnicianById(technicians, job.assigned_tech_ids?.[0] ?? null)
   const scheduledDate = new Date(job.scheduled_time)
   const currentStatus = statusConfig[job.status]
   const currentStepIndex = statusSteps.indexOf(job.status)
