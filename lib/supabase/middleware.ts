@@ -46,20 +46,28 @@ export async function updateSession(request: NextRequest) {
 
     // Public routes that don't require authentication
     const publicRoutes = [
-      "/",
-      "/login", 
-      "/signup",
-      "/tech",
-      "/auth", 
-      "/t/", 
-      "/j/", 
-      "/track/",
-      "/api/public", 
-      "/api/sms/webhook",
-      "/api/auth"
+      { path: "/", exact: true },
+      { path: "/about", exact: true },
+      { path: "/contact", exact: true },
+      { path: "/pricing", exact: true },
+      { path: "/privacy", exact: true },
+      { path: "/terms", exact: true },
+      { path: "/how-it-works", exact: true },
+      { path: "/login", exact: false },
+      { path: "/signup", exact: false },
+      { path: "/tech", exact: false },
+      { path: "/auth", exact: false },
+      { path: "/t/", exact: false },
+      { path: "/j/", exact: false },
+      { path: "/track/", exact: false },
+      { path: "/api/public", exact: false },
+      { path: "/api/sms/webhook", exact: false },
+      { path: "/api/auth", exact: false },
     ]
     const isPublicRoute = publicRoutes.some((route) =>
-      request.nextUrl.pathname.startsWith(route)
+      route.exact 
+        ? request.nextUrl.pathname === route.path
+        : request.nextUrl.pathname.startsWith(route.path)
     )
 
     // Allow API routes (they handle their own auth)
