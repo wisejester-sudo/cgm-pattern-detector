@@ -3,9 +3,16 @@ import { createClient } from "@/lib/supabase/server"
 import Stripe from "stripe"
 import { headers } from "next/headers"
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2026-02-25.clover",
-})
+// Lazy initialization of Stripe - only create when needed
+let stripeInstance: Stripe | null = null
+function getStripe(): Stripe | null {
+  if (!stripeInstance && process.env.STRIPE_SECRET_KEY) {
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2026-02-25.clover",
+    })
+  }
+  return stripeInstance
+}
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
@@ -23,6 +30,11 @@ export async function POST(request: NextRequest) {
 
     if (!signature || !webhookSecret) {
       return NextResponse.json({ error: "Missing signature" }, { status: 400 })
+    }
+
+    const stripe = getStripe()
+    if (!stripe) {
+      return NextResponse.json({ error: "Stripe not configured" }, { status: 503 })
     }
 
     let event: Stripe.Event
