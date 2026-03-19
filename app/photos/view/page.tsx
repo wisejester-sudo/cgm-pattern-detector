@@ -42,9 +42,9 @@ export default function PhotoViewerPage() {
   const [error, setError] = useState<string | null>(null)
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
 
-  const photoId = searchParams.get("photo")
-  const jobId = searchParams.get("job")
-  const token = searchParams.get("token")
+  const photoId = searchParams?.get("photo")
+  const jobId = searchParams?.get("job")
+  const token = searchParams?.get("token")
 
   useEffect(() => {
     if (jobId) {
