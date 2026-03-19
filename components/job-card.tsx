@@ -116,6 +116,17 @@ export function JobCard({ job, technicians = [], onStatusChange, onAcceptJob, sh
                 View Details
               </Button>
             </Link>
+            {/* Show Accept button for available jobs */}
+            {showAcceptButton && job.status === 'available' && onAcceptJob && (
+              <Button 
+                variant="default" 
+                size="sm" 
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                onClick={() => onAcceptJob(job.id)}
+              >
+                Accept Job
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary" size="sm">
@@ -132,13 +143,17 @@ export function JobCard({ job, technicians = [], onStatusChange, onAcceptJob, sh
                   >
                     <span
                       className={`mr-2 h-2 w-2 rounded-full ${
-                        statusKey === "scheduled"
-                          ? "bg-status-scheduled"
-                          : statusKey === "en_route"
-                            ? "bg-status-enroute"
-                            : statusKey === "working"
-                              ? "bg-status-working"
-                              : "bg-status-complete"
+                        statusKey === "available"
+                          ? "bg-blue-500"
+                          : statusKey === "scheduled"
+                            ? "bg-status-scheduled"
+                            : statusKey === "en_route"
+                              ? "bg-status-enroute"
+                              : statusKey === "working"
+                                ? "bg-status-working"
+                                : statusKey === "on_hold"
+                                  ? "bg-amber-500"
+                                  : "bg-status-complete"
                       }`}
                     />
                     {statusConfig[statusKey].label}

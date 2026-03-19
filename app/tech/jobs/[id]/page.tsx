@@ -17,12 +17,15 @@ import {
   Truck,
   Wrench,
   CheckCircle,
+  User,
+  PauseCircle,
+  CheckCircle2,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import {
   useStore,
-  getTechnicianById,
+  getTechniciansByIds,
   getPhotosByJobId,
   maskPhoneNumber,
 } from "@/lib/store"
@@ -37,6 +40,13 @@ const statusConfig: Record<JobStatus, {
   nextLabel?: string
   nextIcon?: React.ComponentType<{ className?: string }>
 }> = {
+  available: {
+    label: "Available",
+    className: "bg-blue-500 text-white",
+    nextStatus: "scheduled",
+    nextLabel: "Accept Job",
+    nextIcon: CheckCircle2,
+  },
   scheduled: {
     label: "Scheduled",
     className: "bg-status-scheduled text-foreground",
@@ -57,6 +67,10 @@ const statusConfig: Record<JobStatus, {
     nextStatus: "complete",
     nextLabel: "Job complete",
     nextIcon: CheckCircle,
+  },
+  on_hold: {
+    label: "On Hold",
+    className: "bg-amber-500 text-white",
   },
   complete: {
     label: "Complete",
@@ -88,8 +102,9 @@ export default function TechJobDetailPage({
   const [notes, setNotes] = useState("")
   const [smsSending, setSmsSending] = useState(false)
 
-  const technician = getTechnicianById(technicians, currentTechId)
+  const currentTechnician = technicians.find(t => t.id === currentTechId)
   const job = jobs.find((j) => j.id === id)
+  const assignedTechnicians = getTechniciansByIds(technicians, job?.assigned_tech_ids || [])
   const jobPhotos = getPhotosByJobId(photos, id)
 
   useEffect(() => {
@@ -116,34 +131,67 @@ export default function TechJobDetailPage({
 
     setSmsSending(true)
     
-    // Call API to update status and send SMS
+    // Special handling for accepting available jobs
+    const isAcceptingJob = job.status === 'available' && status.nextStatus === 'scheduled'
+    
     try {
-      const response = await fetch(`/api/jobs/${job.id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: status.nextStatus }),
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        updateJobStatus(job.id, status.nextStatus)
+      if (isAcceptingJob && currentTechId) {
+        // Accept job - update status and add current tech to assigned techs
+        const response = await fetch(`/api/jobs/${job.id}/accept`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ technician_id: currentTechId }),
+        })
         
-        // Log SMS status
-        if (data.sms) {
-          addSmsLog({
-            job_id: job.id,
-            recipient_phone: job.customer_phone,
-            message_body: `Status updated to ${status.nextStatus}`,
-            status: data.sms.success ? "sent" : "failed",
-            message_sid: data.sms.messageId,
+        if (response.ok) {
+          const data = await response.json()
+          updateJob(job.id, { 
+            status: 'scheduled',
+            assigned_tech_ids: [...(job.assigned_tech_ids || []), currentTechId]
           })
           
-          if (!data.sms.success) {
-            console.error("[TechView] SMS failed:", data.sms.error)
+          // Log SMS status
+          if (data.sms) {
+            addSmsLog({
+              job_id: job.id,
+              recipient_phone: job.customer_phone,
+              message_body: `Job accepted by ${currentTechnician?.name || 'technician'}. Status: Scheduled`,
+              status: data.sms.success ? "sent" : "failed",
+              message_sid: data.sms.messageId,
+            })
           }
+        } else {
+          console.error("[TechView] Failed to accept job")
         }
       } else {
-        console.error("[TechView] Failed to update status")
+        // Normal status advancement
+        const response = await fetch(`/api/jobs/${job.id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: status.nextStatus }),
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          updateJobStatus(job.id, status.nextStatus)
+          
+          // Log SMS status
+          if (data.sms) {
+            addSmsLog({
+              job_id: job.id,
+              recipient_phone: job.customer_phone,
+              message_body: `Status updated to ${status.nextStatus}`,
+              status: data.sms.success ? "sent" : "failed",
+              message_sid: data.sms.messageId,
+            })
+            
+            if (!data.sms.success) {
+              console.error("[TechView] SMS failed:", data.sms.error)
+            }
+          }
+        } else {
+          console.error("[TechView] Failed to update status")
+        }
       }
     } catch (error) {
       console.error("[TechView] Error:", error)
@@ -250,6 +298,32 @@ export default function TechJobDetailPage({
                 <p className="font-medium text-muted-foreground">{maskPhoneNumber(job.customer_phone)}</p>
               </div>
             </div>
+            {/* Assigned Technicians */}
+            {assignedTechnicians.length > 0 && (
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-muted shrink-0">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Team</p>
+                  <p className="font-medium">
+                    {assignedTechnicians.map(t => t.name).join(', ')}
+                  </p>
+                </div>
+              </div>
+            )}
+            {/* On Hold Reason */}
+            {job.status === 'on_hold' && job.on_hold_reason && (
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-amber-100 shrink-0">
+                  <PauseCircle className="h-4 w-4 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-amber-700">On Hold</p>
+                  <p className="font-medium text-amber-800">{job.on_hold_reason}</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
