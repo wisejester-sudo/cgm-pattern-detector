@@ -30,11 +30,20 @@ export async function POST(request: NextRequest) {
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
     
     // Check if Supabase is configured
     if (!supabaseUrl || !supabaseAnonKey) {
-      // Demo mode - accept any credentials
-      return NextResponse.json({ success: true, demo: true })
+      if (demoMode) {
+        // Demo mode - accept any credentials
+        console.warn('[AUTH] Running in DEMO MODE')
+        return NextResponse.json({ success: true, demo: true })
+      }
+      // Production mode without config - reject
+      return NextResponse.json(
+        { error: 'Authentication service unavailable' },
+        { status: 503 }
+      )
     }
 
     const body = await request.json()
