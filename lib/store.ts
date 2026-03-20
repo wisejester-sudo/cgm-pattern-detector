@@ -858,34 +858,65 @@ export const useStore = create<AppState>()(
   )
 )
 
-// Helper to get technician by ID
+/**
+ * Get a technician by their ID
+ * @param technicians - Array of technicians to search
+ * @param id - Technician ID to find
+ * @returns Technician object or null if not found
+ */
 export const getTechnicianById = (technicians: Technician[], id: string | null) => {
   if (!id) return null
   return technicians.find((t) => t.id === id) || null
 }
 
-// Helper to get multiple technicians by IDs
+/**
+ * Get multiple technicians by their IDs
+ * @param technicians - Array of all technicians
+ * @param ids - Array of technician IDs to find
+ * @returns Array of matching technicians
+ */
 export const getTechniciansByIds = (technicians: Technician[], ids: string[] | null) => {
   if (!ids || ids.length === 0) return []
   return technicians.filter((t) => ids.includes(t.id))
 }
 
-// Helper to get jobs assigned to a technician (now checks array)
+/**
+ * Get jobs assigned to a specific technician
+ * @param jobs - Array of all jobs
+ * @param techId - Technician ID to filter by
+ * @returns Array of jobs assigned to the technician
+ */
 export const getTechnicianJobs = (jobs: Job[], techId: string) => {
   return jobs.filter((j) => j.assigned_tech_ids?.includes(techId) ?? false)
 }
 
-// Helper to get available jobs (status === 'available')
+/**
+ * Get all available jobs (status === 'available')
+ * @param jobs - Array of all jobs
+ * @returns Array of available jobs
+ */
 export const getAvailableJobs = (jobs: Job[]) => {
   return jobs.filter((j) => j.status === 'available')
 }
 
-// Helper to get photos by job ID
+/**
+ * Get photos for a specific job
+ * @param photos - Array of all photos
+ * @param jobId - Job ID to filter by
+ * @returns Array of photos for the job
+ */
 export const getPhotosByJobId = (photos: JobPhoto[], jobId: string) => {
   return photos.filter((p) => p.job_id === jobId)
 }
 
-// Helper to render SMS template (with XSS protection)
+/**
+ * Render an SMS template with variable substitution and XSS protection
+ * @param template - Template string with placeholders like {customer_name}
+ * @param job - Job object for variable values
+ * @param tech - Technician object (optional)
+ * @param settings - Company settings for variable values
+ * @returns Rendered template string with escaped values
+ */
 export const renderTemplate = (
   template: string,
   job: Job,
@@ -910,7 +941,11 @@ export const renderTemplate = (
     .replace(/{eta}/g, '15-20 minutes')
 }
 
-// Helper to mask phone numbers for technician view
+/**
+ * Mask a phone number for technician view (privacy protection)
+ * @param phone - Full phone number to mask
+ * @returns Masked phone number like "(555) ***-****" or "***-***-****"
+ */
 export const maskPhoneNumber = (phone: string) => {
   // Returns format: (555) ***-****
   const match = phone.match(/^\((\d{3})\)/)
