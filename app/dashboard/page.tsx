@@ -270,7 +270,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{smsSentToday}</div>
             <p className="text-xs text-muted-foreground">
-              {subscription.sms_used_this_month}/{subscription.sms_limit} this month
+              Unlimited messaging
             </p>
           </CardContent>
         </Card>
