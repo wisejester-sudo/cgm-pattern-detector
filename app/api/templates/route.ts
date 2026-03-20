@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { logger } from "@/lib/logger"
 
 // GET /api/templates - List all SMS templates for current admin
 export async function GET(request: NextRequest) {
   try {
     // Check if Supabase is configured
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      return NextResponse.json([])
+      return NextResponse.json({ templates: [], pagination: { page: 1, limit: 50, total: 0, totalPages: 0, hasMore: false } })
     }
 
     const supabase = await createClient()
     if (!supabase) {
-      return NextResponse.json([])
+      return NextResponse.json({ templates: [], pagination: { page: 1, limit: 50, total: 0, totalPages: 0, hasMore: false } })
     }
     
     // Check authentication
@@ -23,23 +24,39 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { data: templates, error } = await supabase
+    // Parse pagination params
+    const { searchParams } = new URL(request.url)
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10))
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50", 10)))
+    const offset = (page - 1) * limit
+
+    const { data: templates, error, count } = await supabase
       .from("sms_templates")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("admin_id", user.id)
       .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1)
 
     if (error) {
-      console.error("[API] Error fetching templates:", error)
+      logger.error("Error fetching templates:", error)
       return NextResponse.json(
         { error: "Failed to fetch templates" },
         { status: 500 }
       )
     }
 
-    return NextResponse.json(templates)
+    return NextResponse.json({
+      templates: templates || [],
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: count ? Math.ceil(count / limit) : 0,
+        hasMore: count ? offset + (templates?.length || 0) < count : false,
+      }
+    })
   } catch (error) {
-    console.error("[API] Unexpected error:", error)
+    logger.error("Unexpected error:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -131,7 +148,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error("[API] Error creating template:", error)
+      logger.error("Error creating template:", error)
       return NextResponse.json(
         { error: "Failed to create template" },
         { status: 500 }
@@ -140,7 +157,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(template, { status: 201 })
   } catch (error) {
-    console.error("[API] Unexpected error:", error)
+    logger.error("Unexpected error:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
