@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { validateTwilioSignature } from "@/lib/twilio"
 import { checkRateLimit, getClientIdentifier, rateLimitConfigs } from "@/lib/rate-limit"
+import { logger } from "@/lib/logger"
 
 // Keyword mappings for status updates
 const STATUS_KEYWORDS: Record<string, string> = {
@@ -98,7 +99,7 @@ async function handleIncomingSMS(request: NextRequest) {
       const url = request.url
       
       if (!validateTwilioSignature(signature, url, params)) {
-        console.error("[SMS Incoming] Invalid Twilio signature")
+        logger.error("Invalid Twilio signature")
         return NextResponse.json(
           { error: "Invalid signature" },
           { status: 403 }
@@ -239,7 +240,7 @@ async function handleIncomingSMS(request: NextRequest) {
         .eq("id", activeJob.id)
 
       if (updateError) {
-        console.error("[SMS Incoming] Error updating job:", updateError)
+        logger.error("Error updating job:", updateError)
         await sendSMSReply(normalizedPhone,
           "Sorry, there was an error updating your status. Please try again or use the app.")
         
@@ -260,7 +261,7 @@ async function handleIncomingSMS(request: NextRequest) {
         })
 
       if (updateRecordError) {
-        console.error("[SMS Incoming] Error creating update record:", updateRecordError)
+        logger.error("Error creating update record:", updateRecordError)
       }
 
       // Send confirmation to technician
@@ -324,7 +325,7 @@ async function handleIncomingSMS(request: NextRequest) {
     )
 
   } catch (error) {
-    console.error("[SMS Incoming] Unexpected error:", error)
+    logger.error("Unexpected error:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -390,12 +391,12 @@ async function sendSMSReply(to: string, body: string): Promise<void> {
 
     if (!twilioResponse.ok) {
       const errorData = await twilioResponse.text()
-      console.error("[SMS Reply] Twilio error:", errorData)
+      logger.error("SMS reply Twilio error:", errorData)
     } else {
       // SMS reply sent successfully
     }
   } catch (error) {
-    console.error("[SMS Reply] Error sending SMS:", error)
+    logger.error("Error sending SMS reply:", error)
   }
 }
 
@@ -451,7 +452,7 @@ async function notifyCustomerOfStatusChange(
 
     if (!twilioResponse.ok) {
       const errorData = await twilioResponse.text()
-      console.error("[Customer Notify] Twilio error:", errorData)
+      logger.error("Customer notification Twilio error:", errorData)
     } else {
       // Customer notification sent
     }
@@ -467,7 +468,7 @@ async function notifyCustomerOfStatusChange(
     })
 
   } catch (error) {
-    console.error("[Customer Notify] Error:", error)
+    logger.error("Customer notification error:", error)
   }
 }
 
@@ -499,6 +500,6 @@ async function logIncomingMessage(
                    params.parsedAs === "note" ? "note" : "general"
     })
   } catch (error) {
-    console.error("[SMS Log] Error logging message:", error)
+    logger.error("Error logging SMS message:", error)
   }
 }
