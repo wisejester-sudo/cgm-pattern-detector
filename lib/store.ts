@@ -630,9 +630,10 @@ export const useStore = create<AppState>()(
             return
           }
           const data = await response.json()
-          // Only update if we got actual data from Supabase (not empty from demo mode)
-          if (Array.isArray(data) && data.length > 0) {
-            set({ jobs: data })
+          // Handle paginated response format: { jobs: [...], pagination: {...} }
+          const jobs = data.jobs || data
+          if (Array.isArray(jobs)) {
+            set({ jobs })
           }
         } catch (error) {
           // Keep using demo data on error
