@@ -264,7 +264,7 @@ export async function GET(request: NextRequest) {
     // Build query
     let query = supabase
       .from("jobs")
-      .select("*, technicians:assigned_tech_ids(*)", { count: "exact" })
+      .select("*", { count: "exact" })
       .eq("admin_id", user.id)
       .order("scheduled_time", { ascending: false })
       .range(offset, offset + limit - 1)

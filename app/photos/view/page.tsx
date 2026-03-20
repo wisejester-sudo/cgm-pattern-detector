@@ -129,7 +129,7 @@ function PhotoViewerContent() {
         .in(
           "update_id",
           supabase
-            .from("updates")
+            .from("job_updates")
             .select("id")
             .eq("job_id", jobId)
         )

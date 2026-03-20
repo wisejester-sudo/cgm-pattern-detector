@@ -252,7 +252,7 @@ async function handleIncomingSMS(request: NextRequest) {
 
       // Create update record
       const { error: updateRecordError } = await supabase
-        .from("updates")
+        .from("job_updates")
         .insert({
           job_id: activeJob.id,
           status: newStatus as any,
@@ -290,7 +290,7 @@ async function handleIncomingSMS(request: NextRequest) {
       
       // Store as an update note
       await supabase
-        .from("updates")
+        .from("job_updates")
         .insert({
           job_id: activeJob.id,
           status: activeJob.status as any,
