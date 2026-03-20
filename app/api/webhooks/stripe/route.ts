@@ -59,19 +59,21 @@ export async function POST(request: NextRequest) {
         if (companyId && session.subscription) {
           const subscription = await stripe.subscriptions.retrieve(
             session.subscription as string
-          ) as Stripe.Subscription
+          )
 
-          const currentPeriodStart = subscription.current_period_start 
-            ? new Date(subscription.current_period_start * 1000) 
+          // Use type assertion to access Stripe subscription properties
+          const sub = subscription as any
+          const currentPeriodStart = sub.current_period_start 
+            ? new Date(sub.current_period_start * 1000) 
             : null
-          const currentPeriodEnd = subscription.current_period_end 
-            ? new Date(subscription.current_period_end * 1000) 
+          const currentPeriodEnd = sub.current_period_end 
+            ? new Date(sub.current_period_end * 1000) 
             : null
-          const trialStart = subscription.trial_start 
-            ? new Date(subscription.trial_start * 1000) 
+          const trialStart = sub.trial_start 
+            ? new Date(sub.trial_start * 1000) 
             : null
-          const trialEnd = subscription.trial_end 
-            ? new Date(subscription.trial_end * 1000) 
+          const trialEnd = sub.trial_end 
+            ? new Date(sub.trial_end * 1000) 
             : null
 
           await supabase.from("subscriptions").upsert({
