@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { validationSchemas, validateAndSanitize } from "@/lib/validation"
 
 // POST /api/jobs - Create a new job
 export async function POST(request: NextRequest) {
@@ -25,6 +26,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    
+    // Validate and sanitize input
+    const { errors, sanitized } = validateAndSanitize(body, validationSchemas.createJob)
+    
+    if (errors.length > 0) {
+      return NextResponse.json(
+        { error: "Validation failed", errors },
+        { status: 400 }
+      )
+    }
+    
     const { 
       customer_name, 
       customer_phone, 
@@ -34,7 +46,7 @@ export async function POST(request: NextRequest) {
       scheduled_date,
       scheduled_time,
       notes 
-    } = body
+    } = sanitized as typeof body
 
     // Validate required fields
     if (!customer_name || !customer_phone || !customer_address || !job_type) {
