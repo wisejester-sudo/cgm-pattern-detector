@@ -64,7 +64,9 @@ export default function JobsPage() {
         working: 0,
         en_route: 1,
         scheduled: 2,
-        complete: 3,
+        available: 3,
+        on_hold: 4,
+        complete: 5,
       }
       if (statusOrder[a.status] !== statusOrder[b.status]) {
         return statusOrder[a.status] - statusOrder[b.status]
