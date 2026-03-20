@@ -28,60 +28,29 @@ export interface AddressSearchResult {
 }
 
 /**
- * Search for addresses using Photon API
+ * Search for addresses using local proxy API
+ * 
+ * Uses /api/address/search to avoid CSP issues with direct Photon calls
  */
 export async function searchAddresses(query: string, limit: number = 5): Promise<AddressSearchResult> {
-  if (!query || query.length < 3) {
+  if (!query || query.length < 2) {
     return { suggestions: [] }
   }
 
   try {
-    // Add country bias for US/Canada (change as needed)
-    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=${limit}&lang=en`
+    // Use local proxy API (no CSP issues)
+    const url = `/api/address/search?q=${encodeURIComponent(query)}&limit=${limit}`
     
     const response = await fetch(url)
     
     if (!response.ok) {
-      throw new Error(`Photon API error: ${response.status}`)
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.error || `Search failed: ${response.status}`)
     }
 
     const data = await response.json()
     
-    const suggestions: AddressSuggestion[] = data.features.map((feature: any, index: number) => {
-      const props = feature.properties
-      const coords = feature.geometry.coordinates
-      
-      // Build full address from components
-      const parts = []
-      if (props.housenumber && props.street) {
-        parts.push(`${props.housenumber} ${props.street}`)
-      } else if (props.street) {
-        parts.push(props.street)
-      } else if (props.name) {
-        parts.push(props.name)
-      }
-      
-      if (props.city) parts.push(props.city)
-      if (props.state) parts.push(props.state)
-      if (props.postcode) parts.push(props.postcode)
-      if (props.country) parts.push(props.country)
-      
-      return {
-        id: `${props.osm_id || index}`,
-        name: props.name || props.street || query,
-        fullAddress: parts.join(', '),
-        street: props.street,
-        housenumber: props.housenumber,
-        city: props.city,
-        state: props.state,
-        postcode: props.postcode,
-        country: props.country,
-        lat: coords[1],
-        lon: coords[0],
-      }
-    })
-
-    return { suggestions }
+    return { suggestions: data.suggestions || [] }
     
   } catch (error) {
     console.error('Address search error:', error)
