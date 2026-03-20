@@ -8,9 +8,11 @@ import { useStore, getTechniciansByIds } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
 
 const statusLabels: Record<JobStatus, string> = {
+  available: "Available",
   scheduled: "Scheduled",
   en_route: "En Route",
   working: "Working",
+  on_hold: "On Hold",
   complete: "Complete",
 }
 
