@@ -430,14 +430,31 @@ export const useStore = create<AppState>()(
         })
         
         if (!response.ok) {
-          const errorText = await response.text()
-          console.error('Failed to save job to API:', errorText)
-          throw new Error(`Failed to create job: ${errorText}`)
+          let errorMessage = 'Failed to create job'
+          let errorDetails = null
+          
+          try {
+            const errorData = await response.json()
+            errorMessage = errorData.error || errorMessage
+            errorDetails = errorData.details || null
+          } catch {
+            // If JSON parsing fails, use status text
+            errorMessage = response.statusText || errorMessage
+          }
+          
+          console.error('Failed to save job to API:', errorMessage, errorDetails)
+          
+          // Create error with details attached
+          const error = new Error(errorMessage) as Error & { details?: Record<string, string> }
+          if (errorDetails) {
+            error.details = errorDetails
+          }
+          throw error
         }
         
         const savedJob = await response.json()
-        set((state) => ({ jobs: [...state.jobs, savedJob] }))
-        return savedJob
+        set((state) => ({ jobs: [...state.jobs, savedJob.job] }))
+        return savedJob.job
       },
       
       updateJob: async (id, updates) => {
@@ -541,14 +558,30 @@ export const useStore = create<AppState>()(
         })
         
         if (!response.ok) {
-          const errorText = await response.text()
-          console.error('Failed to save technician to API:', errorText)
-          throw new Error(`Failed to create technician: ${errorText}`)
+          let errorMessage = 'Failed to create technician'
+          let errorDetails = null
+          
+          try {
+            const errorData = await response.json()
+            errorMessage = errorData.error || errorMessage
+            errorDetails = errorData.details || null
+          } catch {
+            errorMessage = response.statusText || errorMessage
+          }
+          
+          console.error('Failed to save technician to API:', errorMessage, errorDetails)
+          
+          // Create error with details attached
+          const error = new Error(errorMessage) as Error & { details?: Record<string, string> }
+          if (errorDetails) {
+            error.details = errorDetails
+          }
+          throw error
         }
         
         const savedTech = await response.json()
-        set((state) => ({ technicians: [...state.technicians, savedTech] }))
-        return savedTech
+        set((state) => ({ technicians: [...state.technicians, savedTech.technician] }))
+        return savedTech.technician
       },
       
       updateTechnician: async (id, updates) => {
