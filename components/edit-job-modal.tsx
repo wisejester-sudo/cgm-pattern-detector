@@ -411,7 +411,7 @@ export function EditJobModal({ job, open, onOpenChange, onJobUpdated }: EditJobM
               Cancel
             </Button>
             <BrandButton type="submit" disabled={!isValid || isLoading}>
-              {isLoading ? <Spinner className="mr-2" size="sm" /> : null}
+              {isLoading ? <Spinner className="mr-2 h-4 w-4" /> : null}
               Save Changes
             </BrandButton>
           </DialogFooter>
