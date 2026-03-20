@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useMemo, useCallback } from "react"
 import { toast } from "sonner"
 import { JobCard } from "@/components/job-card"
 import { CreateJobModal } from "@/components/create-job-modal"
-import { useStore, getTechnicianById } from "@/lib/store"
+import { useStore, getTechniciansByIds } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
 
 const statusLabels: Record<JobStatus, string> = {
@@ -22,7 +22,8 @@ export default function JobsPage() {
     loadJobsFromSupabase()
   }, [loadJobsFromSupabase])
 
-  const handleStatusChange = async (jobId: string, newStatus: JobStatus) => {
+  // Memoize handler to prevent unnecessary re-renders
+  const handleStatusChange = useCallback(async (jobId: string, newStatus: JobStatus) => {
     try {
       const response = await fetch(`/api/jobs/${jobId}/status`, {
         method: 'PATCH',
@@ -51,21 +52,24 @@ export default function JobsPage() {
       console.error("Error updating job status:", error)
       toast.error('Failed to update status')
     }
-  }
+  }, [loadJobsFromSupabase])
 
   // Sort jobs: active jobs first, then by scheduled time
-  const sortedJobs = [...jobs].sort((a, b) => {
-    const statusOrder: Record<JobStatus, number> = {
-      working: 0,
-      en_route: 1,
-      scheduled: 2,
-      complete: 3,
-    }
-    if (statusOrder[a.status] !== statusOrder[b.status]) {
-      return statusOrder[a.status] - statusOrder[b.status]
-    }
-    return new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime()
-  })
+  // Memoized to prevent recalculation on every render
+  const sortedJobs = useMemo(() => {
+    return [...jobs].sort((a, b) => {
+      const statusOrder: Record<JobStatus, number> = {
+        working: 0,
+        en_route: 1,
+        scheduled: 2,
+        complete: 3,
+      }
+      if (statusOrder[a.status] !== statusOrder[b.status]) {
+        return statusOrder[a.status] - statusOrder[b.status]
+      }
+      return new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime()
+    })
+  }, [jobs])
 
   return (
     <div className="flex flex-col gap-6">
@@ -86,7 +90,7 @@ export default function JobsPage() {
           <JobCard
             key={job.id}
             job={job}
-            technician={getTechnicianById(technicians, job.assigned_tech_ids?.[0] ?? null)}
+            technicians={getTechniciansByIds(technicians, job.assigned_tech_ids)}
             onStatusChange={handleStatusChange}
           />
         ))}

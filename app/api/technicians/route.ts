@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
-// GET /api/technicians - List all technicians for current admin
+// GET /api/technicians - List all technicians for current admin with pagination
 export async function GET(request: NextRequest) {
   try {
     // Check if Supabase is configured
@@ -22,12 +22,19 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       )
     }
+    
+    // PERFORMANCE: Pagination support
+    const { searchParams } = new URL(request.url)
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10))
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)))
+    const offset = (page - 1) * limit
 
-    const { data: technicians, error } = await supabase
+    const { data: technicians, error, count } = await supabase
       .from("technicians")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("admin_id", user.id)
       .order("name", { ascending: true })
+      .range(offset, offset + limit - 1)
 
     if (error) {
       console.error("[API] Error fetching technicians:", error)
@@ -37,7 +44,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json(technicians)
+    // PERFORMANCE: Return pagination metadata
+    return NextResponse.json({
+      technicians: technicians || [],
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: count ? Math.ceil(count / limit) : 0,
+        hasMore: count ? offset + (technicians?.length || 0) < count : false,
+      }
+    })
   } catch (error) {
     console.error("[API] Unexpected error:", error)
     return NextResponse.json(
@@ -80,6 +97,39 @@ export async function POST(request: NextRequest) {
         { error: "Missing required field: name" },
         { status: 400 }
       )
+    }
+    
+    // SECURITY: Validate email format if provided
+    if (email !== undefined && email !== null) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        return NextResponse.json(
+          { error: "Invalid email format" },
+          { status: 400 }
+        )
+      }
+    }
+    
+    // SECURITY: Validate phone number format if provided
+    if (phone !== undefined && phone !== null) {
+      // Normalize and validate phone (should be 10+ digits)
+      const normalizedPhone = phone.replace(/\D/g, '')
+      if (normalizedPhone.length < 10 || normalizedPhone.length > 15) {
+        return NextResponse.json(
+          { error: "Invalid phone number format" },
+          { status: 400 }
+        )
+      }
+    }
+    
+    // SECURITY: Validate PIN format if provided
+    if (pin !== undefined && pin !== null) {
+      if (!/^\d{4,8}$/.test(pin)) {
+        return NextResponse.json(
+          { error: "PIN must be 4-8 digits" },
+          { status: 400 }
+        )
+      }
     }
 
     // Check technician limit (10 max, including deactivated)

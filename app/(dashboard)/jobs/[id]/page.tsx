@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useState } from "react"
+import { use, useState, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -105,36 +105,37 @@ export default function JobDetailPage({
   const [selectedTechIds, setSelectedTechIds] = useState<string[]>(job.assigned_tech_ids || [])
   const [showTechDialog, setShowTechDialog] = useState(false)
 
-  const handleStatusChange = (newStatus: JobStatus) => {
+  // Memoize handlers to prevent unnecessary re-renders
+  const handleStatusChange = useCallback((newStatus: JobStatus) => {
     updateJobStatus(job.id, newStatus)
     toast.success(`Status updated to ${statusConfig[newStatus].label}`)
-  }
+  }, [job.id, updateJobStatus])
 
-  const handleAddTech = (techId: string) => {
+  const handleAddTech = useCallback((techId: string) => {
     if (!selectedTechIds.includes(techId)) {
       const newTechIds = [...selectedTechIds, techId]
       setSelectedTechIds(newTechIds)
     }
-  }
+  }, [selectedTechIds])
 
-  const handleRemoveTech = (techId: string) => {
+  const handleRemoveTech = useCallback((techId: string) => {
     const newTechIds = selectedTechIds.filter(id => id !== techId)
     setSelectedTechIds(newTechIds)
-  }
+  }, [selectedTechIds])
 
-  const handleSaveTechs = () => {
+  const handleSaveTechs = useCallback(() => {
     updateJob(job.id, { assigned_tech_ids: selectedTechIds.length > 0 ? selectedTechIds : null })
     setShowTechDialog(false)
     toast.success(`Technicians updated`)
-  }
+  }, [job.id, selectedTechIds, updateJob])
 
-  const handleSaveNotes = () => {
+  const handleSaveNotes = useCallback(() => {
     updateJob(job.id, { notes: notes || null })
     setEditingNotes(false)
     toast.success('Notes saved')
-  }
+  }, [job.id, notes, updateJob])
 
-  const handleDeleteJob = async () => {
+  const handleDeleteJob = useCallback(async () => {
     setIsDeleting(true)
     try {
       await fetch(`/api/jobs/${job.id}`, {
@@ -148,9 +149,9 @@ export default function JobDetailPage({
       toast.error('Failed to delete job')
       setIsDeleting(false)
     }
-  }
+  }, [job.id, deleteJob, router])
 
-  const handleSendSMS = async () => {
+  const handleSendSMS = useCallback(async () => {
     const template = templates.find((t) => t.id === selectedTemplate)
     if (!template) return
 
@@ -170,9 +171,9 @@ export default function JobDetailPage({
     setSmsSent(true)
     toast.success('SMS sent successfully')
     setTimeout(() => setSmsSent(false), 3000)
-  }
+  }, [job, primaryTechnician, settings, templates, selectedTemplate, addSmsLog])
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       const url = URL.createObjectURL(file)
@@ -182,9 +183,9 @@ export default function JobDetailPage({
         caption: null,
       })
     }
-  }
+  }, [job.id, addPhoto])
 
-  const handleDownloadPhoto = (photoUrl: string, photoId: string) => {
+  const handleDownloadPhoto = useCallback((photoUrl: string, photoId: string) => {
     const link = document.createElement("a")
     link.href = photoUrl
     link.download = `photo-${photoId}.jpg`
@@ -192,7 +193,7 @@ export default function JobDetailPage({
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-  }
+  }, [])
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
@@ -228,7 +229,7 @@ export default function JobDetailPage({
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-muted">
-                <Phone className="h-4 w-4 text-muted-foreground" />
+                <Phone className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Phone</p>
@@ -237,7 +238,7 @@ export default function JobDetailPage({
             </div>
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-lg bg-muted">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <MapPin className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Address</p>
@@ -353,7 +354,7 @@ export default function JobDetailPage({
                 <div key={photo.id} className="relative group">
                   <Image
                     src={photo.photo_url}
-                    alt="Job photo"
+                    alt={`Job photo ${photo.id}`}
                     width={150}
                     height={150}
                     className="rounded-lg object-cover w-[150px] h-[150px]"
@@ -362,26 +363,32 @@ export default function JobDetailPage({
                     onClick={() => handleDownloadPhoto(photo.photo_url, photo.id)}
                     className="absolute top-2 left-2 p-1.5 bg-primary text-primary-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Download photo"
+                    aria-label={`Download photo ${photo.id}`}
                   >
-                    <Download className="h-3 w-3" />
+                    <Download className="h-3 w-3" aria-hidden="true" />
                   </button>
                   <button
                     onClick={() => deletePhoto(photo.id)}
                     className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Delete photo"
+                    aria-label={`Delete photo ${photo.id}`}
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-3 w-3" aria-hidden="true" />
                   </button>
                 </div>
               ))}
-              <label className="flex flex-col items-center justify-center w-[150px] h-[150px] border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                <Camera className="h-8 w-8 text-muted-foreground mb-2" />
+              <label 
+                className="flex flex-col items-center justify-center w-[150px] h-[150px] border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                aria-label="Upload job photo"
+              >
+                <Camera className="h-8 w-8 text-muted-foreground mb-2" aria-hidden="true" />
                 <span className="text-sm text-muted-foreground">Add Photo</span>
                 <input
                   type="file"
                   accept="image/*"
                   className="hidden"
                   onChange={handlePhotoUpload}
+                  aria-label="Choose photo file"
                 />
               </label>
             </div>

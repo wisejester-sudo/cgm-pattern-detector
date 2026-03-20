@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { checkRateLimit, getClientIdentifier } from "@/lib/rate-limit"
+
+// PUBLIC ENDPOINT: Rate limit to prevent brute force token guessing
+const PUBLIC_RATE_LIMIT = {
+  maxRequests: 30, // 30 requests per minute
+  windowMs: 60 * 1000,
+}
 
 // GET /api/public/job/[token] - Get public job view by token
 export async function GET(
@@ -7,6 +14,17 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    // Rate limiting: Prevent brute force token guessing
+    const identifier = getClientIdentifier(request)
+    const rateLimit = checkRateLimit(`public-job:${identifier}`, PUBLIC_RATE_LIMIT)
+    
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please try again later." },
+        { status: 429 }
+      )
+    }
+
     // Check if Supabase is configured
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       return NextResponse.json(
@@ -16,6 +34,15 @@ export async function GET(
     }
 
     const { token } = await params
+    
+    // SECURITY: Validate token format (should be a hex string)
+    if (!token || !/^[a-f0-9]{32}$/i.test(token)) {
+      return NextResponse.json(
+        { error: "Invalid token format" },
+        { status: 400 }
+      )
+    }
+
     const supabase = await createClient()
     if (!supabase) {
       return NextResponse.json({ error: "Database not configured" }, { status: 503 })

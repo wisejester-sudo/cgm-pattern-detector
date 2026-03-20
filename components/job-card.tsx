@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, memo, useMemo } from "react"
+import { useState, useEffect, memo, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -50,7 +50,7 @@ interface JobCardProps {
   showAcceptButton?: boolean  // Show accept button for available jobs
 }
 
-export function JobCard({ job, technicians = [], onStatusChange, onAcceptJob, showAcceptButton }: JobCardProps) {
+function JobCardComponent({ job, technicians = [], onStatusChange, onAcceptJob, showAcceptButton }: JobCardProps) {
   const status = statusConfig[job.status]
   const scheduledDate = new Date(job.scheduled_time)
   const [formattedTime, setFormattedTime] = useState<string>("")
@@ -61,6 +61,15 @@ export function JobCard({ job, technicians = [], onStatusChange, onAcceptJob, sh
       `${scheduledDate.toLocaleDateString()} at ${scheduledDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
     )
   }, [job.scheduled_time])
+
+  // Memoize handlers to prevent unnecessary re-renders
+  const handleStatusChange = useCallback((statusKey: JobStatus) => {
+    onStatusChange?.(job.id, statusKey)
+  }, [onStatusChange, job.id])
+
+  const handleAcceptJob = useCallback(() => {
+    onAcceptJob?.(job.id)
+  }, [onAcceptJob, job.id])
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -78,21 +87,21 @@ export function JobCard({ job, technicians = [], onStatusChange, onAcceptJob, sh
           {/* Contact info */}
           <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4" />
+              <Phone className="h-4 w-4" aria-hidden="true" />
               <span>{job.customer_phone}</span>
             </div>
             <div className="flex items-start gap-2">
-              <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
+              <MapPin className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
               <span className="line-clamp-2">{job.customer_address}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
+              <Clock className="h-4 w-4" aria-hidden="true" />
               <span>{formattedTime || "Loading..."}</span>
             </div>
             {/* Show assigned technicians */}
             {technicians.length > 0 && (
               <div className="flex items-start gap-2">
-                <User className="h-4 w-4 mt-0.5 shrink-0" />
+                <User className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
                 <span>
                   {technicians.length === 1 
                     ? technicians[0].name 
@@ -103,7 +112,7 @@ export function JobCard({ job, technicians = [], onStatusChange, onAcceptJob, sh
             {/* Show on-hold reason */}
             {job.status === 'on_hold' && job.on_hold_reason && (
               <div className="flex items-start gap-2 text-amber-700">
-                <PauseCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                <PauseCircle className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
                 <span className="line-clamp-2">{job.on_hold_reason}</span>
               </div>
             )}
@@ -122,23 +131,29 @@ export function JobCard({ job, technicians = [], onStatusChange, onAcceptJob, sh
                 variant="default" 
                 size="sm" 
                 className="flex-1 bg-green-600 hover:bg-green-700"
-                onClick={() => onAcceptJob(job.id)}
+                onClick={handleAcceptJob}
+                aria-label={`Accept job for ${job.customer_name}`}
               >
                 Accept Job
               </Button>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="secondary" size="sm">
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  aria-label="Change job status"
+                  aria-expanded="false"
+                >
                   Status
-                  <ChevronDown className="ml-1 h-4 w-4" />
+                  <ChevronDown className="ml-1 h-4 w-4" aria-hidden="true" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {(Object.keys(statusConfig) as JobStatus[]).map((statusKey) => (
                   <DropdownMenuItem
                     key={statusKey}
-                    onClick={() => onStatusChange?.(job.id, statusKey)}
+                    onClick={() => handleStatusChange(statusKey)}
                     className={job.status === statusKey ? "bg-accent" : ""}
                   >
                     <span
@@ -155,6 +170,7 @@ export function JobCard({ job, technicians = [], onStatusChange, onAcceptJob, sh
                                   ? "bg-amber-500"
                                   : "bg-status-complete"
                       }`}
+                      aria-hidden="true"
                     />
                     {statusConfig[statusKey].label}
                   </DropdownMenuItem>
@@ -167,5 +183,8 @@ export function JobCard({ job, technicians = [], onStatusChange, onAcceptJob, sh
     </Card>
   )
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export const JobCard = memo(JobCardComponent)
 
 export { statusConfig }

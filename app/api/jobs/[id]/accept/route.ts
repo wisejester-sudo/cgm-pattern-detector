@@ -35,8 +35,9 @@ export async function POST(
     // Verify the technician belongs to the current user
     const { data: technician, error: techError } = await supabase
       .from("technicians")
-      .select("id, company_id")
+      .select("id, company_id, admin_id")
       .eq("id", technician_id)
+      .eq("admin_id", user.id)
       .single()
 
     if (techError || !technician) {
@@ -46,11 +47,12 @@ export async function POST(
       )
     }
 
-    // Get the current job
+    // SECURITY: Get the current job with ownership verification
     const { data: job, error: jobError } = await supabase
       .from("jobs")
-      .select("*, companies(user_id)")
+      .select("*")
       .eq("id", id)
+      .eq("admin_id", user.id)
       .single()
 
     if (jobError || !job) {

@@ -89,12 +89,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET /api/jobs - List all jobs for the current user
+// GET /api/jobs - List all jobs for the current user with pagination
 export async function GET(request: NextRequest) {
   try {
     // Check if Supabase is configured
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      // Return empty array in demo mode - frontend will use local store
       return NextResponse.json([])
     }
 
@@ -115,12 +114,18 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get("status")
     const technicianId = searchParams.get("technician_id")
+    
+    // PERFORMANCE: Pagination support
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10))
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50", 10))) // Max 100 items per page
+    const offset = (page - 1) * limit
 
     let query = supabase
       .from("jobs")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("admin_id", user.id)
       .order("scheduled_time", { ascending: true })
+      .range(offset, offset + limit - 1)
 
     if (status) {
       query = query.eq("status", status)
@@ -131,7 +136,7 @@ export async function GET(request: NextRequest) {
       query = query.contains("assigned_tech_ids", [technicianId])
     }
 
-    const { data: jobs, error } = await query
+    const { data: jobs, error, count } = await query
 
     if (error) {
       console.error("[API] Error fetching jobs:", error)
@@ -141,7 +146,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json(jobs)
+    // PERFORMANCE: Return pagination metadata
+    return NextResponse.json({
+      jobs: jobs || [],
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: count ? Math.ceil(count / limit) : 0,
+        hasMore: count ? offset + (jobs?.length || 0) < count : false,
+      }
+    })
   } catch (error) {
     console.error("[API] Unexpected error:", error)
     return NextResponse.json(

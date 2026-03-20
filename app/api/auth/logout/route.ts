@@ -13,12 +13,26 @@ export async function POST() {
 
     // Sign out from Supabase
     if (supabase) {
-      await supabase.auth.signOut()
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error("[API] Error signing out:", error)
+        // Still return success - client-side logout should proceed
+      }
     }
 
-    return NextResponse.json({ success: true })
-  } catch {
-    // Return success even on error - user should be logged out client-side
+    // SECURITY: Clear any session cookies (Next.js handles this, but we ensure success)
+    const response = NextResponse.json({ success: true })
+    
+    // Set cache control headers to prevent caching of logout
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    
+    return response
+  } catch (error) {
+    console.error("[API] Unexpected error during logout:", error)
+    // SECURITY: Return success even on error - user should be logged out client-side
+    // This prevents information leakage about the error
     return NextResponse.json({ success: true })
   }
 }

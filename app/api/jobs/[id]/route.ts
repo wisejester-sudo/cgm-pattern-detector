@@ -30,7 +30,8 @@ export async function GET(
       )
     }
 
-    // Fetch job with technician details
+    // SECURITY: Fetch job with ownership verification
+    // Ensure the job belongs to the authenticated admin
     const { data: job, error: jobError } = await supabase
       .from("jobs")
       .select(`
@@ -38,9 +39,11 @@ export async function GET(
         technician:technicians(id, name, phone)
       `)
       .eq("id", id)
+      .eq("admin_id", user.id)
       .single()
 
     if (jobError || !job) {
+      // Return 404 without revealing if job exists but belongs to another user
       return NextResponse.json(
         { error: "Job not found" },
         { status: 404 }
@@ -97,17 +100,32 @@ export async function PATCH(
       )
     }
 
+    // SECURITY: Verify job exists and belongs to the authenticated user
+    const { data: existingJob, error: verifyError } = await supabase
+      .from("jobs")
+      .select("id")
+      .eq("id", id)
+      .eq("admin_id", user.id)
+      .single()
+
+    if (verifyError || !existingJob) {
+      return NextResponse.json(
+        { error: "Job not found" },
+        { status: 404 }
+      )
+    }
+
     const body = await request.json()
     const allowedFields = [
       "customer_name",
       "customer_phone", 
       "customer_address",
       "job_type",
-      "assigned_tech_ids",  // Changed from assigned_tech_id
+      "assigned_tech_ids",
       "scheduled_time",
       "notes",
       "status",
-      "on_hold_reason",    // New field
+      "on_hold_reason",
     ]
 
     // Filter to only allowed fields
@@ -127,10 +145,12 @@ export async function PATCH(
 
     updates.updated_at = new Date().toISOString()
 
+    // SECURITY: Update with admin_id check to ensure ownership
     const { data: job, error } = await supabase
       .from("jobs")
       .update(updates)
       .eq("id", id)
+      .eq("admin_id", user.id)
       .select()
       .single()
 
@@ -162,7 +182,6 @@ export async function DELETE(
 
     // Check if Supabase is configured
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      // Demo mode - just return success, the client-side store handles the deletion
       return NextResponse.json({ success: true })
     }
 
@@ -180,10 +199,12 @@ export async function DELETE(
       )
     }
 
+    // SECURITY: Delete with admin_id check to ensure ownership
     const { error } = await supabase
       .from("jobs")
       .delete()
       .eq("id", id)
+      .eq("admin_id", user.id)
 
     if (error) {
       console.error("[API] Error deleting job:", error)

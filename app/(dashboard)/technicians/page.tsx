@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button, BrandButton } from "@/components/ui/button"
@@ -192,11 +192,16 @@ export default function TechniciansPage() {
     toast.success('Invite link copied to clipboard')
   }
 
-  const getAssignedJobCount = (techId: string) => {
-    return jobs.filter(
-      (j) => j.assigned_tech_ids?.includes(techId) && j.status !== "complete"
-    ).length
-  }
+  // Memoize job counts calculation to prevent recalculation on every render
+  const technicianJobCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    technicians.forEach((tech) => {
+      counts[tech.id] = jobs.filter(
+        (j) => j.assigned_tech_ids?.includes(tech.id) && j.status !== "complete"
+      ).length
+    })
+    return counts
+  }, [jobs, technicians])
 
   const isValid = formData.name && formData.phone && formData.pin
 
@@ -353,7 +358,7 @@ export default function TechniciansPage() {
       {/* Technicians Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {technicians.map((tech) => {
-          const assignedJobs = getAssignedJobCount(tech.id)
+          const assignedJobs = technicianJobCounts[tech.id] || 0
           const hasAccessed = !!tech.accessed_at
           const lastAccessed = tech.last_active_at 
             ? new Date(tech.last_active_at).toLocaleDateString() 

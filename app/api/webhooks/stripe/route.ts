@@ -41,8 +41,9 @@ export async function POST(request: NextRequest) {
 
     try {
       event = stripe.webhooks.constructEvent(payload, signature, webhookSecret)
-    } catch (err: any) {
-      console.error("[Stripe Webhook] Invalid signature:", err.message)
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Invalid signature'
+      console.error("[Stripe Webhook] Invalid signature:", errorMessage)
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
     }
 
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
         const planId = session.metadata?.plan_id
 
         if (companyId && session.subscription) {
-          const subscription: any = await stripe.subscriptions.retrieve(
+          const subscription = await stripe.subscriptions.retrieve(
             session.subscription as string
           )
 
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
       }
 
       case "invoice.paid": {
-        const invoice: any = event.data.object as Stripe.Invoice
+        const invoice = event.data.object as Stripe.Invoice
         
         // Record payment
         if (invoice.customer && invoice.amount_due > 0 && supabase) {
@@ -147,7 +148,7 @@ export async function POST(request: NextRequest) {
       }
 
       case "customer.subscription.updated": {
-        const subscription: any = event.data.object as Stripe.Subscription
+        const subscription = event.data.object as Stripe.Subscription
         
         if (supabase) {
           // Update subscription status

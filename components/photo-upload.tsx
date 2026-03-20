@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Camera, Upload, X, Loader2, CheckCircle, AlertCircle } from "lucide-react"
@@ -146,6 +146,17 @@ export function PhotoUpload({
   const completeCount = files.filter(f => f.status === "complete").length
   const canAddMore = files.length < maxPhotos
 
+  // Cleanup object URLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      files.forEach(file => {
+        if (file.preview) {
+          URL.revokeObjectURL(file.preview)
+        }
+      })
+    }
+  }, [])
+
   return (
     <div className={className}>
       {/* Hidden file inputs */}
@@ -174,8 +185,9 @@ export function PhotoUpload({
             variant="outline"
             className="flex-1"
             onClick={() => cameraInputRef.current?.click()}
+            aria-label="Take photo with camera"
           >
-            <Camera className="h-4 w-4 mr-2" />
+            <Camera className="h-4 w-4 mr-2" aria-hidden="true" />
             Camera
           </Button>
           <Button
@@ -183,8 +195,9 @@ export function PhotoUpload({
             variant="outline"
             className="flex-1"
             onClick={() => fileInputRef.current?.click()}
+            aria-label="Select photos from gallery"
           >
-            <Upload className="h-4 w-4 mr-2" />
+            <Upload className="h-4 w-4 mr-2" aria-hidden="true" />
             Gallery
           </Button>
         </div>
@@ -200,7 +213,7 @@ export function PhotoUpload({
             >
               <img
                 src={file.preview}
-                alt="Preview"
+                alt={`Photo upload preview ${file.id}`}
                 className="w-full h-full object-cover"
               />
               
@@ -229,8 +242,9 @@ export function PhotoUpload({
                   type="button"
                   onClick={() => removeFile(file.id)}
                   className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+                  aria-label={`Remove photo ${file.id}`}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4" aria-hidden="true" />
                 </button>
               )}
 

@@ -76,14 +76,16 @@ export async function GET(request: NextRequest) {
     console.log('[API] Profile found, returning:', profile.full_name)
     console.log('[API] ========== COMPLETE in', Date.now() - startTime, 'ms ==========')
     return NextResponse.json(profile)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[API] ========== UNEXPECTED ERROR ==========')
-    console.error('[API] Error:', error.message)
-    console.error('[API] Stack:', error.stack)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : undefined
+    console.error('[API] Error:', errorMessage)
+    if (errorStack) console.error('[API] Stack:', errorStack)
     console.error('[API] Time elapsed before error:', Date.now() - startTime, 'ms')
     return NextResponse.json({ 
       error: 'Internal server error', 
-      details: error.message 
+      details: errorMessage 
     }, { status: 500 })
   }
 }
@@ -125,7 +127,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Build update object
-    const updates: any = {}
+    const updates: ProfileUpdateData = {}
     if (name !== undefined) updates.full_name = name
     if (phone !== undefined) updates.phone = phone
     if (email !== undefined) updates.email = email
@@ -162,10 +164,10 @@ export async function PATCH(request: NextRequest) {
     if (!existingUser) {
       console.log('[API] User not found in users table, creating...')
       // Insert new user row with ALL provided updates
-      const insertData: any = {
+      const insertData: UserProfileInsertData = {
         id: user.id,
-        email: email || user.email,
-        full_name: name || user.user_metadata?.name || user.email?.split('@')[0],
+        email: email || user.email || '',
+        full_name: name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
         phone: phone || null,
         role: 'admin',
         company_name: null,
@@ -213,11 +215,12 @@ export async function PATCH(request: NextRequest) {
       profile,
       message: 'Profile updated successfully',
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[API] Unexpected error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error?.message || 'Unknown error'
+      details: errorMessage
     }, { status: 500 })
   }
 }

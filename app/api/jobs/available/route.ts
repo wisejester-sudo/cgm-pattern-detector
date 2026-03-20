@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
-// GET /api/jobs/available - Get all available jobs for technicians
+// GET /api/jobs/available - Get all available jobs for the current admin
 export async function GET(request: NextRequest) {
   try {
     // Check if Supabase is configured
@@ -26,10 +26,12 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch available jobs (status = 'available' and no assigned techs)
+    // SECURITY: Only fetch jobs belonging to the authenticated admin
+    // This prevents unauthorized access to other users' jobs
     const { data: jobs, error } = await supabase
       .from("jobs")
       .select("*")
+      .eq("admin_id", user.id)
       .eq("status", "available")
       .order("scheduled_time", { ascending: true })
 
