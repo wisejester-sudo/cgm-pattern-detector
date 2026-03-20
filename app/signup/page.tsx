@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { Zap, AlertCircle, CheckCircle, Mail, ArrowRight } from "lucide-react"
+import { Logo } from "@/components/logo"
 import { useStore } from "@/lib/store"
 import { createBrowserClient } from "@supabase/ssr"
 
