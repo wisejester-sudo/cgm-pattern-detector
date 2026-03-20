@@ -273,12 +273,12 @@ interface AppState {
   // Job actions
   addJob: (job: Omit<Job, 'id' | 'created_at' | 'updated_at'>) => Promise<Job>
   updateJob: (id: string, updates: Partial<Job>) => Promise<void>
-  updateJobStatus: (id: string, status: JobStatus) => void
+  updateJobStatus: (id: string, status: JobStatus) => Promise<void>
   deleteJob: (id: string) => Promise<void>
   
   // Technician actions
   addTechnician: (tech: Omit<Technician, 'id' | 'created_at' | 'last_login' | 'role' | 'assigned_jobs'>) => Promise<Technician>
-  updateTechnician: (id: string, updates: Partial<Technician>) => void
+  updateTechnician: (id: string, updates: Partial<Technician>) => Promise<void>
   deleteTechnician: (id: string) => Promise<void>
   loginTechnician: (pin: string) => Technician | null
   logoutTechnician: () => void
@@ -378,36 +378,38 @@ export const useStore = create<AppState>()(
       
       // Job actions
       addJob: async (jobData) => {
-        // First, try to save to Supabase API
-        try {
-          const response = await fetch('/api/jobs', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(jobData),
-          })
-          
-          if (response.ok) {
-            const savedJob = await response.json()
-            set((state) => ({ jobs: [...state.jobs, savedJob] }))
-            return savedJob
-          }
-        } catch (error) {
-          console.error('Failed to save job to API:', error)
+        // Save to Supabase API - no local fallback to prevent phantom data
+        const response = await fetch('/api/jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(jobData),
+        })
+        
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('Failed to save job to API:', errorText)
+          throw new Error(`Failed to create job: ${errorText}`)
         }
         
-        // Fallback: create locally if API fails
-        const newJob: Job = {
-          ...jobData,
-          id: generateId(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }
-        set((state) => ({ jobs: [...state.jobs, newJob] }))
-        return newJob
+        const savedJob = await response.json()
+        set((state) => ({ jobs: [...state.jobs, savedJob] }))
+        return savedJob
       },
       
       updateJob: async (id, updates) => {
-        // Try to update via API first
+        // Save previous state for rollback
+        const previousJobs = get().jobs
+        
+        // Optimistic update
+        set((state) => ({
+          jobs: state.jobs.map((job) =>
+            job.id === id
+              ? { ...job, ...updates, updated_at: new Date().toISOString() }
+              : job
+          ),
+        }))
+        
+        // Try to update via API
         try {
           const response = await fetch(`/api/jobs/${id}`, {
             method: 'PATCH',
@@ -416,23 +418,23 @@ export const useStore = create<AppState>()(
           })
           
           if (!response.ok) {
-            console.error('Failed to update job via API:', await response.text())
+            const errorText = await response.text()
+            console.error('Failed to update job via API:', errorText)
+            throw new Error(`Failed to update job: ${errorText}`)
           }
         } catch (error) {
-          console.error('Error updating job:', error)
+          // Rollback on failure
+          console.error('Error updating job, rolling back:', error)
+          set({ jobs: previousJobs })
+          throw error
         }
-        
-        // Update local state regardless
-        set((state) => ({
-          jobs: state.jobs.map((job) =>
-            job.id === id
-              ? { ...job, ...updates, updated_at: new Date().toISOString() }
-              : job
-          ),
-        }))
       },
       
-      updateJobStatus: (id, status) => {
+      updateJobStatus: async (id, status) => {
+        // Save previous state for rollback
+        const previousJobs = get().jobs
+        
+        // Optimistic update
         set((state) => ({
           jobs: state.jobs.map((job) =>
             job.id === id
@@ -440,6 +442,26 @@ export const useStore = create<AppState>()(
               : job
           ),
         }))
+        
+        // Try to update via API
+        try {
+          const response = await fetch(`/api/jobs/${id}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status }),
+          })
+          
+          if (!response.ok) {
+            const errorText = await response.text()
+            console.error('Failed to update job status via API:', errorText)
+            throw new Error(`Failed to update job status: ${errorText}`)
+          }
+        } catch (error) {
+          // Rollback on failure
+          console.error('Error updating job status, rolling back:', error)
+          set({ jobs: previousJobs })
+          throw error
+        }
       },
       
       deleteJob: async (id) => {
@@ -451,58 +473,70 @@ export const useStore = create<AppState>()(
           
           if (!response.ok) {
             console.error('Failed to delete job from API:', await response.text())
-            // Continue with local deletion even if API fails
+            throw new Error('Failed to delete job from API')
           }
+          
+          // Only remove from local state if API succeeds
+          set((state) => ({
+            jobs: state.jobs.filter((job) => job.id !== id),
+            photos: state.photos.filter((photo) => photo.job_id !== id),
+          }))
         } catch (error) {
           console.error('Error deleting job:', error)
-          // Continue with local deletion even if API fails
+          throw error // Re-throw so caller knows it failed
         }
-        
-        // Remove from local state
-        set((state) => ({
-          jobs: state.jobs.filter((job) => job.id !== id),
-          photos: state.photos.filter((photo) => photo.job_id !== id),
-        }))
       },
       
       // Technician actions
       addTechnician: async (techData) => {
-        // Try to save to Supabase first
-        try {
-          const response = await fetch('/api/technicians', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(techData),
-          })
-          
-          if (response.ok) {
-            const savedTech = await response.json()
-            set((state) => ({ technicians: [...state.technicians, savedTech] }))
-            return savedTech
-          }
-        } catch (error) {
-          console.error('Failed to save technician to API:', error)
+        // Save to Supabase API - no local fallback to prevent phantom data
+        const response = await fetch('/api/technicians', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(techData),
+        })
+        
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('Failed to save technician to API:', errorText)
+          throw new Error(`Failed to create technician: ${errorText}`)
         }
         
-        // Fallback: create locally
-        const newTech: Technician = {
-          ...techData,
-          id: `tech-${generateId()}`,
-          role: 'technician',
-          created_at: new Date().toISOString(),
-          last_login: null,
-          assigned_jobs: [],
-        }
-        set((state) => ({ technicians: [...state.technicians, newTech] }))
-        return newTech
+        const savedTech = await response.json()
+        set((state) => ({ technicians: [...state.technicians, savedTech] }))
+        return savedTech
       },
       
-      updateTechnician: (id, updates) => {
+      updateTechnician: async (id, updates) => {
+        // Save previous state for rollback
+        const previousTechnicians = get().technicians
+        
+        // Optimistic update
         set((state) => ({
           technicians: state.technicians.map((tech) =>
             tech.id === id ? { ...tech, ...updates } : tech
           ),
         }))
+        
+        // Try to update via API
+        try {
+          const response = await fetch(`/api/technicians/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates),
+          })
+          
+          if (!response.ok) {
+            const errorText = await response.text()
+            console.error('Failed to update technician via API:', errorText)
+            throw new Error(`Failed to update technician: ${errorText}`)
+          }
+        } catch (error) {
+          // Rollback on failure
+          console.error('Error updating technician, rolling back:', error)
+          set({ technicians: previousTechnicians })
+          throw error
+        }
       },
       
       deleteTechnician: async (id) => {
@@ -514,17 +548,17 @@ export const useStore = create<AppState>()(
           
           if (!response.ok) {
             console.error('Failed to delete technician from API:', await response.text())
-            // Continue with local deletion even if API fails
+            throw new Error('Failed to delete technician from API')
           }
+          
+          // Only remove from local state if API succeeds
+          set((state) => ({
+            technicians: state.technicians.filter((tech) => tech.id !== id),
+          }))
         } catch (error) {
           console.error('Error deleting technician:', error)
-          // Continue with local deletion even if API fails
+          throw error // Re-throw so caller knows it failed
         }
-        
-        // Remove from local state
-        set((state) => ({
-          technicians: state.technicians.filter((tech) => tech.id !== id),
-        }))
       },
       
       loginTechnician: (pin) => {
@@ -626,7 +660,7 @@ export const useStore = create<AppState>()(
         try {
           const response = await fetch('/api/jobs')
           if (!response.ok) {
-            // Keep using demo data if API fails
+            console.error('[Store] Failed to load jobs:', response.status, response.statusText)
             return
           }
           const data = await response.json()
@@ -636,7 +670,7 @@ export const useStore = create<AppState>()(
             set({ jobs })
           }
         } catch (error) {
-          // Keep using demo data on error
+          console.error('[Store] Error loading jobs:', error)
         }
       },
 
@@ -644,6 +678,7 @@ export const useStore = create<AppState>()(
         try {
           const response = await fetch('/api/technicians')
           if (!response.ok) {
+            console.error('[Store] Failed to load technicians:', response.status, response.statusText)
             return
           }
           const data = await response.json()
@@ -653,7 +688,7 @@ export const useStore = create<AppState>()(
             set({ technicians })
           }
         } catch (error) {
-          // Keep using demo data on error
+          console.error('[Store] Error loading technicians:', error)
         }
       },
 
@@ -661,6 +696,7 @@ export const useStore = create<AppState>()(
         try {
           const response = await fetch('/api/templates')
           if (!response.ok) {
+            console.error('[Store] Failed to load templates:', response.status, response.statusText)
             return
           }
           const data = await response.json()
@@ -669,8 +705,8 @@ export const useStore = create<AppState>()(
           if (Array.isArray(templates)) {
             set({ templates })
           }
-        } catch {
-          // Keep using default templates on error
+        } catch (error) {
+          console.error('[Store] Error loading templates:', error)
         }
       },
       
@@ -722,12 +758,14 @@ export const useStore = create<AppState>()(
           // Fetch user profile from API
           const response = await fetch('/api/auth/user-profile')
           if (!response.ok) {
+            console.error('[Store] Failed to fetch user profile:', response.status)
             return
           }
           const profile = await response.json()
           
           // Skip if demo profile (not authenticated)
           if (profile.id === 'demo') {
+            console.log('[Store] Demo profile detected, skipping initialization')
             return
           }
           
@@ -774,7 +812,8 @@ export const useStore = create<AppState>()(
                 set({ settings: settingsData })
               }
             }
-          } catch {
+          } catch (error) {
+            console.error('[Store] Error loading settings:', error)
             // Fall through — metadata values are already set above
           }
           
@@ -785,11 +824,12 @@ export const useStore = create<AppState>()(
             get().loadTemplatesFromSupabase(),
           ])
           
-          // Mark as initialized
+          // Mark as initialized only after successful data load
           set({ isInitialized: true })
           console.log('[Store] Initialization complete')
-        } catch {
-          // Silently fail — user will see empty state
+        } catch (error) {
+          console.error('[Store] Initialization failed:', error)
+          // Don't mark as initialized on failure
         }
       },
       
