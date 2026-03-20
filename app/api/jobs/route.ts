@@ -183,6 +183,9 @@ export async function POST(request: NextRequest) {
     
     if (insertError) {
       console.error(`[${requestId}] Database error:`, insertError)
+      console.error(`[${requestId}] Error code:`, insertError.code)
+      console.error(`[${requestId}] Error message:`, insertError.message)
+      console.error(`[${requestId}] Error details:`, insertError.details)
       
       // Check for specific error types
       if (insertError.code === "23505") {
@@ -191,8 +194,16 @@ export async function POST(request: NextRequest) {
       if (insertError.code === "23503") {
         return errorResponse("One or more assigned technicians not found", 400)
       }
+      if (insertError.code === "23502") {
+        return errorResponse(`Missing required field: ${insertError.message}`, 400)
+      }
       
-      return errorResponse("Failed to create job. Please try again.", 500)
+      // Return detailed error for debugging
+      return errorResponse(
+        `Database error: ${insertError.message}`, 
+        500, 
+        { code: insertError.code, hint: insertError.hint || '' }
+      )
     }
     
     console.log(`[${requestId}] Job created successfully: ${job.id}`)
@@ -203,9 +214,14 @@ export async function POST(request: NextRequest) {
       job,
     }, { status: 201 })
     
-  } catch (error) {
+  } catch (error: any) {
     console.error(`[${requestId}] Unexpected error:`, error)
-    return errorResponse("An unexpected error occurred. Please try again.", 500)
+    console.error(`[${requestId}] Error stack:`, error?.stack)
+    return errorResponse(
+      `Server error: ${error?.message || 'Unknown error'}`, 
+      500,
+      { type: error?.name || 'Unknown' }
+    )
   }
 }
 
