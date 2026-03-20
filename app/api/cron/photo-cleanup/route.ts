@@ -14,7 +14,15 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get("authorization")
     const expectedSecret = process.env.CRON_SECRET
 
-    if (expectedSecret && authHeader !== `Bearer ${expectedSecret}`) {
+    // CRON_SECRET must be set in production
+    if (!expectedSecret) {
+      return NextResponse.json(
+        { error: "CRON_SECRET not configured" },
+        { status: 503 }
+      )
+    }
+
+    if (authHeader !== `Bearer ${expectedSecret}`) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -54,7 +62,15 @@ export async function GET(request: NextRequest) {
     const authHeader = request.headers.get("authorization")
     const expectedSecret = process.env.CRON_SECRET
 
-    if (expectedSecret && authHeader !== `Bearer ${expectedSecret}`) {
+    // CRON_SECRET must be set in production
+    if (!expectedSecret) {
+      return NextResponse.json(
+        { error: "CRON_SECRET not configured" },
+        { status: 503 }
+      )
+    }
+
+    if (authHeader !== `Bearer ${expectedSecret}`) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
