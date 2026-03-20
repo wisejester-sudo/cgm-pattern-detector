@@ -377,7 +377,25 @@ export const useStore = create<AppState>()(
       },
       
       // Job actions
-      addJob: (jobData) => {
+      addJob: async (jobData) => {
+        // First, try to save to Supabase API
+        try {
+          const response = await fetch('/api/jobs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(jobData),
+          })
+          
+          if (response.ok) {
+            const savedJob = await response.json()
+            set((state) => ({ jobs: [...state.jobs, savedJob] }))
+            return savedJob
+          }
+        } catch (error) {
+          console.error('Failed to save job to API:', error)
+        }
+        
+        // Fallback: create locally if API fails
         const newJob: Job = {
           ...jobData,
           id: generateId(),
@@ -388,7 +406,23 @@ export const useStore = create<AppState>()(
         return newJob
       },
       
-      updateJob: (id, updates) => {
+      updateJob: async (id, updates) => {
+        // Try to update via API first
+        try {
+          const response = await fetch(`/api/jobs/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates),
+          })
+          
+          if (!response.ok) {
+            console.error('Failed to update job via API:', await response.text())
+          }
+        } catch (error) {
+          console.error('Error updating job:', error)
+        }
+        
+        // Update local state regardless
         set((state) => ({
           jobs: state.jobs.map((job) =>
             job.id === id
