@@ -22,7 +22,8 @@ import {
   HardHat,
   Truck,
   LayoutDashboard,
-  Briefcase
+  Briefcase,
+  Zap
 } from "lucide-react"
 import { Logo } from "@/components/logo"
 

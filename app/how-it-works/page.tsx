@@ -15,6 +15,7 @@ import {
   Bell,
   MapPin,
   Smartphone,
+  Zap,
   ChevronRight,
   Star,
   Shield,

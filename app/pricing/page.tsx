@@ -16,7 +16,8 @@ import {
   Shield,
   BarChart3,
   MessageSquare,
-  HelpCircle
+  HelpCircle,
+  Zap
 } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { useStore } from "@/lib/store"
