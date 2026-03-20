@@ -119,7 +119,7 @@ export default function TechJobDetailPage({
     }
   }, [job])
 
-  if (!technician || !job) {
+  if (!currentTechnician || !job) {
     return null
   }
 

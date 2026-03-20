@@ -112,6 +112,7 @@ export function CreateJobModal({
         scheduled_time: formData.scheduled_time,
         notes: formData.notes || null,
         assigned_tech_ids: formData.assigned_tech_ids.length > 0 ? formData.assigned_tech_ids : null,
+        on_hold_reason: null,
       }
 
       // Try to create via API first (Supabase)
@@ -139,6 +140,7 @@ export function CreateJobModal({
           scheduled_time: scheduledDateTime,
           notes: formData.notes || null,
           assigned_tech_ids: formData.assigned_tech_ids.length > 0 ? formData.assigned_tech_ids : null,
+          on_hold_reason: null,
           status: "scheduled" as const,
         })
         toast.success(`Job for ${formData.customer_name} created locally`)
