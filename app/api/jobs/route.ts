@@ -279,11 +279,15 @@ export async function GET(request: NextRequest) {
     }
     
     // Execute query
+    console.log(`[${requestId}] Executing query...`)
     const { data: jobs, error, count } = await query
     
     if (error) {
       console.error(`[${requestId}] Database error:`, error)
-      return errorResponse("Failed to fetch jobs", 500)
+      return errorResponse(`Database error: ${error.message}`, 500, { 
+        code: error.code,
+        hint: error.hint || 'No hint available'
+      })
     }
     
     console.log(`[${requestId}] Fetched ${jobs?.length || 0} jobs`)
@@ -292,6 +296,21 @@ export async function GET(request: NextRequest) {
       jobs: jobs || [],
       pagination: {
         page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
+      },
+    })
+    
+  } catch (error: any) {
+    console.error(`[${requestId}] Unexpected error in GET /api/jobs:`, error)
+    console.error(`[${requestId}] Error stack:`, error?.stack)
+    return errorResponse(
+      `Server error: ${error?.message || 'Unknown error'}`,
+      500,
+      { type: error?.name || 'Unknown', stack: error?.stack }
+    )
+  }
         limit,
         total: count || 0,
         totalPages: count ? Math.ceil(count / limit) : 0,
