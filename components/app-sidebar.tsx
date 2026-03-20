@@ -132,7 +132,11 @@ export function AppSidebar() {
       <div className="px-3 py-4 border-t border-sidebar-border">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:bg-sidebar-accent transition-colors">
+            <button 
+              className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:bg-sidebar-accent transition-colors"
+              aria-label={`User menu for ${displayName}`}
+              aria-expanded="false"
+            >
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
                   {getInitials(displayName)}
