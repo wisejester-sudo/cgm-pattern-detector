@@ -311,17 +311,6 @@ export async function GET(request: NextRequest) {
       { type: error?.name || 'Unknown', stack: error?.stack }
     )
   }
-        limit,
-        total: count || 0,
-        totalPages: count ? Math.ceil(count / limit) : 0,
-        hasMore: count ? offset + (jobs?.length || 0) < count : false,
-      }
-    })
-    
-  } catch (error) {
-    console.error(`[${requestId}] Unexpected error:`, error)
-    return errorResponse("Failed to fetch jobs", 500)
-  }
 }
 
 // ============================================================================
