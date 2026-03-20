@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { checkRateLimit, getClientIdentifier, rateLimitConfigs } from "@/lib/rate-limit"
+import { logger } from "@/lib/logger"
 
 // POST /api/auth/login - Login with email and password
 export async function POST(request: NextRequest) {
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
     if (!supabaseUrl || !supabaseAnonKey) {
       if (demoMode) {
         // Demo mode - accept any credentials
-        console.warn('[AUTH] Running in DEMO MODE')
+        logger.warn('Running in DEMO MODE')
         return NextResponse.json({ success: true, demo: true })
       }
       // Production mode without config - reject
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error("[API] Login error:", error)
+    logger.error("Login error:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
