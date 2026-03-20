@@ -4,11 +4,11 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { LogOut, MapPin, Clock, ChevronRight, Calendar } from "lucide-react"
+import { LogOut, MapPin, Clock, ChevronRight, Calendar, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useStore, getTechnicianById, maskPhoneNumber } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 const statusConfig: Record<JobStatus, { label: string; className: string }> = {
   available: {
@@ -39,15 +39,21 @@ const statusConfig: Record<JobStatus, { label: string; className: string }> = {
 
 export default function TechJobsPage() {
   const router = useRouter()
-  const { jobs, technicians, currentTechId, logoutTechnician } = useStore()
+  const { jobs, technicians, currentTechId, logoutTechnician, isInitialized } = useStore()
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
   const technician = getTechnicianById(technicians, currentTechId)
 
   useEffect(() => {
+    // Wait for store initialization before checking auth
+    if (!isInitialized) return
+    
     if (!currentTechId) {
       router.push("/tech")
+    } else {
+      setIsCheckingAuth(false)
     }
-  }, [currentTechId, router])
+  }, [currentTechId, router, isInitialized])
 
   // Only show jobs assigned to this technician - DATA ISOLATION
   const myJobs = useMemo(() => {
@@ -85,6 +91,18 @@ export default function TechJobsPage() {
   const handleLogout = () => {
     logoutTechnician()
     router.push("/tech")
+  }
+
+  // Show loading state while checking authentication
+  if (isCheckingAuth || !isInitialized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   if (!technician) {
