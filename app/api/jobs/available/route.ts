@@ -26,14 +26,21 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Parse pagination params
+    const { searchParams } = new URL(request.url)
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10))
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50", 10)))
+    const offset = (page - 1) * limit
+
     // SECURITY: Only fetch jobs belonging to the authenticated admin
     // This prevents unauthorized access to other users' jobs
-    const { data: jobs, error } = await supabase
+    const { data: jobs, error, count } = await supabase
       .from("jobs")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("admin_id", user.id)
       .eq("status", "available")
       .order("scheduled_time", { ascending: true })
+      .range(offset, offset + limit - 1)
 
     if (error) {
       console.error("[API] Error fetching available jobs:", error)
@@ -43,7 +50,16 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json(jobs || [])
+    return NextResponse.json({
+      jobs: jobs || [],
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: count ? Math.ceil(count / limit) : 0,
+        hasMore: count ? offset + (jobs?.length || 0) < count : false,
+      }
+    })
   } catch (error) {
     console.error("[API] Unexpected error:", error)
     return NextResponse.json(
