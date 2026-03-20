@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { validateTwilioSignature } from "@/lib/twilio"
 import { checkRateLimit, getClientIdentifier, rateLimitConfigs } from "@/lib/rate-limit"
+import { logger } from "@/lib/logger"
 
 // GET /api/sms/webhook - Twilio webhook for incoming SMS
 export async function GET(request: NextRequest) {
@@ -63,7 +64,7 @@ async function handleWebhook(request: NextRequest) {
       const url = request.url
       
       if (!validateTwilioSignature(signature, url, params)) {
-        console.error("[SMS Webhook] Invalid Twilio signature")
+        logger.error("Invalid Twilio signature")
         return NextResponse.json(
           { error: "Invalid signature" },
           { status: 403 }
@@ -90,13 +91,14 @@ async function handleWebhook(request: NextRequest) {
     const normalizedPhone = from.replace(/\D/g, "").slice(-10)
 
     // Find the most recent job for this phone number
+    // SECURITY: Use parameterized ilike to prevent SQL injection
     const { data: recentJob } = await supabase
       .from("jobs")
       .select("id, customer_name, assigned_tech_ids")
-      .or(`customer_phone.ilike.%${normalizedPhone}%`)
+      .ilike("customer_phone", `%${normalizedPhone}%`)
       .order("updated_at", { ascending: false })
       .limit(1)
-      .single()
+      .maybeSingle()
 
     // Store inbound message in sms_logs
     const { data: smsLog, error: logError } = await supabase
@@ -113,7 +115,7 @@ async function handleWebhook(request: NextRequest) {
       .single()
 
     if (logError) {
-      console.error("[SMS Webhook] Error logging message:", logError)
+      logger.error("Error logging message:", logError)
     }
 
     // Check if this is a YES approval response
@@ -151,7 +153,7 @@ async function handleWebhook(request: NextRequest) {
       }
     )
   } catch (error) {
-    console.error("[SMS Webhook] Unexpected error:", error)
+    logger.error("Unexpected error:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
