@@ -22,9 +22,21 @@ const generateId = () => Math.random().toString(36).substring(2, 15)
 // CSRF Token helper - gets token from client-readable cookie
 function getCSRFToken(): string | null {
   if (typeof document === 'undefined') return null
+  
+  // Debug: log all cookies
+  console.log('[CSRF Debug] All cookies:', document.cookie)
+  
   // Try client-readable cookie first, fall back to legacy cookie name
-  const match = document.cookie.match(/csrf-token-client=([^;]+)/) || document.cookie.match(/csrf-token=([^;]+)/)
-  return match ? match[1] : null
+  const clientMatch = document.cookie.match(/csrf-token-client=([^;]+)/)
+  const legacyMatch = document.cookie.match(/csrf-token=([^;]+)/)
+  
+  console.log('[CSRF Debug] Client cookie match:', clientMatch ? 'found' : 'not found')
+  console.log('[CSRF Debug] Legacy cookie match:', legacyMatch ? 'found' : 'not found')
+  
+  const token = clientMatch?.[1] || legacyMatch?.[1] || null
+  console.log('[CSRF Debug] Token:', token ? `${token.substring(0, 8)}...` : 'null')
+  
+  return token
 }
 
 // Fetch wrapper that includes CSRF token for state-changing requests
@@ -36,10 +48,15 @@ async function fetchWithCSRF(url: string, options: RequestInit = {}): Promise<Re
   if (stateChangingMethods.includes(method)) {
     const csrfToken = getCSRFToken()
     if (csrfToken) {
+      console.log('[CSRF Debug] Adding token to request')
       options.headers = {
         ...options.headers,
         'x-csrf-token': csrfToken,
       }
+    } else {
+      console.warn('[CSRF Debug] No CSRF token found! Request may fail.')
+      // TEMPORARY: Still make the request even without token (for debugging)
+      // Remove this line once CSRF is working properly
     }
   }
   
