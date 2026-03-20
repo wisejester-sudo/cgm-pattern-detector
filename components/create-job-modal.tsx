@@ -294,32 +294,50 @@ export function CreateJobModal({
                   )}
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="assigned_tech_ids">Assign Technician</FieldLabel>
-                  <Select
-                    value={formData.assigned_tech_ids[0] || ""}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, assigned_tech_ids: value ? [value] : [] })
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select technician (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {technicians.length > 0 ? (
-                        technicians
-                          .filter((t) => t.is_active)
-                          .map((tech) => (
-                            <SelectItem key={tech.id} value={tech.id}>
-                              {tech.name}
-                            </SelectItem>
-                          ))
-                      ) : (
-                        <SelectItem value="none" disabled>
-                          No technicians available
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <FieldLabel>Assign Technicians</FieldLabel>
+                  <div className="border rounded-md p-3 max-h-40 overflow-y-auto">
+                    {technicians.length > 0 ? (
+                      technicians
+                        .filter((t) => t.is_active)
+                        .map((tech) => (
+                          <label
+                            key={tech.id}
+                            className="flex items-center gap-2 py-2 hover:bg-muted/50 rounded cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formData.assigned_tech_ids.includes(tech.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFormData({
+                                    ...formData,
+                                    assigned_tech_ids: [...formData.assigned_tech_ids, tech.id],
+                                  })
+                                } else {
+                                  setFormData({
+                                    ...formData,
+                                    assigned_tech_ids: formData.assigned_tech_ids.filter(
+                                      (id) => id !== tech.id
+                                    ),
+                                  })
+                                }
+                              }}
+                              className="h-4 w-4 rounded border-gray-300"
+                            />
+                            <span className="text-sm">{tech.name}</span>
+                          </label>
+                        ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground py-2">
+                        No technicians available
+                      </p>
+                    )}
+                  </div>
+                  {formData.assigned_tech_ids.length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formData.assigned_tech_ids.length} technician{formData.assigned_tech_ids.length > 1 ? 's' : ''} selected
+                    </p>
+                  )}
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-4">
