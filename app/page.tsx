@@ -7,7 +7,6 @@ import {
   Camera, 
   CheckCircle2, 
   ArrowRight,
-  Zap,
   Shield,
   BarChart3,
   Smartphone,
@@ -25,6 +24,7 @@ import {
   LayoutDashboard,
   Briefcase
 } from "lucide-react"
+import { Logo } from "@/components/logo"
 
 export default function LandingPage() {
   return (
@@ -40,11 +40,8 @@ export default function LandingPage() {
       <header className="fixed top-0 w-full z-50 border-b bg-white/80 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-                <Zap className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold">Dispatchly</span>
+            <Link href="/">
+              <Logo size="md" />
             </Link>
             <nav className="hidden md:flex items-center gap-8">
               <Link href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</Link>
@@ -562,11 +559,8 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
             <div className="col-span-2 md:col-span-1">
-              <Link href="/" className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <span className="text-lg font-bold">Dispatchly</span>
+              <Link href="/" className="mb-4">
+                <Logo size="sm" />
               </Link>
               <p className="text-sm text-muted-foreground">
                 Field service management made simple.

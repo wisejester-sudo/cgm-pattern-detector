@@ -170,11 +170,8 @@ export default function SignupPage() {
       </div>
 
       {/* Logo */}
-      <Link href="/" className="mb-8 flex items-center gap-2">
-        <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-          <Zap className="w-6 h-6 text-primary-foreground" />
-        </div>
-        <span className="text-2xl font-bold">Dispatchly</span>
+      <Link href="/" className="mb-8">
+        <Logo size="xl" />
       </Link>
 
       <Card className="w-full max-w-md shadow-xl border-border/50">

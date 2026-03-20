@@ -3,7 +3,8 @@
 import { use } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Phone, MapPin, Clock, User, Wrench, Zap, CheckCircle2, Truck, Calendar } from "lucide-react"
+import { Phone, MapPin, Clock, User, Wrench, CheckCircle2, Truck, Calendar } from "lucide-react"
+import { Logo } from "@/components/logo"
 import { useStore, getTechnicianById } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
 
@@ -85,9 +86,7 @@ export default function CustomerTrackPage({
       <header className="bg-sidebar text-sidebar-foreground py-6 px-4">
         <div className="max-w-lg mx-auto text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sidebar-primary">
-              <Zap className="w-5 h-5 text-sidebar-primary-foreground" />
-            </div>
+            <Logo size="sm" variant="white" showText={false} />
             <span className="font-semibold text-lg">{settings.company_name}</span>
           </div>
           <p className="text-sidebar-muted text-sm">Job Tracking</p>

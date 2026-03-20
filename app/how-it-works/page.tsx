@@ -15,12 +15,12 @@ import {
   Bell,
   MapPin,
   Smartphone,
-  Zap,
   ChevronRight,
   Star,
   Shield,
   Users
 } from "lucide-react"
+import { Logo } from "@/components/logo"
 import { MockScreenshot } from "@/components/mock-screenshot"
 
 export default function HowItWorksPage() {
@@ -30,11 +30,8 @@ export default function HowItWorksPage() {
       <header className="fixed top-0 w-full z-50 border-b bg-background/80 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-                <Zap className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold">Dispatchly</span>
+            <Link href="/">
+              <Logo size="md" />
             </Link>
             <nav className="hidden md:flex items-center gap-8">
               <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Home</Link>
