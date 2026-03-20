@@ -19,10 +19,11 @@ import type {
 // Generate unique IDs
 const generateId = () => Math.random().toString(36).substring(2, 15)
 
-// CSRF Token helper - gets token from cookie
+// CSRF Token helper - gets token from client-readable cookie
 function getCSRFToken(): string | null {
   if (typeof document === 'undefined') return null
-  const match = document.cookie.match(/csrf-token=([^;]+)/)
+  // Try client-readable cookie first, fall back to legacy cookie name
+  const match = document.cookie.match(/csrf-token-client=([^;]+)/) || document.cookie.match(/csrf-token=([^;]+)/)
   return match ? match[1] : null
 }
 

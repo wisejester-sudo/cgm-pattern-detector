@@ -1,6 +1,6 @@
 import { updateSession } from "@/lib/supabase/middleware"
 import { type NextRequest, NextResponse } from "next/server"
-import { generateCSRFToken, hashCSRFToken, getCSRFTokenFromRequest, requiresCSRFProtection, getCSRFCookieOptions } from "@/lib/csrf"
+import { generateCSRFToken, hashCSRFToken, getCSRFTokenFromRequest, requiresCSRFProtection, getCSRFCookieOptions, getCSRFClientCookieOptions } from "@/lib/csrf"
 
 export async function middleware(request: NextRequest) {
   // First, update the session
@@ -35,10 +35,13 @@ export async function middleware(request: NextRequest) {
         const newToken = generateCSRFToken()
         const hashedToken = hashCSRFToken(newToken)
         
-        // Set the hashed token in cookie
+        // Set the hashed token in httpOnly cookie (for server validation)
         response.cookies.set('csrf-token', hashedToken, getCSRFCookieOptions())
         
-        // Also set the raw token in a header so client can read it
+        // Set the raw token in client-readable cookie (for JavaScript to access)
+        response.cookies.set('csrf-token-client', newToken, getCSRFClientCookieOptions())
+        
+        // Also set the raw token in a header so client can read it immediately
         response.headers.set('X-CSRF-Token', newToken)
       }
     }

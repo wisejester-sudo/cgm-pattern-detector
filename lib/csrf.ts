@@ -44,11 +44,25 @@ export function requiresCSRFProtection(method: string): boolean {
 }
 
 /**
- * Create CSRF token cookie options
+ * Create CSRF token cookie options (httpOnly - for server validation)
  */
 export function getCSRFCookieOptions() {
   return {
     httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict' as const,
+    maxAge: 60 * 60 * 24, // 24 hours
+    path: '/',
+  }
+}
+
+/**
+ * Create CSRF token cookie options for client-readable cookie
+ * This allows JavaScript to read the token and send it in headers
+ */
+export function getCSRFClientCookieOptions() {
+  return {
+    httpOnly: false, // Client can read this
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict' as const,
     maxAge: 60 * 60 * 24, // 24 hours
