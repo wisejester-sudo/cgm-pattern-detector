@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { logger } from "@/lib/logger"
 
 // GET /api/technicians - List all technicians for current admin with pagination
 export async function GET(request: NextRequest) {
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + limit - 1)
 
     if (error) {
-      console.error("[API] Error fetching technicians:", error)
+      logger.error("Error fetching technicians:", error)
       return NextResponse.json(
         { error: "Failed to fetch technicians" },
         { status: 500 }
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error("[API] Unexpected error:", error)
+    logger.error("Unexpected error:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest) {
       .eq("admin_id", user.id)
 
     if (countError) {
-      console.error("[API] Error counting technicians:", countError)
+      logger.error("Error counting technicians:", countError)
       return NextResponse.json(
         { error: "Failed to verify technician limit" },
         { status: 500 }
@@ -167,7 +168,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error("[API] Error creating technician:", error)
+      logger.error("Error creating technician:", error)
       return NextResponse.json(
         { error: "Failed to create technician" },
         { status: 500 }
@@ -176,7 +177,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(technician, { status: 201 })
   } catch (error) {
-    console.error("[API] Unexpected error:", error)
+    logger.error("Unexpected error:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
