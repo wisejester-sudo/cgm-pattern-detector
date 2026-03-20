@@ -87,58 +87,44 @@ export default function TechniciansPage() {
     const normalizedPhone = normalizePhone(formData.countryCode, formData.phone)
 
     try {
-      const response = await fetch('/api/technicians', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phone: normalizedPhone,
-          pin: formData.pin,
-        }),
-      })
-
-      if (response.ok) {
-        // Reload from Supabase
-        await loadTechniciansFromSupabase()
-        toast.success(`${formData.name} added successfully`)
-      } else {
-        // Fall back to local store
-        addTechnician({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          pin: formData.pin,
-          is_active: true,
-        })
-        toast.success(`${formData.name} added locally`)
-      }
-    } catch {
-      // Fall back to local store on error
-      addTechnician({
+      // Create technician via store (which calls API)
+      await addTechnician({
         name: formData.name,
         email: formData.email,
-        phone: formData.phone,
+        phone: normalizedPhone,
         pin: formData.pin,
         is_active: true,
       })
-      toast.success(`${formData.name} added locally`)
+      
+      toast.success(`${formData.name} added successfully`)
+      setFormData({ name: "", email: "", countryCode: "+1", phone: "", pin: "" })
+      setIsAddOpen(false)
+    } catch (error) {
+      console.error('Failed to add technician:', error)
+      toast.error('Failed to add technician. Please try again.')
+    } finally {
+      setIsLoading(false)
     }
-
-    setFormData({ name: "", email: "", countryCode: "+1", phone: "", pin: "" })
-    setIsLoading(false)
-    setIsAddOpen(false)
   }
 
-  const handleToggleActive = (techId: string, currentActive: boolean) => {
-    updateTechnician(techId, { is_active: !currentActive })
+  const handleToggleActive = async (techId: string, currentActive: boolean) => {
+    try {
+      await updateTechnician(techId, { is_active: !currentActive })
+      toast.success(`Technician ${currentActive ? 'deactivated' : 'activated'}`)
+    } catch (error) {
+      console.error('Failed to update technician:', error)
+      toast.error('Failed to update technician status')
+    }
   }
 
   const handleDelete = async (techId: string) => {
-    await deleteTechnician(techId)
-    // Reload from Supabase to ensure deletion is reflected
-    await loadTechniciansFromSupabase()
-    toast.success('Technician deleted')
+    try {
+      await deleteTechnician(techId)
+      toast.success('Technician deleted')
+    } catch (error) {
+      console.error('Failed to delete technician:', error)
+      toast.error('Failed to delete technician')
+    }
   }
 
   const togglePinVisibility = (techId: string) => {

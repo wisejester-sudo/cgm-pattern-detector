@@ -103,48 +103,26 @@ export function CreateJobModal({
     setIsLoading(true)
 
     try {
+      const scheduledDateTime = formData.scheduled_date && formData.scheduled_time
+        ? new Date(`${formData.scheduled_date}T${formData.scheduled_time}`).toISOString()
+        : new Date().toISOString()
+
       const jobData = {
         customer_name: formData.customer_name,
         customer_phone: formData.customer_phone,
         customer_address: formData.customer_address,
         job_type: formData.job_type,
-        scheduled_date: formData.scheduled_date,
-        scheduled_time: formData.scheduled_time,
+        scheduled_time: scheduledDateTime,
         notes: formData.notes || null,
         assigned_tech_ids: formData.assigned_tech_ids.length > 0 ? formData.assigned_tech_ids : null,
         on_hold_reason: null,
+        status: "scheduled" as const,
       }
 
-      // Try to create via API first (Supabase)
-      const response = await fetch('/api/jobs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(jobData),
-      })
-
-      if (response.ok) {
-        // Successfully created via API - reload jobs from Supabase
-        await useStore.getState().loadJobsFromSupabase()
-        toast.success(`Job for ${formData.customer_name} created`)
-      } else {
-        // Fall back to local store if API fails (demo mode)
-        const scheduledDateTime = formData.scheduled_date && formData.scheduled_time
-          ? new Date(`${formData.scheduled_date}T${formData.scheduled_time}`).toISOString()
-          : new Date().toISOString()
-
-        addJob({
-          customer_name: formData.customer_name,
-          customer_phone: formData.customer_phone,
-          customer_address: formData.customer_address,
-          job_type: formData.job_type,
-          scheduled_time: scheduledDateTime,
-          notes: formData.notes || null,
-          assigned_tech_ids: formData.assigned_tech_ids.length > 0 ? formData.assigned_tech_ids : null,
-          on_hold_reason: null,
-          status: "scheduled" as const,
-        })
-        toast.success(`Job for ${formData.customer_name} created locally`)
-      }
+      // Create job via store (which calls API)
+      await addJob(jobData)
+      
+      toast.success(`Job for ${formData.customer_name} created`)
 
       setFormData({
         customer_name: "",
@@ -157,8 +135,9 @@ export function CreateJobModal({
         assigned_tech_ids: [] as string[],
       })
       setOpen(false)
-    } catch {
-      // Silently fail - the local store fallback should have worked
+    } catch (error) {
+      console.error('Failed to create job:', error)
+      toast.error('Failed to create job. Please try again.')
     } finally {
       setIsLoading(false)
     }
