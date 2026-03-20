@@ -8,6 +8,12 @@ import { useStore, getTechnicianById } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
 
 const statusConfig: Record<JobStatus, { label: string; className: string; icon: React.ElementType; description: string }> = {
+  available: {
+    label: "Available",
+    className: "bg-blue-100 text-blue-800",
+    icon: Calendar,
+    description: "This job is available and waiting to be assigned to a technician.",
+  },
   scheduled: {
     label: "Scheduled",
     className: "bg-status-scheduled text-foreground",
@@ -25,6 +31,12 @@ const statusConfig: Record<JobStatus, { label: string; className: string; icon: 
     className: "bg-status-working text-foreground",
     icon: Wrench,
     description: "Your technician has arrived and is working on the job.",
+  },
+  on_hold: {
+    label: "On Hold",
+    className: "bg-amber-100 text-amber-800",
+    icon: Clock,
+    description: "This job is temporarily on hold. We'll update you when work resumes.",
   },
   complete: {
     label: "Completed",
