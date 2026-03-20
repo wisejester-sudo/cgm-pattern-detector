@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
+  <!-- Speech bubble background -->
+  <path d="M40 8H8C5.79086 8 4 9.79086 4 12V32C4 34.2091 5.79086 36 8 36H16L20 44L24 36H40C42.2091 36 44 34.2091 44 32V12C44 9.79086 42.2091 8 40 8Z" fill="#FFFFFF"/>
+  <!-- Lightning bolt cutout -->
+  <path d="M26 14L18 24H24L22 32L30 22H24L26 14Z" fill="#F97316" stroke="#1E3A8A" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>

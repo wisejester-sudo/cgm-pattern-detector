@@ -15,6 +15,7 @@ import {
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { User, LogOut, Settings } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { Logo } from "@/components/logo";
 
 interface UserProfile {
   id: string;
@@ -72,8 +73,8 @@ export function TopBar() {
     <header className="flex items-center justify-between h-16 px-4 md:px-6 border-b border-border bg-card">
       <div className="flex items-center gap-3">
         <MobileSidebar />
-        <div className="md:hidden flex items-center gap-2">
-          <span className="font-semibold text-lg">Dispatchly</span>
+        <div className="md:hidden">
+          <Logo size="sm" showText={true} />
         </div>
       </div>
       

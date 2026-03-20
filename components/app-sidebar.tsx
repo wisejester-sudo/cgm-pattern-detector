@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useStore } from "@/lib/store";
+import { Logo } from "@/components/logo";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -95,11 +96,8 @@ export function AppSidebar() {
   return (
     <aside className="hidden md:flex w-[200px] flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
       {/* Logo */}
-      <div className="flex items-center gap-2 px-4 h-16 border-b border-sidebar-border">
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sidebar-primary">
-          <Zap className="w-5 h-5 text-sidebar-primary-foreground" />
-        </div>
-        <span className="font-semibold text-lg">Dispatchly</span>
+      <div className="flex items-center px-4 h-16 border-b border-sidebar-border">
+        <Logo size="md" variant="default" />
       </div>
 
       {/* Navigation */}
