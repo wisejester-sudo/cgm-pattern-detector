@@ -271,13 +271,13 @@ interface AppState {
   updateAdmin: (updates: Partial<Admin>) => void
   
   // Job actions
-  addJob: (job: Omit<Job, 'id' | 'created_at' | 'updated_at'>) => Job
-  updateJob: (id: string, updates: Partial<Job>) => void
+  addJob: (job: Omit<Job, 'id' | 'created_at' | 'updated_at'>) => Promise<Job>
+  updateJob: (id: string, updates: Partial<Job>) => Promise<void>
   updateJobStatus: (id: string, status: JobStatus) => void
   deleteJob: (id: string) => Promise<void>
   
   // Technician actions
-  addTechnician: (tech: Omit<Technician, 'id' | 'created_at' | 'last_login' | 'role' | 'assigned_jobs'>) => void
+  addTechnician: (tech: Omit<Technician, 'id' | 'created_at' | 'last_login' | 'role' | 'assigned_jobs'>) => Promise<Technician>
   updateTechnician: (id: string, updates: Partial<Technician>) => void
   deleteTechnician: (id: string) => Promise<void>
   loginTechnician: (pin: string) => Technician | null
