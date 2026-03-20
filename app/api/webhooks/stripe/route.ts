@@ -119,15 +119,17 @@ export async function POST(request: NextRequest) {
             .single()
 
           if (subscriptionData) {
+            // Cast invoice to access properties that may not be in types
+            const inv = invoice as any
             await supabase.from("payments").insert({
               company_id: subscriptionData.company_id,
               stripe_invoice_id: invoice.id,
-              stripe_payment_intent_id: invoice.payment_intent as string,
+              stripe_payment_intent_id: inv.payment_intent as string,
               amount: invoice.amount_due,
               currency: invoice.currency,
               status: "succeeded",
-              billing_reason: invoice.billing_reason,
-              description: invoice.description,
+              billing_reason: inv.billing_reason,
+              description: inv.description,
               paid_at: new Date(),
             })
           }
