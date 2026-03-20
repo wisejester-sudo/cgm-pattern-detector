@@ -146,14 +146,25 @@ export function PhotoUpload({
   const completeCount = files.filter(f => f.status === "complete").length
   const canAddMore = files.length < maxPhotos
 
-  // Cleanup object URLs on unmount to prevent memory leaks
+  // Track all created object URLs for proper cleanup
+  const previewUrlsRef = useRef<Set<string>>(new Set())
+
+  // Update ref when files change
+  useEffect(() => {
+    files.forEach(file => {
+      if (file.preview) {
+        previewUrlsRef.current.add(file.preview)
+      }
+    })
+  }, [files])
+
+  // Cleanup all object URLs on unmount to prevent memory leaks
   useEffect(() => {
     return () => {
-      files.forEach(file => {
-        if (file.preview) {
-          URL.revokeObjectURL(file.preview)
-        }
+      previewUrlsRef.current.forEach(url => {
+        URL.revokeObjectURL(url)
       })
+      previewUrlsRef.current.clear()
     }
   }, [])
 
