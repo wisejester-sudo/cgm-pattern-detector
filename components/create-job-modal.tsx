@@ -88,6 +88,9 @@ export function CreateJobModal({
     notes: "",
     assigned_tech_ids: [] as string[],
   })
+  
+  // Validation errors state
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Normalize phone number to E.164 format
   const normalizePhone = (countryCode: string, phone: string): string => {
@@ -101,6 +104,7 @@ export function CreateJobModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setErrors({}) // Clear previous errors
 
     try {
       const scheduledDateTime = formData.scheduled_date && formData.scheduled_time
@@ -134,10 +138,18 @@ export function CreateJobModal({
         notes: "",
         assigned_tech_ids: [] as string[],
       })
+      setErrors({})
       setOpen(false)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create job:', error)
-      toast.error('Failed to create job. Please try again.')
+      
+      // Check if error has validation details
+      if (error.details && typeof error.details === 'object') {
+        setErrors(error.details)
+        toast.error('Please fix the validation errors below', { duration: 5000 })
+      } else {
+        toast.error(error.message || 'Failed to create job. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -176,10 +188,17 @@ export function CreateJobModal({
                     id="customer_name"
                     placeholder="Enter customer name"
                     value={formData.customer_name}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setFormData({ ...formData, customer_name: e.target.value })
-                    }
+                      if (errors.customer_name) {
+                        setErrors({ ...errors, customer_name: '' })
+                      }
+                    }}
+                    className={errors.customer_name ? "border-red-500" : ""}
                   />
+                  {errors.customer_name && (
+                    <p className="text-sm text-red-500 mt-1">{errors.customer_name}</p>
+                  )}
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="customer_phone">Phone Number</FieldLabel>
@@ -213,10 +232,16 @@ export function CreateJobModal({
                       onChange={(e) => {
                         setPhoneInput(e.target.value)
                         setFormData({ ...formData, customer_phone: normalizePhone(countryCode, e.target.value) })
+                        if (errors.customer_phone) {
+                          setErrors({ ...errors, customer_phone: '' })
+                        }
                       }}
-                      className="flex-1"
+                      className={`flex-1 ${errors.customer_phone ? "border-red-500" : ""}`}
                     />
                   </div>
+                  {errors.customer_phone && (
+                    <p className="text-sm text-red-500 mt-1">{errors.customer_phone}</p>
+                  )}
                 </Field>
               </div>
               <Field>
@@ -225,11 +250,18 @@ export function CreateJobModal({
                   id="customer_address"
                   placeholder="Enter full address"
                   value={formData.customer_address}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setFormData({ ...formData, customer_address: e.target.value })
-                  }
+                    if (errors.customer_address) {
+                      setErrors({ ...errors, customer_address: '' })
+                    }
+                  }}
                   rows={2}
+                  className={errors.customer_address ? "border-red-500" : ""}
                 />
+                {errors.customer_address && (
+                  <p className="text-sm text-red-500 mt-1">{errors.customer_address}</p>
+                )}
               </Field>
 
               {/* Job Details */}
@@ -239,11 +271,14 @@ export function CreateJobModal({
                   <FieldLabel htmlFor="job_type">Job Type</FieldLabel>
                   <Select
                     value={formData.job_type}
-                    onValueChange={(value) =>
+                    onValueChange={(value) => {
                       setFormData({ ...formData, job_type: value })
-                    }
+                      if (errors.job_type) {
+                        setErrors({ ...errors, job_type: '' })
+                      }
+                    }}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className={`w-full ${errors.job_type ? "border-red-500" : ""}`}>
                       <SelectValue placeholder="Select job type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -254,6 +289,9 @@ export function CreateJobModal({
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.job_type && (
+                    <p className="text-sm text-red-500 mt-1">{errors.job_type}</p>
+                  )}
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="assigned_tech_ids">Assign Technician</FieldLabel>
