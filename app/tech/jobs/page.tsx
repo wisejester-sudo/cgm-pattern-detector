@@ -8,6 +8,7 @@ import { LogOut, MapPin, Clock, ChevronRight, Calendar, Loader2 } from "lucide-r
 import Link from "next/link"
 import { useStore, getTechnicianById, maskPhoneNumber } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
+import { isSameDayUTC, getTodayUTC } from "@/lib/date-utils"
 import { useEffect, useMemo, useState } from "react"
 
 const statusConfig: Record<JobStatus, { label: string; className: string }> = {
@@ -76,13 +77,13 @@ export default function TechJobsPage() {
       })
   }, [jobs, currentTechId])
 
-  // Today's jobs
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  // BUG FIX: Use timezone-safe date comparisons
+  // Get today's date in UTC (consistent with database storage)
+  const todayUTC = getTodayUTC()
+  
+  // Today's jobs - compare using UTC dates
   const todaysJobs = myJobs.filter((job) => {
-    const jobDate = new Date(job.scheduled_time)
-    jobDate.setHours(0, 0, 0, 0)
-    return jobDate.getTime() === today.getTime()
+    return isSameDayUTC(job.scheduled_time, todayUTC)
   })
 
   const activeJobs = myJobs.filter((j) => j.status !== "complete")

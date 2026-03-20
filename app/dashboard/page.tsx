@@ -8,6 +8,7 @@ import Link from "next/link"
 import { Button, BrandButton } from "@/components/ui/button"
 import { useStore, getTechnicianById } from "@/lib/store"
 import { CreateJobModal } from "@/components/create-job-modal"
+import { isSameDayUTC, getTodayUTC } from "@/lib/date-utils"
 import type { JobStatus } from "@/lib/types"
 
 const statusConfig: Record<JobStatus, { label: string; className: string }> = {
@@ -43,20 +44,18 @@ export default function DashboardPage() {
   const completedJobs = jobs.filter((j) => j.status === "complete").length
   const activeTechs = technicians.filter((t) => t.is_active).length
 
-  // Today's jobs
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  // BUG FIX: Use timezone-safe date comparisons
+  // Get today's date in UTC (consistent with database storage)
+  const todayUTC = getTodayUTC()
+  
+  // Today's jobs - compare using UTC dates
   const todaysJobs = jobs.filter((job) => {
-    const jobDate = new Date(job.scheduled_time)
-    jobDate.setHours(0, 0, 0, 0)
-    return jobDate.getTime() === today.getTime()
+    return isSameDayUTC(job.scheduled_time, todayUTC)
   })
 
-  // SMS sent today
+  // SMS sent today - compare using UTC dates
   const smsSentToday = smsLogs.filter((log) => {
-    const logDate = new Date(log.sent_at)
-    logDate.setHours(0, 0, 0, 0)
-    return logDate.getTime() === today.getTime()
+    return isSameDayUTC(log.sent_at, todayUTC)
   }).length
 
   // Show loading state during hydration to prevent mismatch
