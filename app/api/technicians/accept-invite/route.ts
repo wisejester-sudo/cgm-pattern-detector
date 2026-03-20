@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,11 +23,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find technician by token
+    // Hash the incoming token for secure lookup
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex')
+
+    // Find technician by token hash
     const { data: technician, error: fetchError } = await supabase
       .from('technicians')
       .select('*')
-      .eq('magic_link_token', token)
+      .eq('magic_link_token', tokenHash)
       .single()
 
     if (fetchError || !technician) {
@@ -43,11 +48,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update technician with PIN and mark as accepted
+    // Hash PIN before storing (security fix)
+    const saltRounds = 10
+    const hashedPin = await bcrypt.hash(pin, saltRounds)
+
+    // Update technician with hashed PIN and mark as accepted
     const { error: updateError } = await supabase
       .from('technicians')
       .update({
-        pin: pin,
+        pin: hashedPin,
         invite_accepted_at: new Date().toISOString(),
         magic_link_token: null,
         magic_link_expires_at: null,

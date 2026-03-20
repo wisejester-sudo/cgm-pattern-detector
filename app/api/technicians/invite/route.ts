@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
 
     // Generate magic link token with environment context
     const token = crypto.randomBytes(32).toString('hex')
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex')
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
     
     // Capture environment context for multi-environment safety
@@ -50,11 +51,11 @@ export async function POST(request: NextRequest) {
     if (technicianId) {
       console.log('[API] Updating existing technician:', technicianId)
       
-      // Update existing technician with magic link token and environment
+      // Update existing technician with magic link token hash and environment
       const { error: updateError } = await supabase
         .from('technicians')
         .update({
-          magic_link_token: token,
+          magic_link_token: tokenHash,
           magic_link_expires_at: expiresAt.toISOString(),
           environment: environment,
           base_url: baseUrl,
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
     } else {
       console.log('[API] Creating new technician:', { name, email, phone })
       
-      // Create new technician with magic link token and environment
+      // Create new technician with magic link token hash and environment
       const { data: newTech, error: createError } = await supabase
         .from('technicians')
         .insert({
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
           name,
           email: email || null,
           phone,
-          magic_link_token: token,
+          magic_link_token: tokenHash,
           magic_link_expires_at: expiresAt.toISOString(),
           environment: environment,
           base_url: baseUrl,
