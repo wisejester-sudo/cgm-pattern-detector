@@ -155,9 +155,9 @@ async function handleIncomingSMS(request: NextRequest) {
     // STEP 2: Find technician's most recent active job
     const { data: activeJob, error: jobError } = await supabase
       .from("jobs")
-      .select("id, customer_name, customer_phone, address, status, company_id")
-      .eq("technician_id", technician.id)
-      .in("status", ["scheduled", "enroute", "working"])
+      .select("id, customer_name, customer_phone, customer_address, status, admin_id")
+      .contains("assigned_tech_ids", [technician.id])
+      .in("status", ["scheduled", "en_route", "working"])
       .order("updated_at", { ascending: false })
       .limit(1)
       .single()
