@@ -885,20 +885,28 @@ export const getPhotosByJobId = (photos: JobPhoto[], jobId: string) => {
   return photos.filter((p) => p.job_id === jobId)
 }
 
-// Helper to render SMS template
+// Helper to render SMS template (with XSS protection)
 export const renderTemplate = (
   template: string,
   job: Job,
   tech: Technician | null,
   settings: CompanySettings
 ) => {
+  // Escape HTML to prevent XSS in SMS content
+  const escape = (str: string) => str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+
   return template
-    .replace(/{customer_name}/g, job.customer_name)
-    .replace(/{address}/g, job.customer_address)
-    .replace(/{job_type}/g, job.job_type)
-    .replace(/{tech_name}/g, tech?.name || 'Your technician')
-    .replace(/{company_name}/g, settings.company_name)
-    .replace(/{company_phone}/g, settings.company_phone)
+    .replace(/{customer_name}/g, escape(job.customer_name))
+    .replace(/{address}/g, escape(job.customer_address))
+    .replace(/{job_type}/g, escape(job.job_type))
+    .replace(/{tech_name}/g, escape(tech?.name || 'Your technician'))
+    .replace(/{company_name}/g, escape(settings.company_name))
+    .replace(/{company_phone}/g, escape(settings.company_phone))
     .replace(/{eta}/g, '15-20 minutes')
 }
 
