@@ -57,9 +57,14 @@ export async function POST(request: NextRequest) {
         const planId = session.metadata?.plan_id
 
         if (companyId && session.subscription) {
-          const subscription = await stripe.subscriptions.retrieve(
+          const subscriptionResponse = await stripe.subscriptions.retrieve(
             session.subscription as string
           )
+          
+          // Handle both direct response and { data: Subscription } wrapper
+          const subscription = 'data' in subscriptionResponse 
+            ? subscriptionResponse.data 
+            : subscriptionResponse
 
           const currentPeriodStart = subscription.current_period_start 
             ? new Date(subscription.current_period_start * 1000) 
