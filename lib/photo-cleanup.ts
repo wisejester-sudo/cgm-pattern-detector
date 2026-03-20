@@ -24,9 +24,9 @@ export async function cleanupOldPhotos(): Promise<{ deleted: number; errors: str
 
     // Get photos older than 45 days
     const { data: oldPhotos, error: fetchError } = await supabase
-      .from("photos")
-      .select("id, url, thumbnail_url")
-      .lt("created_at", cutoffISO)
+      .from("job_photos")
+      .select("id, photo_url, thumbnail_url, uploaded_at")
+      .lt("uploaded_at", cutoffISO)
 
     if (fetchError) {
       throw new Error(`Failed to fetch old photos: ${fetchError.message}`)
@@ -43,7 +43,7 @@ export async function cleanupOldPhotos(): Promise<{ deleted: number; errors: str
     for (const photo of oldPhotos) {
       try {
         // Extract storage paths from URLs
-        const fullImagePath = extractStoragePath(photo.url)
+        const fullImagePath = extractStoragePath(photo.photo_url)
         const thumbnailPath = photo.thumbnail_url
           ? extractStoragePath(photo.thumbnail_url)
           : null
@@ -74,7 +74,7 @@ export async function cleanupOldPhotos(): Promise<{ deleted: number; errors: str
 
         // Delete database record
         const { error: dbError } = await supabase
-          .from("photos")
+          .from("job_photos")
           .delete()
           .eq("id", photo.id)
 

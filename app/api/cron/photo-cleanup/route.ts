@@ -103,9 +103,9 @@ export async function GET(request: NextRequest) {
     }
 
     const { count, error } = await supabase
-      .from("photos")
+      .from("job_photos")
       .select("*", { count: "exact", head: true })
-      .lt("created_at", cutoffDate.toISOString())
+      .lt("uploaded_at", cutoffDate.toISOString())
 
     if (error) {
       return NextResponse.json(
