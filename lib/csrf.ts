@@ -1,28 +1,34 @@
 // CSRF Protection Utilities
-import { createHash, randomBytes } from 'crypto'
+// Uses Web Crypto API for Edge Runtime compatibility
 
 const CSRF_TOKEN_LENGTH = 32
 const CSRF_HEADER_NAME = 'x-csrf-token'
 
 /**
- * Generate a new CSRF token
+ * Generate a new CSRF token using Web Crypto API
  */
 export function generateCSRFToken(): string {
-  return randomBytes(CSRF_TOKEN_LENGTH).toString('hex')
+  const array = new Uint8Array(CSRF_TOKEN_LENGTH)
+  crypto.getRandomValues(array)
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
 }
 
 /**
- * Hash a CSRF token for storage (prevents token theft from DB)
+ * Hash a CSRF token for storage using Web Crypto API
  */
-export function hashCSRFToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex')
+export async function hashCSRFToken(token: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(token)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('')
 }
 
 /**
  * Validate a CSRF token against its hash
  */
-export function validateCSRFToken(token: string, hashedToken: string): boolean {
-  const computedHash = hashCSRFToken(token)
+export async function validateCSRFToken(token: string, hashedToken: string): Promise<boolean> {
+  const computedHash = await hashCSRFToken(token)
   return computedHash === hashedToken
 }
 
@@ -58,11 +64,10 @@ export function getCSRFCookieOptions() {
 
 /**
  * Create CSRF token cookie options for client-readable cookie
- * This allows JavaScript to read the token and send it in headers
  */
 export function getCSRFClientCookieOptions() {
   return {
-    httpOnly: false, // Client can read this
+    httpOnly: false, // Client needs to read this
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict' as const,
     maxAge: 60 * 60 * 24, // 24 hours

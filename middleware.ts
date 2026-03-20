@@ -17,7 +17,8 @@ export async function middleware(request: NextRequest) {
       // For safe methods, set a new CSRF token if not present
       if (!csrfCookie) {
         const newToken = generateCSRFToken()
-        const hashedToken = hashCSRFToken(newToken)
+        // Use sync hash for middleware (Edge Runtime compatible)
+        const hashedToken = await hashCSRFToken(newToken)
         
         // Set the hashed token in httpOnly cookie (for server validation)
         response.cookies.set('csrf-token', hashedToken, getCSRFCookieOptions())
