@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { validationSchemas, validateAndSanitize } from "@/lib/validation"
+import { validationSchemas, validateAndSanitize, checkBodySize, MAX_BODY_SIZES } from "@/lib/validation"
 
 // POST /api/jobs - Create a new job
 export async function POST(request: NextRequest) {
@@ -24,6 +24,10 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       )
     }
+
+    // Check request body size
+    const sizeError = checkBodySize(request, MAX_BODY_SIZES.json)
+    if (sizeError) return sizeError
 
     const body = await request.json()
     

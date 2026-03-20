@@ -50,9 +50,8 @@ export async function POST(
     // SECURITY: Get the current job with ownership verification
     const { data: job, error: jobError } = await supabase
       .from("jobs")
-      .select("*")
+      .select("*, companies!inner(admin_id)")
       .eq("id", id)
-      .eq("admin_id", user.id)
       .single()
 
     if (jobError || !job) {
@@ -62,9 +61,13 @@ export async function POST(
       )
     }
 
-    // Verify the user owns this job
-    // Note: This assumes companies table has user_id relation
-    // You may need to adjust based on your actual schema
+    // Verify the user owns this job through the company
+    if (job.companies?.admin_id !== user.id) {
+      return NextResponse.json(
+        { error: "Job not found" },
+        { status: 404 }
+      )
+    }
 
     // Update the job: add technician to assigned_tech_ids and change status to scheduled
     // First, get current assigned_tech_ids or initialize empty array

@@ -1,4 +1,37 @@
 // Input Validation Utilities
+import { NextRequest, NextResponse } from "next/server"
+
+/**
+ * Maximum request body sizes for different endpoints
+ */
+export const MAX_BODY_SIZES = {
+  default: 1024 * 1024,      // 1MB
+  upload: 10 * 1024 * 1024,  // 10MB for file uploads
+  json: 1024 * 1024,          // 1MB for JSON payloads
+  webhook: 5 * 1024 * 1024,   // 5MB for webhooks
+} as const
+
+/**
+ * Check request body size and return error if too large
+ */
+export function checkBodySize(
+  request: NextRequest,
+  maxSize: number = MAX_BODY_SIZES.default
+): NextResponse | null {
+  const contentLength = request.headers.get('content-length')
+  
+  if (contentLength) {
+    const size = parseInt(contentLength, 10)
+    if (size > maxSize) {
+      return NextResponse.json(
+        { error: `Request body too large (max ${maxSize / 1024 / 1024}MB)` },
+        { status: 413 }
+      )
+    }
+  }
+  
+  return null
+}
 
 export interface ValidationRule {
   maxLength?: number

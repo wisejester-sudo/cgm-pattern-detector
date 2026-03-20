@@ -47,6 +47,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
     }
 
+    // Idempotency check: Skip if already processed
+    const { data: existingEvent } = await supabase
+      .from("stripe_webhook_events")
+      .select("id")
+      .eq("event_id", event.id)
+      .single()
+
+    if (existingEvent) {
+      console.log("[Stripe Webhook] Duplicate event, skipping:", event.id)
+      return NextResponse.json({ received: true, duplicate: true })
+    }
+
+    // Store event for idempotency tracking
+    await supabase.from("stripe_webhook_events").insert({
+      event_id: event.id,
+      event_type: event.type,
+      processed_at: new Date().toISOString(),
+    })
+
     // Handle different event types
     switch (event.type) {
       case "checkout.session.completed": {
