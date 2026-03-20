@@ -77,33 +77,12 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({ suggestions })
     
-  } catch (error) {
+  } catch (error: any) {
     console.error("Address search error:", error)
+    console.error("Error stack:", error?.stack)
     return NextResponse.json(
-      { error: "Failed to search addresses" },
+      { error: `Search failed: ${error?.message || 'Unknown error'}` },
       { status: 500 }
     )
   }
-}
-
-// Rate limiting - simple in-memory rate limit
-const rateLimits = new Map<string, { count: number; resetTime: number }>()
-const RATE_LIMIT = 30 // requests per minute
-const RATE_WINDOW = 60 * 1000 // 1 minute
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now()
-  const limit = rateLimits.get(ip)
-  
-  if (!limit || now > limit.resetTime) {
-    rateLimits.set(ip, { count: 1, resetTime: now + RATE_WINDOW })
-    return true
-  }
-  
-  if (limit.count >= RATE_LIMIT) {
-    return false
-  }
-  
-  limit.count++
-  return true
 }
