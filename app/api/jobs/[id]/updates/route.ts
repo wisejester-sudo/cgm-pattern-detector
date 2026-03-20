@@ -195,7 +195,10 @@ export async function GET(
       .from("job_updates")
       .select(`
         *,
-        technician:technicians(id,
+        technician:technicians(id, name)
+      `)
+      .eq("job_id", id)
+      .order("created_at", { ascending: false })
 
     if (error) {
       console.error("[API] Error fetching updates:", error)
@@ -205,7 +208,7 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ updates })
+    return NextResponse.json({ updates: updates || [] })
   } catch (error) {
     console.error("[API] Unexpected error:", error)
     return NextResponse.json(
