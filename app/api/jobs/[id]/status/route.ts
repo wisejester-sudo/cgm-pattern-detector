@@ -44,10 +44,10 @@ export async function PATCH(
       )
     }
 
-    // Get current job to check transition
+    // Get current job to check ownership and transition
     const { data: currentJob, error: fetchError } = await supabase
       .from("jobs")
-      .select("status, assigned_tech_ids")
+      .select("status, assigned_tech_ids, admin_id")
       .eq("id", id)
       .single()
 
@@ -55,6 +55,14 @@ export async function PATCH(
       return NextResponse.json(
         { error: "Job not found" },
         { status: 404 }
+      )
+    }
+
+    // Verify ownership - only job owner can update status
+    if (currentJob.admin_id !== user.id) {
+      return NextResponse.json(
+        { error: "Forbidden - you don't have permission to update this job" },
+        { status: 403 }
       )
     }
 

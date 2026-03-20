@@ -169,14 +169,33 @@ export async function GET(
       )
     }
 
+    // Verify job ownership first
+    const { data: job, error: jobError } = await supabase
+      .from("jobs")
+      .select("admin_id")
+      .eq("id", id)
+      .single()
+
+    if (jobError || !job) {
+      return NextResponse.json(
+        { error: "Job not found" },
+        { status: 404 }
+      )
+    }
+
+    // Check if user owns this job
+    if (job.admin_id !== user.id) {
+      return NextResponse.json(
+        { error: "Forbidden - you don't have permission to view this job's updates" },
+        { status: 403 }
+      )
+    }
+
     const { data: updates, error } = await supabase
       .from("job_updates")
       .select(`
         *,
-        technician:technicians(id, name)
-      `)
-      .eq("job_id", id)
-      .order("created_at", { ascending: false })
+        technician:technicians(id,
 
     if (error) {
       console.error("[API] Error fetching updates:", error)
