@@ -20,16 +20,16 @@ import {
   Clock,
   Calendar,
   ChevronRight,
-  Wrench,
+  HardHat,
   Truck,
-  HardHat
+  LayoutDashboard,
+  Briefcase
 } from "lucide-react"
-import Image from "next/image"
 
 export default function LandingPage() {
   return (
     <div className="relative min-h-screen bg-background overflow-hidden">
-      {/* Background Effects - Subtle gradient with texture */}
+      {/* Background Effects - Subtle gradient */}
       <div className="fixed inset-0 -z-10">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-slate-50" />
         <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl" />
@@ -114,28 +114,50 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Hero Image - Subtle background style */}
+            {/* Hero Dashboard Mockup */}
             <div className="relative lg:pl-8">
               <div className="absolute -inset-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-3xl blur-2xl opacity-50" />
-              <div className="relative rounded-2xl overflow-hidden bg-slate-100">
-                <Image
-                  src="https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&q=60"
-                  alt="Field service technician"
-                  width={600}
-                  height={400}
-                  className="w-full h-auto object-cover opacity-90"
-                  priority
-                />
-                <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                      <CheckCircle2 className="h-5 w-5 text-white" />
+              <div className="relative rounded-2xl overflow-hidden bg-white shadow-2xl border">
+                {/* Mock Dashboard Header */}
+                <div className="bg-sidebar border-b px-4 py-3 flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                  <span className="font-semibold">Dispatchly</span>
+                  <div className="ml-auto flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">JD</div>
+                  </div>
+                </div>
+                {/* Mock Dashboard Content */}
+                <div className="p-4 space-y-4">
+                  {/* Stats Row */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <p className="text-2xl font-bold">12</p>
+                      <p className="text-xs text-muted-foreground">Active Jobs</p>
                     </div>
-                    <div>
-                      <p className="font-semibold text-sm">Job Completed</p>
-                      <p className="text-xs text-muted-foreground">Service call finished</p>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <p className="text-2xl font-bold">8</p>
+                      <p className="text-xs text-muted-foreground">Technicians</p>
                     </div>
-                    <div className="ml-auto text-xs text-muted-foreground">2 min ago</div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <p className="text-2xl font-bold">94%</p>
+                      <p className="text-xs text-muted-foreground">Completion</p>
+                    </div>
+                  </div>
+                  {/* Job List Mock */}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Today&apos;s Jobs</p>
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+                        <div className="w-2 h-2 rounded-full bg-green-500" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">Customer {i}</p>
+                          <p className="text-xs text-muted-foreground">AC Repair • 2:00 PM</p>
+                        </div>
+                        <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">En Route</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -178,97 +200,141 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: Workflow,
-                title: "Job Management",
-                description: "Create, assign, and track jobs from start to finish. Real-time status updates keep everyone informed.",
-              },
-              {
-                icon: MessageSquare,
-                title: "SMS Communication",
-                description: "Two-way texting with customers and technicians. No apps to download or install.",
-              },
-              {
-                icon: Camera,
-                title: "Photo Management",
-                description: "Technicians upload photos from the field. Customers view them instantly via web link.",
-              },
-              {
-                icon: Users,
-                title: "Team Management",
-                description: "Invite technicians with magic links. No passwords to remember or manage.",
-              },
-              {
-                icon: Bell,
-                title: "Real-time Updates",
-                description: "Automatic notifications when jobs are updated. Customers know exactly when you arrive.",
-              },
-              {
-                icon: BarChart3,
-                title: "Reporting & Analytics",
-                description: "Track performance metrics, completion rates, and customer satisfaction over time.",
-              },
-            ].map((feature, i) => (
-              <div key={i} className="group bg-card border rounded-2xl p-6 hover:shadow-lg transition-all">
-                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                  <feature.icon className="h-6 w-6 text-primary" />
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Feature 1: Dashboard */}
+            <div className="bg-card border rounded-2xl overflow-hidden">
+              <div className="p-6 border-b bg-muted/30">
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
+                  <LayoutDashboard className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
+                <h3 className="text-xl font-semibold mb-2">Command Dashboard</h3>
+                <p className="text-muted-foreground">See everything at a glance. Track jobs, technicians, and performance in real-time.</p>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Field Operations - Subtle background image */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="absolute inset-0 -z-10">
-          <Image
-            src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=1920&q=40"
-            alt="Service van background"
-            fill
-            className="object-cover opacity-10"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/80" />
-        </div>
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <Badge variant="outline" className="mb-4">Field Operations</Badge>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Built for the field, not the office
-              </h2>
-              <p className="text-lg text-muted-foreground mb-6">
-                Your technicians are out in the field, not sitting at desks. Dispatchly works on any phone with SMS—no apps to install or learn.
-              </p>
-              <ul className="space-y-4">
-                {[
-                  { icon: Truck, text: "Track technician locations and job status in real-time" },
-                  { icon: Wrench, text: "Manage service jobs with custom workflows" },
-                  { icon: Smartphone, text: "Simple text-based updates from any mobile device" },
-                  { icon: Shield, text: "Secure access without managing passwords" },
-                ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <item.icon className="h-4 w-4 text-primary" />
+              <div className="p-6 bg-slate-50/50">
+                {/* Mock Dashboard Mini */}
+                <div className="bg-white rounded-lg shadow-sm border p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Active Jobs</span>
+                    <span className="text-lg font-bold text-primary">12</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full w-3/4 bg-primary rounded-full" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="p-2 bg-green-50 rounded">
+                      <div className="font-bold text-green-700">5</div>
+                      <div className="text-green-600">Working</div>
                     </div>
-                    <span className="text-muted-foreground">{item.text}</span>
-                  </li>
-                ))}
-              </ul>
+                    <div className="p-2 bg-blue-50 rounded">
+                      <div className="font-bold text-blue-700">4</div>
+                      <div className="text-blue-600">En Route</div>
+                    </div>
+                    <div className="p-2 bg-amber-50 rounded">
+                      <div className="font-bold text-amber-700">3</div>
+                      <div className="text-amber-600">Scheduled</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="relative">
-              <div className="rounded-2xl overflow-hidden shadow-xl bg-slate-100">
-                <Image
-                  src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=60"
-                  alt="Field service team"
-                  width={600}
-                  height={400}
-                  className="w-full h-auto object-cover"
-                />
+
+            {/* Feature 2: Job Management */}
+            <div className="bg-card border rounded-2xl overflow-hidden">
+              <div className="p-6 border-b bg-muted/30">
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
+                  <Briefcase className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Job Management</h3>
+                <p className="text-muted-foreground">Create, assign, and track jobs from start to finish. Never lose track of a job again.</p>
+              </div>
+              <div className="p-6 bg-slate-50/50">
+                {/* Mock Job Card */}
+                <div className="bg-white rounded-lg shadow-sm border p-4 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-medium">Sarah Johnson</p>
+                      <p className="text-sm text-muted-foreground">AC Repair & Maintenance</p>
+                    </div>
+                    <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">Working</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span>Today, 2:00 PM</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">MT</div>
+                    <span className="text-sm">Mike T.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Feature 3: SMS Notifications */}
+            <div className="bg-card border rounded-2xl overflow-hidden">
+              <div className="p-6 border-b bg-muted/30">
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
+                  <MessageSquare className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">SMS Notifications</h3>
+                <p className="text-muted-foreground">Keep customers informed with automatic text updates. No apps to download.</p>
+              </div>
+              <div className="p-6 bg-slate-50/50">
+                {/* Mock SMS Thread */}
+                <div className="bg-white rounded-lg shadow-sm border p-4 space-y-3">
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+                      <Zap className="w-4 h-4 text-primary-foreground" />
+                    </div>
+                    <div className="bg-muted rounded-2xl rounded-tl-none px-4 py-2 text-sm max-w-[80%]">
+                      Your technician Mike is on the way! Estimated arrival: 2:15 PM
+                    </div>
+                  </div>
+                  <div className="flex gap-3 justify-end">
+                    <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-none px-4 py-2 text-sm max-w-[80%]">
+                      Great, thanks!
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+                      <Zap className="w-4 h-4 text-primary-foreground" />
+                    </div>
+                    <div className="bg-muted rounded-2xl rounded-tl-none px-4 py-2 text-sm max-w-[80%]">
+                      Job completed! View photos: [link]
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Feature 4: Mobile Technician View */}
+            <div className="bg-card border rounded-2xl overflow-hidden">
+              <div className="p-6 border-b bg-muted/30">
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
+                  <Smartphone className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Mobile-First for Techs</h3>
+                <p className="text-muted-foreground">Technicians get a simple mobile interface. No apps to install—works on any phone.</p>
+              </div>
+              <div className="p-6 bg-slate-50/50">
+                {/* Mock Mobile View */}
+                <div className="bg-white rounded-lg shadow-sm border p-4 space-y-3 max-w-[240px] mx-auto">
+                  <div className="flex items-center gap-2 pb-3 border-b">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">MT</div>
+                    <span className="font-medium text-sm">Hi, Mike</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Your Jobs Today</p>
+                  <div className="space-y-2">
+                    <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                      <p className="font-medium text-sm">Sarah Johnson</p>
+                      <p className="text-xs text-muted-foreground">AC Repair • 2:00 PM</p>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 mt-2 inline-block">En Route</span>
+                    </div>
+                    <div className="p-3 border rounded-lg opacity-60">
+                      <p className="font-medium text-sm">Tom Wilson</p>
+                      <p className="text-xs text-muted-foreground">Maintenance • 4:00 PM</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -294,20 +360,26 @@ export default function LandingPage() {
                 step: "01",
                 title: "Create a Job",
                 description: "Enter customer details and assign a technician. Takes less than 60 seconds.",
+                icon: LayoutDashboard,
               },
               {
                 step: "02",
                 title: "Tech Gets Notified",
                 description: "Technician receives an SMS with job details and a magic link to update status.",
+                icon: MessageSquare,
               },
               {
                 step: "03",
                 title: "Everyone Stays Informed",
                 description: "Customers get automatic updates when techs are en route, working, and complete.",
+                icon: CheckCircle2,
               },
             ].map((item, i) => (
               <div key={i} className="relative bg-white rounded-2xl p-8 shadow-sm">
                 <div className="text-5xl font-bold text-primary/10 leading-none mb-4">{item.step}</div>
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
+                  <item.icon className="h-6 w-6 text-primary" />
+                </div>
                 <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
                 <p className="text-muted-foreground">{item.description}</p>
               </div>
@@ -356,7 +428,7 @@ export default function LandingPage() {
                     <Star key={j} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
-                <p className="text-foreground mb-6">"{testimonial.quote}"</p>
+                <p className="text-foreground mb-6">&ldquo;{testimonial.quote}&rdquo;</p>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                     <span className="text-primary font-semibold">{testimonial.author[0]}</span>
@@ -462,12 +534,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="relative bg-gradient-to-br from-primary to-primary/80 rounded-3xl overflow-hidden">
             <div className="absolute inset-0 opacity-10">
-              <Image
-                src="https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=1200&q=40"
-                alt="Field service background"
-                fill
-                className="object-cover"
-              />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,white,transparent_50%)]" />
             </div>
             <div className="relative z-10 p-12 md:p-16 text-center">
               <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
