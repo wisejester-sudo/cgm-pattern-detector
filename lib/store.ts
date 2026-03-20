@@ -647,8 +647,10 @@ export const useStore = create<AppState>()(
             return
           }
           const data = await response.json()
-          if (Array.isArray(data) && data.length > 0) {
-            set({ technicians: data })
+          // Handle paginated response format: { technicians: [...], pagination: {...} }
+          const technicians = data.technicians || data
+          if (Array.isArray(technicians)) {
+            set({ technicians })
           }
         } catch (error) {
           // Keep using demo data on error
@@ -662,8 +664,10 @@ export const useStore = create<AppState>()(
             return
           }
           const data = await response.json()
-          if (Array.isArray(data) && data.length > 0) {
-            set({ templates: data })
+          // Handle paginated response format: { templates: [...], pagination: {...} }
+          const templates = data.templates || data
+          if (Array.isArray(templates)) {
+            set({ templates })
           }
         } catch {
           // Keep using default templates on error
