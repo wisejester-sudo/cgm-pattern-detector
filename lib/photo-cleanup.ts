@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { logger } from "@/lib/logger"
 
 /**
  * Clean up photos older than 45 days
@@ -20,7 +21,7 @@ export async function cleanupOldPhotos(): Promise<{ deleted: number; errors: str
     cutoffDate.setDate(cutoffDate.getDate() - 45)
     const cutoffISO = cutoffDate.toISOString()
 
-    console.log(`[Cleanup] Deleting photos older than ${cutoffISO}`)
+    logger.info(`Deleting photos older than ${cutoffISO}`)
 
     // Get photos older than 45 days
     const { data: oldPhotos, error: fetchError } = await supabase
@@ -33,11 +34,11 @@ export async function cleanupOldPhotos(): Promise<{ deleted: number; errors: str
     }
 
     if (!oldPhotos || oldPhotos.length === 0) {
-      console.log("[Cleanup] No photos to delete")
+      logger.info("No photos to delete")
       return { deleted: 0, errors: [] }
     }
 
-    console.log(`[Cleanup] Found ${oldPhotos.length} photos to delete`)
+    logger.info(`Found ${oldPhotos.length} photos to delete`)
 
     // Delete each photo from storage and database
     for (const photo of oldPhotos) {
@@ -55,7 +56,7 @@ export async function cleanupOldPhotos(): Promise<{ deleted: number; errors: str
             .remove([fullImagePath])
 
           if (storageError) {
-            console.error(`[Cleanup] Failed to delete full image ${photo.id}:`, storageError)
+            logger.error(`Failed to delete full image ${photo.id}:`, storageError)
             errors.push(`Failed to delete full image ${photo.id}: ${storageError.message}`)
           }
         }
@@ -67,7 +68,7 @@ export async function cleanupOldPhotos(): Promise<{ deleted: number; errors: str
             .remove([thumbnailPath])
 
           if (thumbError) {
-            console.error(`[Cleanup] Failed to delete thumbnail ${photo.id}:`, thumbError)
+            logger.error(`Failed to delete thumbnail ${photo.id}:`, thumbError)
             errors.push(`Failed to delete thumbnail ${photo.id}: ${thumbError.message}`)
           }
         }
@@ -79,24 +80,24 @@ export async function cleanupOldPhotos(): Promise<{ deleted: number; errors: str
           .eq("id", photo.id)
 
         if (dbError) {
-          console.error(`[Cleanup] Failed to delete photo record ${photo.id}:`, dbError)
+          logger.error(`Failed to delete photo record ${photo.id}:`, dbError)
           errors.push(`Failed to delete photo record ${photo.id}: ${dbError.message}`)
         } else {
           deleted++
-          console.log(`[Cleanup] Deleted photo ${photo.id}`)
+          logger.info(`Deleted photo ${photo.id}`)
         }
       } catch (err) {
         const errorMsg = `Error processing photo ${photo.id}: ${err instanceof Error ? err.message : String(err)}`
-        console.error(`[Cleanup] ${errorMsg}`)
+        logger.error(errorMsg)
         errors.push(errorMsg)
       }
     }
 
-    console.log(`[Cleanup] Completed. Deleted ${deleted}/${oldPhotos.length} photos`)
+    logger.info(`Completed. Deleted ${deleted}/${oldPhotos.length} photos`)
     return { deleted, errors }
   } catch (error) {
     const errorMsg = `Cleanup failed: ${error instanceof Error ? error.message : String(error)}`
-    console.error(`[Cleanup] ${errorMsg}`)
+    logger.error(errorMsg)
     errors.push(errorMsg)
     return { deleted, errors }
   }
