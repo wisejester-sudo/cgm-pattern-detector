@@ -19,6 +19,32 @@ import type {
 // Generate unique IDs
 const generateId = () => Math.random().toString(36).substring(2, 15)
 
+// CSRF Token helper - gets token from cookie
+function getCSRFToken(): string | null {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie.match(/csrf-token=([^;]+)/)
+  return match ? match[1] : null
+}
+
+// Fetch wrapper that includes CSRF token for state-changing requests
+async function fetchWithCSRF(url: string, options: RequestInit = {}): Promise<Response> {
+  const method = options.method?.toUpperCase() || 'GET'
+  const stateChangingMethods = ['POST', 'PUT', 'PATCH', 'DELETE']
+  
+  // Only add CSRF token for state-changing methods
+  if (stateChangingMethods.includes(method)) {
+    const csrfToken = getCSRFToken()
+    if (csrfToken) {
+      options.headers = {
+        ...options.headers,
+        'x-csrf-token': csrfToken,
+      }
+    }
+  }
+  
+  return fetch(url, options)
+}
+
 // Empty initial state - will be populated from Supabase or user data
 const emptyAdmin: Admin | null = null
 
@@ -379,7 +405,7 @@ export const useStore = create<AppState>()(
       // Job actions
       addJob: async (jobData) => {
         // Save to Supabase API - no local fallback to prevent phantom data
-        const response = await fetch('/api/jobs', {
+        const response = await fetchWithCSRF('/api/jobs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(jobData),
@@ -411,7 +437,7 @@ export const useStore = create<AppState>()(
         
         // Try to update via API
         try {
-          const response = await fetch(`/api/jobs/${id}`, {
+          const response = await fetchWithCSRF(`/api/jobs/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updates),
@@ -445,7 +471,7 @@ export const useStore = create<AppState>()(
         
         // Try to update via API
         try {
-          const response = await fetch(`/api/jobs/${id}/status`, {
+          const response = await fetchWithCSRF(`/api/jobs/${id}/status`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status }),
@@ -467,7 +493,7 @@ export const useStore = create<AppState>()(
       deleteJob: async (id) => {
         // Try to delete from Supabase first
         try {
-          const response = await fetch(`/api/jobs/${id}`, {
+          const response = await fetchWithCSRF(`/api/jobs/${id}`, {
             method: 'DELETE',
           })
           
@@ -490,7 +516,7 @@ export const useStore = create<AppState>()(
       // Technician actions
       addTechnician: async (techData) => {
         // Save to Supabase API - no local fallback to prevent phantom data
-        const response = await fetch('/api/technicians', {
+        const response = await fetchWithCSRF('/api/technicians', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(techData),
@@ -520,7 +546,7 @@ export const useStore = create<AppState>()(
         
         // Try to update via API
         try {
-          const response = await fetch(`/api/technicians/${id}`, {
+          const response = await fetchWithCSRF(`/api/technicians/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updates),
@@ -542,7 +568,7 @@ export const useStore = create<AppState>()(
       deleteTechnician: async (id) => {
         // Try to delete from Supabase first
         try {
-          const response = await fetch(`/api/technicians/${id}`, {
+          const response = await fetchWithCSRF(`/api/technicians/${id}`, {
             method: 'DELETE',
           })
           
@@ -658,7 +684,7 @@ export const useStore = create<AppState>()(
       // If no data is returned, we keep the existing demo data
       loadJobsFromSupabase: async () => {
         try {
-          const response = await fetch('/api/jobs')
+          const response = await fetchWithCSRF('/api/jobs')
           if (!response.ok) {
             console.error('[Store] Failed to load jobs:', response.status, response.statusText)
             return
@@ -676,7 +702,7 @@ export const useStore = create<AppState>()(
 
       loadTechniciansFromSupabase: async () => {
         try {
-          const response = await fetch('/api/technicians')
+          const response = await fetchWithCSRF('/api/technicians')
           if (!response.ok) {
             console.error('[Store] Failed to load technicians:', response.status, response.statusText)
             return
@@ -694,7 +720,7 @@ export const useStore = create<AppState>()(
 
       loadTemplatesFromSupabase: async () => {
         try {
-          const response = await fetch('/api/templates')
+          const response = await fetchWithCSRF('/api/templates')
           if (!response.ok) {
             console.error('[Store] Failed to load templates:', response.status, response.statusText)
             return
@@ -714,7 +740,7 @@ export const useStore = create<AppState>()(
       refreshUserProfile: async () => {
         try {
           console.log('[Store] Refreshing user profile...')
-          const response = await fetch('/api/auth/user-profile')
+          const response = await fetchWithCSRF('/api/auth/user-profile')
           if (!response.ok) {
             console.error('[Store] Failed to refresh profile:', response.status)
             return
@@ -756,7 +782,7 @@ export const useStore = create<AppState>()(
         
         try {
           // Fetch user profile from API
-          const response = await fetch('/api/auth/user-profile')
+          const response = await fetchWithCSRF('/api/auth/user-profile')
           if (!response.ok) {
             console.error('[Store] Failed to fetch user profile:', response.status)
             return
@@ -805,7 +831,7 @@ export const useStore = create<AppState>()(
           
           // Try to also fetch persisted company settings from DB (may be empty for new users)
           try {
-            const settingsResponse = await fetch('/api/settings')
+            const settingsResponse = await fetchWithCSRF('/api/settings')
             if (settingsResponse.ok) {
               const settingsData = await settingsResponse.json()
               if (settingsData && settingsData.company_name) {
