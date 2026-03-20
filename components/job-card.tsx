@@ -48,9 +48,10 @@ interface JobCardProps {
   onStatusChange?: (jobId: string, newStatus: JobStatus) => void
   onAcceptJob?: (jobId: string) => void  // For techs to accept available jobs
   showAcceptButton?: boolean  // Show accept button for available jobs
+  onClick?: (job: Job) => void  // Click handler for editing
 }
 
-function JobCardComponent({ job, technicians = [], onStatusChange, onAcceptJob, showAcceptButton }: JobCardProps) {
+function JobCardComponent({ job, technicians = [], onStatusChange, onAcceptJob, showAcceptButton, onClick }: JobCardProps) {
   const status = statusConfig[job.status]
   const scheduledDate = new Date(job.scheduled_time)
   const [formattedTime, setFormattedTime] = useState<string>("")
@@ -72,7 +73,10 @@ function JobCardComponent({ job, technicians = [], onStatusChange, onAcceptJob, 
   }, [onAcceptJob, job.id])
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card 
+      className="hover:shadow-md transition-shadow cursor-pointer"
+      onClick={() => onClick?.(job)}
+    >
       <CardContent className="p-4">
         <div className="flex flex-col gap-3">
           {/* Header with name and status */}
@@ -119,8 +123,11 @@ function JobCardComponent({ job, technicians = [], onStatusChange, onAcceptJob, 
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 pt-2 border-t border-border">
-            <Link href={`/jobs/${job.id}`} className="flex-1">
+          <div 
+            className="flex items-center gap-2 pt-2 border-t border-border"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Link href={`/jobs/${job.id}`} className="flex-1" onClick={(e) => e.stopPropagation()}>
               <Button variant="outline" size="sm" className="w-full">
                 View Details
               </Button>
