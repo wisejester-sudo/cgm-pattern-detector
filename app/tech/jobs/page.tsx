@@ -11,6 +11,10 @@ import type { JobStatus } from "@/lib/types"
 import { useEffect, useMemo } from "react"
 
 const statusConfig: Record<JobStatus, { label: string; className: string }> = {
+  available: {
+    label: "Available",
+    className: "bg-blue-100 text-blue-800",
+  },
   scheduled: {
     label: "Scheduled",
     className: "bg-status-scheduled text-foreground",
@@ -22,6 +26,10 @@ const statusConfig: Record<JobStatus, { label: string; className: string }> = {
   working: {
     label: "Working",
     className: "bg-status-working text-foreground",
+  },
+  on_hold: {
+    label: "On Hold",
+    className: "bg-amber-100 text-amber-800",
   },
   complete: {
     label: "Complete",
@@ -51,7 +59,9 @@ export default function TechJobsPage() {
           working: 0,
           en_route: 1,
           scheduled: 2,
-          complete: 3,
+          available: 3,
+          on_hold: 4,
+          complete: 5,
         }
         if (statusOrder[a.status] !== statusOrder[b.status]) {
           return statusOrder[a.status] - statusOrder[b.status]

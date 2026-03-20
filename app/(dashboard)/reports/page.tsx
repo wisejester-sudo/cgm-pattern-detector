@@ -44,9 +44,11 @@ import type { JobStatus } from "@/lib/types"
 type TimeRange = "7d" | "30d" | "90d"
 
 const statusConfig: Record<JobStatus, { label: string; className: string }> = {
+  available: { label: "Available", className: "bg-blue-100 text-blue-800" },
   scheduled: { label: "Scheduled", className: "bg-status-scheduled text-foreground" },
   en_route: { label: "En Route", className: "bg-status-enroute text-primary-foreground" },
   working: { label: "Working", className: "bg-status-working text-foreground" },
+  on_hold: { label: "On Hold", className: "bg-amber-100 text-amber-800" },
   complete: { label: "Complete", className: "bg-status-complete text-primary-foreground" },
 }
 
