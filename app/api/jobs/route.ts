@@ -49,18 +49,14 @@ const createJobSchema = z.object({
     .min(1, "Job type is required")
     .max(50, "Job type must be 50 characters or less"),
   
-  scheduled_date: z.string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
-    .optional(),
-  
   scheduled_time: z.string()
-    .regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Time must be in HH:MM format (24-hour)")
+    .datetime("Scheduled time must be a valid datetime")
     .optional(),
   
-  notes: z.string()
-    .max(1000, "Notes must be 1000 characters or less")
-    .optional()
-    .transform(val => val?.trim() || null),
+  notes: z.union([
+    z.string().max(1000, "Notes must be 1000 characters or less"),
+    z.null()
+  ]).optional(),
   
   assigned_tech_ids: z.array(z.string().uuid("Invalid technician ID"))
     .optional(),
@@ -86,13 +82,6 @@ function formatPhoneForDisplay(phone: string): string {
     return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
   }
   return phone
-}
-
-function combineDateTime(date?: string, time?: string): string {
-  if (date && time) {
-    return new Date(`${date}T${time}`).toISOString()
-  }
-  return new Date().toISOString()
 }
 
 function formatValidationErrors(error: z.ZodError): Record<string, string> {
@@ -171,9 +160,6 @@ export async function POST(request: NextRequest) {
     // Sanitize phone number
     const sanitizedPhone = sanitizePhone(data.customer_phone)
     
-    // Combine date and time
-    const scheduledTime = combineDateTime(data.scheduled_date, data.scheduled_time)
-    
     // Prepare job data
     const jobData = {
       admin_id: user.id,
@@ -181,8 +167,8 @@ export async function POST(request: NextRequest) {
       customer_phone: sanitizedPhone,
       customer_address: data.customer_address,
       job_type: data.job_type,
-      scheduled_time: scheduledTime,
-      notes: data.notes || null,
+      scheduled_time: data.scheduled_time || new Date().toISOString(),
+      notes: data.notes ?? null,
       assigned_tech_ids: data.assigned_tech_ids || null,
       status: "available" as const,
       on_hold_reason: null,
