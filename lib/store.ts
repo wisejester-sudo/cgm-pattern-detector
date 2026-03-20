@@ -466,7 +466,25 @@ export const useStore = create<AppState>()(
       },
       
       // Technician actions
-      addTechnician: (techData) => {
+      addTechnician: async (techData) => {
+        // Try to save to Supabase first
+        try {
+          const response = await fetch('/api/technicians', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(techData),
+          })
+          
+          if (response.ok) {
+            const savedTech = await response.json()
+            set((state) => ({ technicians: [...state.technicians, savedTech] }))
+            return savedTech
+          }
+        } catch (error) {
+          console.error('Failed to save technician to API:', error)
+        }
+        
+        // Fallback: create locally
         const newTech: Technician = {
           ...techData,
           id: `tech-${generateId()}`,
@@ -476,6 +494,7 @@ export const useStore = create<AppState>()(
           assigned_jobs: [],
         }
         set((state) => ({ technicians: [...state.technicians, newTech] }))
+        return newTech
       },
       
       updateTechnician: (id, updates) => {
