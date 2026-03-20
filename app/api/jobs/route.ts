@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { validationSchemas, validateAndSanitize, checkBodySize, MAX_BODY_SIZES } from "@/lib/validation"
+import { ErrorResponses } from "@/lib/errors"
 
 // POST /api/jobs - Create a new job
 export async function POST(request: NextRequest) {
