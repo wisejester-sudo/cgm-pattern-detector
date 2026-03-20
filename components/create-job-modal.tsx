@@ -25,6 +25,7 @@ import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import { Plus } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
 import { useStore } from "@/lib/store"
+import { AddressAutocomplete } from "@/components/address-autocomplete"
 import type { Technician } from "@/lib/types"
 
 interface CreateJobModalProps {
@@ -245,23 +246,19 @@ export function CreateJobModal({
                 </Field>
               </div>
               <Field>
-                <FieldLabel htmlFor="customer_address">Address</FieldLabel>
-                <Textarea
-                  id="customer_address"
-                  placeholder="Enter full address"
+                <AddressAutocomplete
                   value={formData.customer_address}
-                  onChange={(e) => {
-                    setFormData({ ...formData, customer_address: e.target.value })
+                  onChange={(address) => {
+                    setFormData({ ...formData, customer_address: address })
                     if (errors.customer_address) {
                       setErrors({ ...errors, customer_address: '' })
                     }
                   }}
-                  rows={2}
-                  className={errors.customer_address ? "border-red-500" : ""}
+                  label="Address"
+                  placeholder="Start typing an address..."
+                  error={errors.customer_address}
+                  required
                 />
-                {errors.customer_address && (
-                  <p className="text-sm text-red-500 mt-1">{errors.customer_address}</p>
-                )}
               </Field>
 
               {/* Job Details */}
