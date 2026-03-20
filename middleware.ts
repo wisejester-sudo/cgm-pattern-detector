@@ -10,31 +10,11 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/api/')) {
     const csrfCookie = request.cookies.get('csrf-token')?.value
 
-    // For state-changing methods, validate CSRF token
-    // TEMPORARILY DISABLED - CSRF protection causing issues
-    // TODO: Fix CSRF token handling and re-enable
-    /*
-    if (requiresCSRFProtection(request.method)) {
-      const csrfHeader = getCSRFTokenFromRequest(request)
-
-      if (!csrfCookie || !csrfHeader) {
-        return NextResponse.json(
-          { error: 'CSRF token missing' },
-          { status: 403 }
-        )
-      }
-
-      // Validate the token
-      const hashedToken = hashCSRFToken(csrfHeader)
-      if (hashedToken !== csrfCookie) {
-        return NextResponse.json(
-          { error: 'Invalid CSRF token' },
-          { status: 403 }
-        )
-      }
-    }
-    */ else {
-      // For safe methods (GET, HEAD, OPTIONS), set a new CSRF token if not present
+    // CSRF validation TEMPORARILY DISABLED
+    // Still set CSRF cookies for when we re-enable protection
+    // TODO: Fix and re-enable CSRF validation
+    if (request.method === 'GET' || request.method === 'HEAD' || request.method === 'OPTIONS') {
+      // For safe methods, set a new CSRF token if not present
       if (!csrfCookie) {
         const newToken = generateCSRFToken()
         const hashedToken = hashCSRFToken(newToken)
