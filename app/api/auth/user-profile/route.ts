@@ -26,12 +26,12 @@ export async function GET(request: NextRequest) {
     
     if (authError) {
       console.log('[API] ERROR: Auth error:', authError.message)
-      return NextResponse.json({ error: 'Unauthorized', details: authError.message }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
     if (!user) {
       console.log('[API] ERROR: No user found')
-      return NextResponse.json({ error: 'Unauthorized', details: 'No user' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
     console.log('[API] User authenticated:', user.id)
@@ -84,8 +84,7 @@ export async function GET(request: NextRequest) {
     if (errorStack) console.error('[API] Stack:', errorStack)
     console.error('[API] Time elapsed before error:', Date.now() - startTime, 'ms')
     return NextResponse.json({ 
-      error: 'Internal server error', 
-      details: errorMessage 
+      error: 'Internal server error'
     }, { status: 500 })
   }
 }
@@ -141,7 +140,7 @@ export async function PATCH(request: NextRequest) {
       if (authUpdateError) {
         console.error('[API] Error updating auth email:', authUpdateError)
         return NextResponse.json(
-          { error: `Failed to update email: ${authUpdateError.message}` },
+          { error: 'Failed to update email' },
           { status: 400 }
         )
       }
@@ -158,7 +157,7 @@ export async function PATCH(request: NextRequest) {
 
     if (checkError) {
       console.error('[API] Error checking for existing user:', checkError)
-      return NextResponse.json({ error: `Database error: ${checkError.message}` }, { status: 500 })
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
     }
 
     if (!existingUser) {
@@ -184,7 +183,7 @@ export async function PATCH(request: NextRequest) {
 
       if (insertError) {
         console.error('[API] Error creating user profile:', insertError)
-        return NextResponse.json({ error: `Failed to create profile: ${insertError.message}` }, { status: 500 })
+        return NextResponse.json({ error: 'Failed to create profile' }, { status: 500 })
       }
 
       console.log('[API] User profile created successfully')
@@ -206,7 +205,7 @@ export async function PATCH(request: NextRequest) {
 
     if (error) {
       console.error('[API] Error updating profile:', error)
-      return NextResponse.json({ error: `Failed to update profile: ${error.message}` }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
     }
 
     console.log('[API] Profile updated successfully')
@@ -217,10 +216,8 @@ export async function PATCH(request: NextRequest) {
     })
   } catch (error: unknown) {
     console.error('[API] Unexpected error:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ 
-      error: 'Internal server error',
-      details: errorMessage
+      error: 'Internal server error'
     }, { status: 500 })
   }
 }

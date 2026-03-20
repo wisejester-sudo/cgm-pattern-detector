@@ -179,13 +179,11 @@ export async function POST(request: NextRequest) {
     // Invite sent successfully
     return NextResponse.json(response)
   } catch (error: any) {
+    // Log full error server-side only
     console.error('[API] Unexpected error:', error)
+    // Return generic error to client (no stack trace or details)
     return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        details: error?.message || 'Unknown error',
-        stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
-      },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
