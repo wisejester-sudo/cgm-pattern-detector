@@ -57,9 +57,11 @@ interface PublicJobData {
 }
 
 const statusConfig: Record<JobStatus, { label: string; icon: React.ElementType; className: string }> = {
+  available: { label: "Available", icon: Clock, className: "bg-slate-100 text-slate-800" },
   scheduled: { label: "Scheduled", icon: Clock, className: "bg-blue-100 text-blue-800" },
   en_route: { label: "On the Way", icon: Truck, className: "bg-yellow-100 text-yellow-800" },
   working: { label: "In Progress", icon: Wrench, className: "bg-orange-100 text-orange-800" },
+  on_hold: { label: "On Hold", icon: Clock, className: "bg-amber-100 text-amber-800" },
   complete: { label: "Completed", icon: CheckCircle, className: "bg-green-100 text-green-800" },
 }
 
