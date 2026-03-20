@@ -38,7 +38,6 @@ import {
   CheckCircle,
   Calendar,
 } from "lucide-react"
-import { WorkspaceBackground } from "@/components/workspace-background"
 import { useStore, getTechnicianById } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
 
@@ -172,8 +171,6 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="relative">
-      <WorkspaceBackground />
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -394,7 +391,6 @@ export default function ReportsPage() {
           </Table>
         </CardContent>
       </Card>
-    </div>
     </div>
   )
 }
