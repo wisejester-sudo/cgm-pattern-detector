@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import { Plus, MoreVertical, Phone, Mail, User, KeyRound, Send, CheckCircle2, Clock, AlertCircle, Eye, EyeOff, HelpCircle } from "lucide-react"
+import { WorkspaceBackground } from "@/components/workspace-background"
 import { useStore } from "@/lib/store"
 import { Spinner } from "@/components/ui/spinner"
 import {
@@ -206,6 +207,8 @@ export default function TechniciansPage() {
   const isValid = formData.name && formData.phone && formData.pin
 
   return (
+    <div className="relative">
+      <WorkspaceBackground />
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -547,6 +550,7 @@ export default function TechniciansPage() {
           </BrandButton>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
     </div>
   )
 }

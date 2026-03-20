@@ -1,5 +1,6 @@
 "use client"
 
+import { WorkspaceBackground } from "@/components/workspace-background"
 import {
   ProfileSection,
   CompanySettingsSection,
@@ -9,6 +10,8 @@ import {
 
 export default function SettingsPage() {
   return (
+    <div className="relative">
+      <WorkspaceBackground />
     <div className="flex flex-col gap-6 max-w-5xl">
       {/* Header */}
       <div>
@@ -25,6 +28,7 @@ export default function SettingsPage() {
         <TemplatesSection />
         <JobTypesSection />
       </div>
+    </div>
     </div>
   )
 }

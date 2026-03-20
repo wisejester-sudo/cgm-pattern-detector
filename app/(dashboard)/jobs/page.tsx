@@ -4,6 +4,7 @@ import { useEffect, useMemo, useCallback } from "react"
 import { toast } from "sonner"
 import { JobCard } from "@/components/job-card"
 import { CreateJobModal } from "@/components/create-job-modal"
+import { WorkspaceBackground } from "@/components/workspace-background"
 import { useStore, getTechniciansByIds } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
 
@@ -76,6 +77,8 @@ export default function JobsPage() {
   }, [jobs])
 
   return (
+    <div className="relative">
+      <WorkspaceBackground />
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -108,6 +111,7 @@ export default function JobsPage() {
           </p>
         </div>
       )}
+    </div>
     </div>
   )
 }
