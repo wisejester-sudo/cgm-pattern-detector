@@ -8,6 +8,7 @@ import Link from "next/link"
 import { Button, BrandButton } from "@/components/ui/button"
 import { useStore, getTechnicianById } from "@/lib/store"
 import { CreateJobModal } from "@/components/create-job-modal"
+import { WorkspaceBackground } from "@/components/workspace-background"
 import type { JobStatus } from "@/lib/types"
 
 const statusConfig: Record<JobStatus, { label: string; className: string }> = {
@@ -122,9 +123,10 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 relative">
+      <WorkspaceBackground />
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative z-10">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">
             Welcome back, {currentAdmin?.name.split(" ")[0] || "Admin"}
