@@ -70,7 +70,7 @@ export async function GET(
     }
 
     // Fetch assigned technicians
-    let technicians = []
+    let technicians: Array<{ id: string; name: string; phone: string }> = []
     if (job.assigned_tech_ids && job.assigned_tech_ids.length > 0) {
       const { data: techs } = await supabase
         .from('technicians')
