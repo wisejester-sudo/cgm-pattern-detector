@@ -1,0 +1,54 @@
+/* Touch Target Utilities - Minimum 48px for accessibility */
+
+@layer utilities {
+  /* Minimum touch target size */
+  .touch-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
+  
+  .touch-target-sm {
+    min-height: 40px;
+    min-width: 40px;
+  }
+  
+  .touch-target-lg {
+    min-height: 56px;
+    min-width: 56px;
+  }
+  
+  /* Mobile-specific touch targets */
+  @media (max-width: 768px) {
+    .mobile-touch {
+      min-height: 48px;
+      min-width: 48px;
+    }
+    
+    /* Ensure buttons are at least 48px tall on mobile */
+    button:not(.touch-exclude),
+    [role="button"]:not(.touch-exclude) {
+      min-height: 48px;
+    }
+    
+    /* Larger padding for mobile inputs */
+    input, textarea, select {
+      padding-top: 12px;
+      padding-bottom: 12px;
+    }
+  }
+  
+  /* Spacing utilities for touch */
+  .touch-gap {
+    gap: 12px;
+  }
+  
+  .touch-gap-lg {
+    gap: 16px;
+  }
+  
+  /* Prevent text size adjustment on mobile */
+  .no-text-adjust {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+}

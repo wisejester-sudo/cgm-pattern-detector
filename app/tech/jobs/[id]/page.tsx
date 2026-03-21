@@ -31,6 +31,7 @@ import {
 } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
+import { FloatingActionButton } from "@/components/floating-action-button"
 
 // Simplified status config with clear technician-friendly labels
 const statusConfig: Record<JobStatus, { 
@@ -396,7 +397,7 @@ export default function TechJobDetailPage({
 
       {/* Bottom Action Bar - Simplified status buttons for technicians */}
       {status.nextStatus && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border lg:hidden">
           <Button
             className="w-full h-14 text-lg"
             onClick={handleStatusAdvance}
@@ -416,6 +417,37 @@ export default function TechJobDetailPage({
           </p>
         </div>
       )}
+
+      {/* Floating Action Button - Quick actions */}
+      <FloatingActionButton
+        mainIcon={<Wrench className="h-6 w-6" />}
+        actions={[
+          ...(status.nextStatus ? [{
+            icon: status.nextIcon ? <status.nextIcon className="h-5 w-5" /> : <CheckCircle className="h-5 w-5" />,
+            label: status.nextLabel || "Update Status",
+            onClick: handleStatusAdvance,
+            color: "bg-blue-500 hover:bg-blue-600",
+          }] : []),
+          {
+            icon: <Camera className="h-5 w-5" />,
+            label: "Add Photo",
+            onClick: () => document.querySelector<HTMLInputElement>('input[type="file"]')?.click(),
+            color: "bg-purple-500 hover:bg-purple-600",
+          },
+          {
+            icon: <Navigation className="h-5 w-5" />,
+            label: "Navigate",
+            onClick: () => window.open(`https://maps.google.com/?q=${encodeURIComponent(job.customer_address)}`, '_blank'),
+            color: "bg-green-500 hover:bg-green-600",
+          },
+          {
+            icon: <Phone className="h-5 w-5" />,
+            label: "Call Customer",
+            onClick: () => window.location.href = `tel:${job.customer_phone}`,
+            color: "bg-orange-500 hover:bg-orange-600",
+          },
+        ].filter(Boolean)}
+      />
     </div>
   )
 }
