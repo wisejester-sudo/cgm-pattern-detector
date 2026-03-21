@@ -48,7 +48,6 @@ export function JobTimeline({ jobId }: JobTimelineProps) {
   const [updates, setUpdates] = useState<JobUpdate[]>([])
   const [smsLogs, setSmsLogs] = useState<SMSLog[]>([])
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
 
   useEffect(() => {
     fetchTimelineData()
@@ -57,6 +56,11 @@ export function JobTimeline({ jobId }: JobTimelineProps) {
   async function fetchTimelineData() {
     try {
       setLoading(true)
+      
+      // Create client inside function to ensure env vars are available
+      const supabase = createClient()
+      
+      console.log('[Timeline] Fetching data for job:', jobId)
 
       // Fetch job updates
       const { data: updatesData, error: updatesError } = await supabase
