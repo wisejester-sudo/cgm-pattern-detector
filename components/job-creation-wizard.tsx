@@ -196,6 +196,7 @@ export function JobCreationWizard({
           formData.assigned_tech_ids.length > 0
             ? formData.assigned_tech_ids
             : null,
+        on_hold_reason: null,
       })
 
       toast.success("Job created successfully!")
