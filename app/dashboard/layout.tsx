@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import dynamic from "next/dynamic"
 import { SetupGuard } from "@/components/setup-guard"
 import { useStore } from "@/lib/store"
-import { SidebarErrorBoundary, ContentErrorBoundary } from "@/components/error-boundary"
+import { ErrorBoundary } from "@/components/error-boundary"
 
 // Dynamically import components with Radix UI to prevent hydration mismatch
 const AppSidebar = dynamic(() => import("@/components/app-sidebar").then(mod => ({ default: mod.AppSidebar })), {
@@ -46,15 +46,15 @@ export default function DashboardLayout({
   return (
     <SetupGuard>
       <div className="flex min-h-screen bg-background">
-        <SidebarErrorBoundary>
+        <ErrorBoundary>
           <AppSidebar />
-        </SidebarErrorBoundary>
+        </ErrorBoundary>
         <div className="flex flex-col flex-1">
           <TopBar />
           <main className="flex-1 p-4 md:p-6 overflow-auto">
-            <ContentErrorBoundary>
+            <ErrorBoundary>
               {children}
-            </ContentErrorBoundary>
+            </ErrorBoundary>
           </main>
         </div>
       </div>
