@@ -66,6 +66,7 @@ export default function JobDetailPage({
     technicians,
     photos,
     templates,
+    smsLogs,
     settings,
     updateJob,
     updateJobStatus,
@@ -73,6 +74,7 @@ export default function JobDetailPage({
     deletePhoto,
     deleteJob,
     addSmsLog,
+    loadSmsLogsFromSupabase,
   } = useStore()
 
   const job = jobs.find((j) => j.id === id)
@@ -84,6 +86,41 @@ export default function JobDetailPage({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+
+  // Load SMS logs when job loads
+  useEffect(() => {
+    if (id) {
+      loadSmsLogsFromSupabase(id)
+    }
+  }, [id, loadSmsLogsFromSupabase])
+
+  // Handle sending SMS
+  const handleSendMessage = async (message: string) => {
+    try {
+      const response = await fetch(`/api/sms`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          job_id: id,
+          recipient_phone: job?.customer_phone,
+          message_body: message,
+          sender_name: settings?.company_name || "Business",
+          sender_type: "admin",
+        }),
+      })
+
+      if (response.ok) {
+        toast.success("Message sent!")
+        // Reload SMS logs
+        loadSmsLogsFromSupabase(id)
+      } else {
+        toast.error("Failed to send message")
+      }
+    } catch (error) {
+      console.error("Error sending SMS:", error)
+      toast.error("Failed to send message")
+    }
+  }
 
   if (!job) {
     return (
@@ -508,13 +545,10 @@ export default function JobDetailPage({
           jobId={id}
           customerName={job.customer_name}
           customerPhone={job.customer_phone}
-          messages={[]} // TODO: Load from database
+          messages={smsLogs.filter((log) => log.job_id === id)}
           currentUserName={settings?.company_name || "Business"}
           currentUserType="admin"
-          onSendMessage={async (message) => {
-            // TODO: Send SMS and save to database
-            toast.success(`Message sent: ${message}`)
-          }}
+          onSendMessage={handleSendMessage}
           templates={templates}
         />
       </div>
