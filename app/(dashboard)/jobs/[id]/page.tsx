@@ -257,18 +257,21 @@ export default function JobDetailPage({
           
           {/* Action Buttons - Mobile: wrap, Desktop: row */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Status Dropdown */}
+            {/* Status Dropdown - Merged with badge style */}
             <Select
               value={job.status}
               onValueChange={(v) => handleStatusChange(v as JobStatus)}
             >
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Status" />
+              <SelectTrigger className={`w-[140px] border-0 font-medium ${statusConfig[job.status].className}`}>
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {(Object.keys(statusConfig) as JobStatus[]).map((s) => (
                   <SelectItem key={s} value={s}>
-                    {statusConfig[s].label}
+                    <span className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${statusConfig[s].className.split(' ')[0].replace('bg-', 'bg-').replace('text-', '')}`}></span>
+                      {statusConfig[s].label}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -307,13 +310,6 @@ export default function JobDetailPage({
               <Trash2 className="h-4 w-4 sm:mr-1.5" />
               <span className="hidden sm:inline">Delete</span>
             </Button>
-
-            {/* Status Badge */}
-            <Badge
-              className={`${statusConfig[job.status].className} text-sm px-3 py-1 hidden sm:inline-flex`}
-            >
-              {statusConfig[job.status].label}
-            </Badge>
           </div>
         </div>
       </div>
