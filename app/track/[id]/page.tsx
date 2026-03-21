@@ -1,11 +1,10 @@
 "use client"
 
-import { use } from "react"
+import { use, useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Phone, MapPin, Clock, User, Wrench, CheckCircle2, Truck, Calendar } from "lucide-react"
+import { Phone, MapPin, Clock, User, Wrench, CheckCircle2, Truck, Calendar, Loader2 } from "lucide-react"
 import { Logo } from "@/components/logo"
-import { useStore, getTechnicianById } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
 
 const statusConfig: Record<JobStatus, { label: string; className: string; icon: React.ElementType; description: string }> = {
@@ -49,25 +48,87 @@ const statusConfig: Record<JobStatus, { label: string; className: string; icon: 
 
 const statusSteps: JobStatus[] = ["scheduled", "en_route", "working", "complete"]
 
+interface Job {
+  id: string
+  customer_name: string
+  customer_phone: string
+  customer_address: string
+  job_type: string
+  status: JobStatus
+  scheduled_time: string
+  notes: string | null
+  assigned_tech_ids: string[] | null
+}
+
+interface Technician {
+  id: string
+  name: string
+  phone: string
+}
+
+interface Settings {
+  company_name: string
+  company_phone: string
+}
+
 export default function CustomerTrackPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
   const { id } = use(params)
-  const { jobs, technicians, settings } = useStore()
+  const [job, setJob] = useState<Job | null>(null)
+  const [technicians, setTechnicians] = useState<Technician[]>([])
+  const [settings, setSettings] = useState<Settings>({ company_name: "", company_phone: "" })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // For demo, use first job if ID is "demo"
-  const job = id === "demo" ? jobs[0] : jobs.find((j) => j.id === id)
+  useEffect(() => {
+    fetchJobData()
+    // Poll for updates every 30 seconds
+    const interval = setInterval(fetchJobData, 30000)
+    return () => clearInterval(interval)
+  }, [id])
 
-  if (!job) {
+  const fetchJobData = async () => {
+    try {
+      const response = await fetch(`/api/public/jobs/${id}`)
+      if (!response.ok) {
+        throw new Error("Job not found")
+      }
+      const data = await response.json()
+      setJob(data.job)
+      setTechnicians(data.assigned_techs || [])
+      setSettings(data.settings || { company_name: "", company_phone: "" })
+      setError(null)
+    } catch (err) {
+      setError("Unable to load job details. Please check your tracking link.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md text-center">
           <CardContent className="py-8">
-            <p className="text-muted-foreground mb-2">Job not found</p>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading job details...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (error || !job) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="py-8">
+            <p className="text-destructive mb-2">{error || "Job not found"}</p>
             <p className="text-sm text-muted-foreground">
-              Please check the tracking link and try again
+              Please check your tracking link and try again
             </p>
           </CardContent>
         </Card>
@@ -75,7 +136,7 @@ export default function CustomerTrackPage({
     )
   }
 
-  const technician = getTechnicianById(technicians, job.assigned_tech_ids?.[0] ?? null)
+  const assignedTechnician = technicians[0]
   const scheduledDate = new Date(job.scheduled_time)
   const currentStatus = statusConfig[job.status]
   const currentStepIndex = statusSteps.indexOf(job.status)
@@ -87,7 +148,7 @@ export default function CustomerTrackPage({
         <div className="max-w-lg mx-auto text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Logo size="sm" variant="white" showText={false} />
-            <span className="font-semibold text-lg">{settings.company_name}</span>
+            <span className="font-semibold text-lg">{settings.company_name || "Dispatchly"}</span>
           </div>
           <p className="text-sidebar-muted text-sm">Job Tracking</p>
         </div>
@@ -99,155 +160,118 @@ export default function CustomerTrackPage({
         <Card>
           <CardContent className="pt-6">
             <div className="text-center mb-6">
-              <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${
-                job.status === "complete" ? "bg-status-complete/20" : "bg-primary/10"
-              }`}>
-                <currentStatus.icon className={`w-8 h-8 ${
-                  job.status === "complete" ? "text-status-complete" : "text-primary"
-                }`} />
+              <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-3 ${currentStatus.className}`}>
+                <currentStatus.icon className="h-8 w-8" />
               </div>
-              <Badge className={`${currentStatus.className} text-base px-4 py-1 mb-2`}>
-                {currentStatus.label}
-              </Badge>
-              <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-                {currentStatus.description}
-              </p>
+              <h2 className="text-2xl font-bold mb-1">{currentStatus.label}</h2>
+              <p className="text-muted-foreground text-sm">{currentStatus.description}</p>
             </div>
 
             {/* Progress Steps */}
-            <div className="flex items-center justify-between px-4 mb-2">
-              {statusSteps.map((step, index) => {
-                const isCompleted = index <= currentStepIndex
-                const isCurrent = index === currentStepIndex
-                const StepIcon = statusConfig[step].icon
-                return (
-                  <div key={step} className="flex flex-col items-center">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                        isCompleted
-                          ? isCurrent
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-status-complete text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      <StepIcon className="w-5 h-5" />
-                    </div>
-                    <span className={`text-xs mt-1 ${
-                      isCompleted ? "text-foreground" : "text-muted-foreground"
-                    }`}>
-                      {statusConfig[step].label.split(" ")[0]}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
+            {job.status !== "available" && job.status !== "on_hold" && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  {statusSteps.map((step, index) => {
+                    const stepConfig = statusConfig[step]
+                    const isActive = index <= currentStepIndex
+                    const isCurrent = index === currentStepIndex
 
-            {/* Progress Line */}
-            <div className="relative mx-9 h-1 bg-muted rounded-full mb-6">
-              <div
-                className="absolute top-0 left-0 h-full bg-status-complete rounded-full transition-all duration-500"
-                style={{
-                  width: `${(currentStepIndex / (statusSteps.length - 1)) * 100}%`,
-                }}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Job Details */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Appointment Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-muted shrink-0">
-                <Wrench className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Service</p>
-                <p className="font-medium">{job.job_type}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-muted shrink-0">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Scheduled Time</p>
-                <p className="font-medium">
-                  {scheduledDate.toLocaleDateString(undefined, {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
-                  })}{" "}
-                  at{" "}
-                  {scheduledDate.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
+                    return (
+                      <div key={step} className="flex flex-col items-center flex-1">
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium mb-1 ${
+                            isCurrent
+                              ? stepConfig.className
+                              : isActive
+                              ? "bg-primary/20 text-primary"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {index + 1}
+                        </div>
+                        <span className={`text-xs ${isCurrent ? "font-medium" : "text-muted-foreground"}`}>
+                          {stepConfig.label}
+                        </span>
+                      </div>
+                    )
                   })}
+                </div>
+                <div className="relative h-1 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="absolute h-full bg-primary rounded-full transition-all"
+                    style={{
+                      width: `${Math.max(0, (currentStepIndex / (statusSteps.length - 1)) * 100)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Job Details */}
+            <div className="space-y-3 pt-4 border-t">
+              <div className="flex items-start gap-3">
+                <User className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">{job.customer_name}</p>
+                  <p className="text-sm text-muted-foreground">{job.job_type}</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <p className="text-sm">{job.customer_address}</p>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Clock className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <p className="text-sm">
+                  {scheduledDate.toLocaleDateString()} at{" "}
+                  {scheduledDate.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                 </p>
               </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-muted shrink-0">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Service Address</p>
-                <p className="font-medium">{job.customer_address}</p>
-              </div>
+
+              {assignedTechnician && (
+                <div className="flex items-start gap-3">
+                  <User className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium">{assignedTechnician.name}</p>
+                    <a
+                      href={`tel:${assignedTechnician.phone}`}
+                      className="text-sm text-primary flex items-center gap-1"
+                    >
+                      <Phone className="h-3 w-3" />
+                      {assignedTechnician.phone}
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Technician Info */}
-        {technician && (
+        {/* Contact Card */}
+        {settings.company_phone && (
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Your Technician</CardTitle>
+            <CardHeader>
+              <CardTitle className="text-base">Need Help?</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">{technician.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Service Technician
-                  </p>
-                </div>
-              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Contact us if you have any questions about your appointment.
+              </p>
+              <a href={`tel:${settings.company_phone}`}>
+                <Button variant="outline" className="w-full">
+                  <Phone className="mr-2 h-4 w-4" />
+                  Call {settings.company_name}
+                </Button>
+              </a>
             </CardContent>
           </Card>
         )}
 
-        {/* Contact Card */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Need Help?</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <a
-              href={`tel:${settings.company_phone.replace(/\D/g, "")}`}
-              className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
-            >
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Phone className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium">{settings.company_phone}</p>
-                <p className="text-sm text-muted-foreground">Tap to call</p>
-              </div>
-            </a>
-          </CardContent>
-        </Card>
-
-        {/* Footer */}
-        <p className="text-center text-sm text-muted-foreground py-4">
-          Powered by Dispatchly
+        {/* Auto-refresh notice */}
+        <p className="text-center text-xs text-muted-foreground">
+          This page updates automatically. Last updated: {new Date().toLocaleTimeString()}
         </p>
       </main>
     </div>
