@@ -130,23 +130,32 @@ export function EditJobModal({ job, open, onOpenChange, onJobUpdated }: EditJobM
         `${formData.scheduled_date}T${formData.scheduled_time}`
       ).toISOString()
 
+      const requestBody = {
+        customer_name: formData.customer_name,
+        customer_phone: formData.customer_phone,
+        customer_address: formData.customer_address,
+        job_type: formData.job_type,
+        status: formData.status,
+        scheduled_time: scheduledDateTime,
+        notes: formData.notes || null,
+        on_hold_reason: formData.status === "on_hold" ? formData.on_hold_reason : null,
+        assigned_tech_ids: formData.assigned_tech_ids.length > 0 ? formData.assigned_tech_ids : null,
+      }
+      
+      console.log('[EditJob] Sending PATCH request:', requestBody)
+
       const response = await fetch(`/api/jobs/${job.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          customer_name: formData.customer_name,
-          customer_phone: formData.customer_phone,
-          customer_address: formData.customer_address,
-          job_type: formData.job_type,
-          status: formData.status,
-          scheduled_time: scheduledDateTime,
-          notes: formData.notes || null,
-          on_hold_reason: formData.status === "on_hold" ? formData.on_hold_reason : null,
-          assigned_tech_ids: formData.assigned_tech_ids.length > 0 ? formData.assigned_tech_ids : null,
-        }),
+        body: JSON.stringify(requestBody),
       })
+
+      console.log('[EditJob] Response status:', response.status)
+      
+      const responseText = await response.text()
+      console.log('[EditJob] Response body:', responseText)
 
       if (response.ok) {
         toast.success("Job updated successfully")
@@ -154,8 +163,17 @@ export function EditJobModal({ job, open, onOpenChange, onJobUpdated }: EditJobM
         onJobUpdated?.()
         onOpenChange(false)
       } else {
-        const error = await response.json()
-        toast.error(error.error || "Failed to update job")
+        let errorMessage = "Failed to update job"
+        try {
+          const errorData = JSON.parse(responseText)
+          errorMessage = errorData.error || errorMessage
+          if (errorData.details) {
+            console.error('[EditJob] Validation errors:', errorData.details)
+          }
+        } catch (e) {
+          // Not JSON
+        }
+        toast.error(errorMessage)
       }
     } catch (error) {
       console.error("Error updating job:", error)
