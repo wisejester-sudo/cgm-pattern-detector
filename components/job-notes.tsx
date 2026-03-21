@@ -116,16 +116,35 @@ export function JobNotes({ jobId }: JobNotesProps) {
 
   const getSessionToken = async () => {
     try {
+      // Try to get session from Supabase
       const { data: { session }, error } = await supabase.auth.getSession()
+      
       if (error) {
         console.error("Error getting session:", error)
+      }
+      
+      if (session?.access_token) {
+        console.log("Got session token from Supabase")
+        return session.access_token
+      }
+      
+      // Fallback: Check if user is logged in via store
+      if (!currentAdmin && !currentTechId) {
+        console.error("No user logged in (store check)")
         return ""
       }
-      if (!session) {
-        console.error("No session available")
+      
+      // If we have a user in store but no session, try to refresh
+      console.log("User in store but no Supabase session, trying refresh...")
+      const { data: { session: refreshedSession }, error: refreshError } = 
+        await supabase.auth.refreshSession()
+      
+      if (refreshError) {
+        console.error("Session refresh failed:", refreshError)
         return ""
       }
-      return session.access_token
+      
+      return refreshedSession?.access_token || ""
     } catch (e) {
       console.error("Exception getting session:", e)
       return ""
