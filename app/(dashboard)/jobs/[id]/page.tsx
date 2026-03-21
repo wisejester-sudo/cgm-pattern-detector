@@ -52,6 +52,7 @@ import type { JobStatus } from "@/lib/types"
 import { statusConfig } from "@/components/job-card"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import { JobTimeline } from "@/components/job-timeline"
+import { SmsConversation } from "@/components/sms-conversation"
 
 export default function JobDetailPage({
   params,
@@ -499,6 +500,24 @@ export default function JobDetailPage({
 
       {/* Job Timeline */}
       <JobTimeline jobId={id} />
+
+      {/* SMS Conversation Thread */}
+      <div className="mt-6">
+        <h2 className="text-lg font-semibold mb-4">Messages</h2>
+        <SmsConversation
+          jobId={id}
+          customerName={job.customer_name}
+          customerPhone={job.customer_phone}
+          messages={[]} // TODO: Load from database
+          currentUserName={settings?.company_name || "Business"}
+          currentUserType="admin"
+          onSendMessage={async (message) => {
+            // TODO: Send SMS and save to database
+            toast.success(`Message sent: ${message}`)
+          }}
+          templates={templates}
+        />
+      </div>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

@@ -350,6 +350,7 @@ interface AppState {
   loadJobsFromSupabase: () => Promise<void>
   loadTechniciansFromSupabase: () => Promise<void>
   loadTemplatesFromSupabase: () => Promise<void>
+  loadSmsLogsFromSupabase: (jobId?: string) => Promise<void>
   
   // User initialization - fetches user profile and settings from Supabase
   initializeUserFromSupabase: () => Promise<void>
@@ -784,6 +785,24 @@ export const useStore = create<AppState>()(
           }
         } catch (error) {
           console.error('[Store] Error loading templates:', error)
+        }
+      },
+
+      loadSmsLogsFromSupabase: async (jobId?: string) => {
+        try {
+          const url = jobId ? `/api/sms?job_id=${jobId}` : '/api/sms'
+          const response = await fetchWithCSRF(url)
+          if (!response.ok) {
+            console.error('[Store] Failed to load SMS logs:', response.status, response.statusText)
+            return
+          }
+          const data = await response.json()
+          const smsLogs = data.smsLogs || data
+          if (Array.isArray(smsLogs)) {
+            set({ smsLogs })
+          }
+        } catch (error) {
+          console.error('[Store] Error loading SMS logs:', error)
         }
       },
       
