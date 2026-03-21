@@ -43,6 +43,7 @@ import {
   Trash2,
   X,
   Download,
+  AlertCircle,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -253,15 +254,63 @@ export default function JobDetailPage({
             </h1>
             <p className="text-muted-foreground">Job #{id}</p>
           </div>
-          <div className="flex items-center gap-2">
+          
+          {/* Action Buttons - Mobile: wrap, Desktop: row */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Status Dropdown */}
+            <Select
+              value={job.status}
+              onValueChange={(v) => handleStatusChange(v as JobStatus)}
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(statusConfig) as JobStatus[]).map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {statusConfig[s].label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Manage Technicians */}
             <Button 
               variant="outline" 
+              size="sm"
+              onClick={() => setShowTechDialog(true)}
+            >
+              <User className="mr-1.5 h-4 w-4" />
+              <span className="hidden sm:inline">
+                {assignedTechnicians.length > 0 
+                  ? `${assignedTechnicians.length} Techs` 
+                  : 'Assign Techs'}
+              </span>
+              <span className="sm:hidden">Techs</span>
+            </Button>
+
+            {/* Edit Job */}
+            <Button 
+              variant="outline" 
+              size="sm"
               onClick={() => setIsEditModalOpen(true)}
             >
-              Edit Job
+              Edit
             </Button>
+
+            {/* Delete Job */}
+            <Button 
+              variant="destructive" 
+              size="sm"
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              <Trash2 className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">Delete</span>
+            </Button>
+
+            {/* Status Badge */}
             <Badge
-              className={`${statusConfig[job.status].className} text-sm px-3 py-1`}
+              className={`${statusConfig[job.status].className} text-sm px-3 py-1 hidden sm:inline-flex`}
             >
               {statusConfig[job.status].label}
             </Badge>
@@ -443,96 +492,16 @@ export default function JobDetailPage({
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-lg">Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <Field>
-                <FieldLabel>Update Status</FieldLabel>
-                <Select
-                  value={job.status}
-                  onValueChange={(v) => handleStatusChange(v as JobStatus)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(statusConfig) as JobStatus[]).map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {statusConfig[s].label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              {/* On Hold Reason - only shown when status is on_hold */}
-              {job.status === 'on_hold' && (
-                <Field className="sm:col-span-2 lg:col-span-2">
-                  <FieldLabel>On Hold Reason</FieldLabel>
-                  <Textarea
-                    value={job.on_hold_reason || ''}
-                    onChange={(e) => updateJob(job.id, { on_hold_reason: e.target.value || null })}
-                    placeholder="Why is this job on hold? (e.g., waiting for parts, customer rescheduled, etc.)"
-                    rows={2}
-                  />
-                </Field>
-              )}
-
-              <Field>
-                <FieldLabel>Manage Technicians</FieldLabel>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => setShowTechDialog(true)}
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  {assignedTechnicians.length > 0 
-                    ? `${assignedTechnicians.length} technician(s) assigned` 
-                    : 'Assign Technicians'}
-                </Button>
-              </Field>
-
-              <Field>
-                <FieldLabel>SMS Template</FieldLabel>
-                <Select
-                  value={selectedTemplate}
-                  onValueChange={setSelectedTemplate}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select template" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templates.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
+        {/* On Hold Reason Banner */}
+        {job.status === 'on_hold' && job.on_hold_reason && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium text-amber-900">On Hold</p>
+              <p className="text-sm text-amber-800">{job.on_hold_reason}</p>
             </div>
-
-            <div className="mt-4 flex gap-2">
-              <Button
-                onClick={handleSendSMS}
-                disabled={smsSending || !selectedTemplate}
-              >
-                <MessageSquare className="mr-2 h-4 w-4" />
-                {smsSending ? "Sending..." : smsSent ? "SMS Sent!" : "Send Status SMS"}
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => setShowDeleteDialog(true)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Job
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        )}
       </div>
 
       {/* Job Timeline */}
