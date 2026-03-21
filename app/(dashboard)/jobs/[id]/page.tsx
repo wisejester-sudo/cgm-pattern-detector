@@ -48,6 +48,7 @@ import {
 import Link from "next/link"
 import Image from "next/image"
 import { useStore, getTechniciansByIds, getPhotosByJobId, renderTemplate } from "@/lib/store"
+import { supabase } from "@/lib/supabase"
 import { EditJobModal } from "@/components/edit-job-modal"
 import type { JobStatus } from "@/lib/types"
 import { statusConfig } from "@/components/job-card"
@@ -101,9 +102,14 @@ export default function JobDetailPage({
   // Handle sending SMS
   const handleSendMessage = async (message: string) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      
       const response = await fetch(`/api/sms`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token || ''}`
+        },
         body: JSON.stringify({
           job_id: id,
           recipient_phone: job?.customer_phone,

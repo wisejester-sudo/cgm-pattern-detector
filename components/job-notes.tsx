@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { Loader2, Plus, Trash2, User, Wrench, Bot } from "lucide-react"
 import { formatDistanceToNow, formatDate } from "@/lib/date-utils"
 import { useStore } from "@/lib/store"
+import { supabase } from "@/lib/supabase"
 import type { JobNote } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -100,8 +101,8 @@ export function JobNotes({ jobId }: JobNotesProps) {
   }
 
   const getSessionToken = async () => {
-    // This is a placeholder - in real implementation you'd get from Supabase
-    return ""
+    const { data: { session } } = await supabase.auth.getSession()
+    return session?.access_token || ""
   }
 
   const getAuthorIcon = (type: string) => {
