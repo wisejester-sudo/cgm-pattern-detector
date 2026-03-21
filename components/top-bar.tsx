@@ -16,6 +16,7 @@ import { MobileSidebar } from "@/components/mobile-sidebar";
 import { User, LogOut, Settings } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Logo } from "@/components/logo";
+import { NotificationBell } from "@/components/notification-bell";
 
 interface UserProfile {
   id: string;
@@ -85,6 +86,8 @@ export function TopBar() {
             <p className="text-xs text-muted-foreground capitalize">{userRole}</p>
           </div>
         )}
+        
+        <NotificationBell />
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
