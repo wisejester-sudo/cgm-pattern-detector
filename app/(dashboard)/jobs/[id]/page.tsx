@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useState, useCallback, useMemo } from "react"
+import { use, useState, useCallback, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
