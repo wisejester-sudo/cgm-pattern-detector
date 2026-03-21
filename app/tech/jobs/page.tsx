@@ -4,11 +4,12 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { LogOut, MapPin, Clock, ChevronRight, Calendar, Loader2 } from "lucide-react"
+import { LogOut, MapPin, Clock, ChevronRight, Calendar, Loader2, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { useStore, getTechnicianById, maskPhoneNumber } from "@/lib/store"
 import type { JobStatus } from "@/lib/types"
 import { isSameDayUTC, getTodayUTC } from "@/lib/date-utils"
+import { useRealtimeJobs } from "@/hooks/use-realtime-jobs"
 import { useEffect, useMemo, useState } from "react"
 
 const statusConfig: Record<JobStatus, { label: string; className: string }> = {
@@ -40,8 +41,11 @@ const statusConfig: Record<JobStatus, { label: string; className: string }> = {
 
 export default function TechJobsPage() {
   const router = useRouter()
-  const { jobs, technicians, currentTechId, logoutTechnician, isInitialized } = useStore()
+  const { jobs, technicians, currentTechId, logoutTechnician, isInitialized, loadJobsFromSupabase } = useStore()
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  
+  // Enable real-time updates
+  useRealtimeJobs()
 
   const technician = getTechnicianById(technicians, currentTechId)
 

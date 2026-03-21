@@ -1,305 +1,152 @@
 "use client"
 
-import { useState, useRef, useCallback, useEffect } from "react"
+import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Camera, Upload, X, Loader2, CheckCircle, AlertCircle } from "lucide-react"
+import { Camera, X, Upload, CheckCircle, AlertCircle } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 interface PhotoUploadProps {
-  jobId?: string
-  onUploadComplete?: (urls: string[]) => void
-  maxPhotos?: number
+  onUpload: (file: File) => Promise<void>
+  maxSize?: number // in MB
   className?: string
 }
 
-interface UploadingFile {
-  id: string
-  file: File
-  preview: string
-  progress: number
-  status: "pending" | "uploading" | "complete" | "error"
-  url?: string
-  error?: string
-}
+type UploadState = "idle" | "uploading" | "success" | "error"
 
-export function PhotoUpload({ 
-  jobId, 
-  onUploadComplete, 
-  maxPhotos = 5,
-  className 
-}: PhotoUploadProps) {
-  const [files, setFiles] = useState<UploadingFile[]>([])
-  const [isUploading, setIsUploading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const cameraInputRef = useRef<HTMLInputElement>(null)
+export function PhotoUpload({ onUpload, maxSize = 10, className }: PhotoUploadProps) {
+  const [uploadState, setUploadState] = useState<UploadState>("idle")
+  const [progress, setProgress] = useState(0)
+  const [preview, setPreview] = useState<string | null>(null)
 
-  const handleFileSelect = useCallback((selectedFiles: FileList | null) => {
-    if (!selectedFiles) return
-
-    const newFiles: UploadingFile[] = []
-    const remainingSlots = maxPhotos - files.length
-
-    for (let i = 0; i < Math.min(selectedFiles.length, remainingSlots); i++) {
-      const file = selectedFiles[i]
-      
-      // Validate file type
-      if (!file.type.startsWith("image/")) {
-        continue
-      }
-
-      // Validate file size (10MB max)
-      if (file.size > 10 * 1024 * 1024) {
-        continue
-      }
-
-      newFiles.push({
-        id: `${Date.now()}-${i}`,
-        file,
-        preview: URL.createObjectURL(file),
-        progress: 0,
-        status: "pending",
-      })
+  const validateFile = (file: File): string | null => {
+    if (!file.type.startsWith("image/")) {
+      return "Please select an image file"
     }
-
-    setFiles(prev => [...prev, ...newFiles])
-  }, [files.length, maxPhotos])
-
-  const removeFile = useCallback((id: string) => {
-    setFiles(prev => {
-      const file = prev.find(f => f.id === id)
-      if (file?.preview) {
-        URL.revokeObjectURL(file.preview)
-      }
-      return prev.filter(f => f.id !== id)
-    })
-  }, [])
-
-  const uploadFile = async (uploadingFile: UploadingFile): Promise<string | null> => {
-    const formData = new FormData()
-    formData.append("file", uploadingFile.file)
-    if (jobId) {
-      formData.append("job_id", jobId)
+    if (file.size > maxSize * 1024 * 1024) {
+      return `File size must be less than ${maxSize}MB`
     }
-
-    try {
-      // Update progress
-      setFiles(prev => 
-        prev.map(f => 
-          f.id === uploadingFile.id 
-            ? { ...f, status: "uploading" as const, progress: 10 }
-            : f
-        )
-      )
-
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      })
-
-      if (!response.ok) {
-        throw new Error("Upload failed")
-      }
-
-      const data = await response.json()
-
-      // Update to complete
-      setFiles(prev => 
-        prev.map(f => 
-          f.id === uploadingFile.id 
-            ? { ...f, status: "complete" as const, progress: 100, url: data.url }
-            : f
-        )
-      )
-
-      return data.url
-    } catch (error) {
-      // Update to error
-      setFiles(prev => 
-        prev.map(f => 
-          f.id === uploadingFile.id 
-            ? { ...f, status: "error" as const, error: "Upload failed" }
-            : f
-        )
-      )
-      return null
-    }
+    return null
   }
 
-  const uploadAllFiles = async () => {
-    const pendingFiles = files.filter(f => f.status === "pending")
-    if (pendingFiles.length === 0) return
+  const handleFileSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file) return
 
-    setIsUploading(true)
-
-    const uploadPromises = pendingFiles.map(f => uploadFile(f))
-    const results = await Promise.all(uploadPromises)
-    const successfulUrls = results.filter((url): url is string => url !== null)
-
-    setIsUploading(false)
-
-    if (onUploadComplete && successfulUrls.length > 0) {
-      onUploadComplete(successfulUrls)
-    }
-  }
-
-  const pendingCount = files.filter(f => f.status === "pending").length
-  const completeCount = files.filter(f => f.status === "complete").length
-  const canAddMore = files.length < maxPhotos
-
-  // Track all created object URLs for proper cleanup
-  const previewUrlsRef = useRef<Set<string>>(new Set())
-
-  // Update ref when files change
-  useEffect(() => {
-    files.forEach(file => {
-      if (file.preview) {
-        previewUrlsRef.current.add(file.preview)
+      // Validate file
+      const error = validateFile(file)
+      if (error) {
+        toast.error(error)
+        return
       }
-    })
-  }, [files])
 
-  // Cleanup all object URLs on unmount to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      previewUrlsRef.current.forEach(url => {
-        URL.revokeObjectURL(url)
-      })
-      previewUrlsRef.current.clear()
-    }
-  }, [])
+      // Show preview
+      const reader = new FileReader()
+      reader.onload = () => setPreview(reader.result as string)
+      reader.readAsDataURL(file)
+
+      // Start upload
+      setUploadState("uploading")
+      setProgress(0)
+
+      // Simulate progress (in real app, this would track actual upload progress)
+      const progressInterval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval)
+            return 90
+          }
+          return prev + 10
+        })
+      }, 100)
+
+      try {
+        await onUpload(file)
+        clearInterval(progressInterval)
+        setProgress(100)
+        setUploadState("success")
+        toast.success("Photo uploaded successfully")
+        
+        // Reset after success
+        setTimeout(() => {
+          setUploadState("idle")
+          setProgress(0)
+          setPreview(null)
+        }, 2000)
+      } catch (error) {
+        clearInterval(progressInterval)
+        setUploadState("error")
+        toast.error("Failed to upload photo")
+      }
+    },
+    [onUpload, maxSize]
+  )
+
+  const clearPreview = () => {
+    setPreview(null)
+    setUploadState("idle")
+    setProgress(0)
+  }
 
   return (
-    <div className={className}>
-      {/* Hidden file inputs */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={(e) => handleFileSelect(e.target.files)}
-      />
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => handleFileSelect(e.target.files)}
-      />
-
-      {/* Action buttons */}
-      {canAddMore && (
-        <div className="flex gap-2 mb-4">
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1"
-            onClick={() => cameraInputRef.current?.click()}
-            aria-label="Take photo with camera"
-          >
-            <Camera className="h-4 w-4 mr-2" aria-hidden="true" />
-            Camera
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1"
-            onClick={() => fileInputRef.current?.click()}
-            aria-label="Select photos from gallery"
-          >
-            <Upload className="h-4 w-4 mr-2" aria-hidden="true" />
-            Gallery
-          </Button>
-        </div>
-      )}
-
-      {/* Preview grid */}
-      {files.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          {files.map((file) => (
-            <div 
-              key={file.id} 
-              className="relative aspect-square rounded-lg overflow-hidden bg-muted"
-            >
-              <img
-                src={file.preview}
-                alt={`Photo upload preview ${file.id}`}
-                className="w-full h-full object-cover"
-              />
-              
-              {/* Status overlay */}
-              {file.status === "uploading" && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <Loader2 className="h-6 w-6 text-white animate-spin" />
-                </div>
-              )}
-              
-              {file.status === "complete" && (
-                <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
-                  <CheckCircle className="h-6 w-6 text-green-500" />
-                </div>
-              )}
-              
-              {file.status === "error" && (
-                <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center">
-                  <AlertCircle className="h-6 w-6 text-red-500" />
-                </div>
-              )}
-
-              {/* Remove button (only for pending) */}
-              {file.status === "pending" && (
-                <button
-                  type="button"
-                  onClick={() => removeFile(file.id)}
-                  className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
-                  aria-label={`Remove photo ${file.id}`}
-                >
-                  <X className="h-4 w-4" aria-hidden="true" />
-                </button>
-              )}
-
-              {/* Progress bar */}
-              {file.status === "uploading" && (
-                <div className="absolute bottom-0 left-0 right-0">
-                  <Progress value={file.progress} className="h-1 rounded-none" />
-                </div>
-              )}
+    <div className={cn("relative", className)}>
+      {preview ? (
+        <div className="relative">
+          <img
+            src={preview}
+            alt="Preview"
+            className="w-full h-48 object-cover rounded-lg"
+          />
+          {uploadState === "uploading" && (
+            <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center rounded-lg p-4">
+              <Upload className="h-8 w-8 text-white mb-2 animate-bounce" />
+              <Progress value={progress} className="w-full max-w-xs" />
+              <p className="text-white text-sm mt-2">{progress}%</p>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Upload status */}
-      {files.length > 0 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-          <span>
-            {files.length} of {maxPhotos} photos
-            {completeCount > 0 && ` (${completeCount} uploaded)`}
-          </span>
-        </div>
-      )}
-
-      {/* Upload button */}
-      {pendingCount > 0 && (
-        <Button
-          type="button"
-          className="w-full"
-          disabled={isUploading}
-          onClick={uploadAllFiles}
-        >
-          {isUploading ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Uploading...
-            </>
-          ) : (
-            <>
-              <Upload className="h-4 w-4 mr-2" />
-              Upload {pendingCount} Photo{pendingCount !== 1 ? "s" : ""}
-            </>
           )}
-        </Button>
+          {uploadState === "success" && (
+            <div className="absolute inset-0 bg-green-500/50 flex items-center justify-center rounded-lg">
+              <CheckCircle className="h-12 w-12 text-white" />
+            </div>
+          )}
+          {uploadState === "error" && (
+            <div className="absolute inset-0 bg-red-500/50 flex flex-col items-center justify-center rounded-lg p-4">
+              <AlertCircle className="h-8 w-8 text-white mb-2" />
+              <p className="text-white text-sm text-center">Upload failed</p>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={clearPreview}
+                className="mt-2"
+              >
+                Try Again
+              </Button>
+            </div>
+          )}
+          {uploadState === "idle" && (
+            <button
+              onClick={clearPreview}
+              className="absolute top-2 right-2 p-1 bg-black/50 rounded-full text-white hover:bg-black/70"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      ) : (
+        <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+          <Camera className="h-8 w-8 text-muted-foreground mb-2" />
+          <span className="text-sm text-muted-foreground">Click to add photo</span>
+          <span className="text-xs text-muted-foreground mt-1">Max {maxSize}MB</span>
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileSelect}
+            disabled={uploadState === "uploading"}
+          />
+        </label>
       )}
     </div>
   )

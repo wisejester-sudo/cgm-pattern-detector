@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/sonner'
 import { NetworkStatus } from '@/components/network-status'
+import { ErrorBoundary } from '@/components/error-boundary'
 import './globals.css'
 
 // Force rebuild: rebuild-marker-2026
@@ -32,7 +33,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans antialiased bg-background text-foreground" style={{ minHeight: '100vh' }}>
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
         <Toaster position="top-right" richColors closeButton />
         <NetworkStatus />
         <Analytics />
