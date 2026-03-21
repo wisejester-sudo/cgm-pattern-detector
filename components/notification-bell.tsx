@@ -8,6 +8,25 @@ import { Badge } from "@/components/ui/badge"
 import { formatDistanceToNow } from "@/lib/date-utils"
 import Link from "next/link"
 
+function getNotificationIcon(type: string) {
+  switch (type) {
+    case 'sms_received':
+      return '💬'
+    case 'status_change':
+      return '🔄'
+    case 'note_added':
+      return '📝'
+    case 'tech_assigned':
+      return '👤'
+    case 'job_created':
+      return '📋'
+    case 'job_completed':
+      return '✅'
+    default:
+      return '🔔'
+  }
+}
+
 export function NotificationBell() {
   const { notifications, unreadCount, loadNotificationsFromSupabase, markNotificationsAsRead, markAllNotificationsAsRead } = useStore()
   const [isOpen, setIsOpen] = useState(false)
@@ -41,25 +60,6 @@ export function NotificationBell() {
 
   const handleMarkAllRead = async () => {
     await markAllNotificationsAsRead()
-  }
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'sms_received':
-        return '💬'
-      case 'status_change':
-        return '🔄'
-      case 'note_added':
-        return '📝'
-      case 'tech_assigned':
-        return '👤'
-      case 'job_created':
-        return '📋'
-      case 'job_completed':
-        return '✅'
-      default:
-        return '🔔'
-    }
   }
 
   return (
