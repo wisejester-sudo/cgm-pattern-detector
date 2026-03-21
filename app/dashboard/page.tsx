@@ -44,13 +44,12 @@ export default function DashboardPage() {
   const completedJobs = jobs.filter((j) => j.status === "complete").length
   const activeTechs = technicians.filter((t) => t.is_active).length
 
-  // BUG FIX: Use timezone-safe date comparisons
-  // Get today's date in UTC (consistent with database storage)
-  const todayUTC = getTodayUTC()
+  // Use local date comparison for "today's jobs" (what the user expects)
+  const todayLocal = getTodayLocal()
   
-  // Today's jobs - compare using UTC dates
+  // Today's jobs - compare using local dates (user's timezone)
   const todaysJobs = jobs.filter((job) => {
-    return isSameDayUTC(job.scheduled_time, todayUTC)
+    return isSameDayLocal(job.scheduled_time, todayLocal)
   })
 
   // SMS sent today - compare using UTC dates

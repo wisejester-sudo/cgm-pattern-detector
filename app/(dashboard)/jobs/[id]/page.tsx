@@ -322,8 +322,6 @@ export default function JobDetailPage({
             { id: 'overview', label: 'Overview', icon: '👤' },
             { id: 'activity', label: 'Activity', icon: '📋' },
             { id: 'messages', label: 'Messages', icon: '💬' },
-            { id: 'photos', label: 'Photos', icon: '📷' },
-            { id: 'notes', label: 'Notes', icon: '📝' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -555,69 +553,6 @@ export default function JobDetailPage({
           </div>
         )}
 
-        {/* Photos Tab */}
-        {activeTab === 'photos' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Job Photos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-4">
-                {jobPhotos.length === 0 && (
-                  <p className="text-muted-foreground">No photos yet.</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Notes Tab */}
-        {activeTab === 'notes' && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Notes</CardTitle>
-              {!editingNotes && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setEditingNotes(true)}
-                >
-                  Edit
-                </Button>
-              )}
-            </CardHeader>
-            <CardContent>
-              {editingNotes ? (
-                <FieldGroup>
-                  <Field>
-                    <Textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      rows={4}
-                      placeholder="Add notes about this job..."
-                    />
-                  </Field>
-                  <div className="flex gap-2">
-                    <Button onClick={handleSaveNotes}>Save Notes</Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setNotes(job.notes || "")
-                        setEditingNotes(false)
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </FieldGroup>
-              ) : (
-                <p className="text-muted-foreground">
-                  {job.notes || "No notes added yet."}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
       </div>
 
       {/* Dialogs */}
