@@ -13,7 +13,8 @@ import type {
   Admin,
   Subscription,
   Invoice,
-  NotificationPreferences
+  NotificationPreferences,
+  Notification
 } from './types'
 
 // Generate unique IDs
@@ -305,6 +306,10 @@ interface AppState {
   invoices: Invoice[]
   notificationPreferences: NotificationPreferences
   
+  // Notifications
+  notifications: Notification[]
+  unreadCount: number
+  
   // Role checks (computed)
   isAdmin: () => boolean
   isTechnician: () => boolean
@@ -351,6 +356,9 @@ interface AppState {
   loadTechniciansFromSupabase: () => Promise<void>
   loadTemplatesFromSupabase: () => Promise<void>
   loadSmsLogsFromSupabase: (jobId?: string) => Promise<void>
+  loadNotificationsFromSupabase: () => Promise<void>
+  markNotificationsAsRead: (ids?: string[]) => Promise<void>
+  markAllNotificationsAsRead: () => Promise<void>
   
   // User initialization - fetches user profile and settings from Supabase
   initializeUserFromSupabase: () => Promise<void>
@@ -806,6 +814,66 @@ export const useStore = create<AppState>()(
         }
       },
       
+      // Notifications - load from Supabase
+      loadNotificationsFromSupabase: async () => {
+        try {
+          const response = await fetchWithCSRF('/api/notifications')
+          if (!response.ok) {
+            console.error('[Store] Failed to load notifications:', response.status)
+            return
+          }
+          const data = await response.json()
+          set({ 
+            notifications: data.notifications || [],
+            unreadCount: data.unreadCount || 0
+          })
+        } catch (error) {
+          console.error('[Store] Error loading notifications:', error)
+        }
+      },
+      
+      // Mark notifications as read
+      markNotificationsAsRead: async (ids?: string[]) => {
+        try {
+          const response = await fetchWithCSRF('/api/notifications', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notificationIds: ids, markAll: !ids }),
+          })
+          if (!response.ok) {
+            console.error('[Store] Failed to mark notifications as read:', response.status)
+            return
+          }
+          // Refresh notifications
+          const { loadNotificationsFromSupabase } = get()
+          await loadNotificationsFromSupabase()
+        } catch (error) {
+          console.error('[Store] Error marking notifications as read:', error)
+        }
+      },
+      
+      // Mark all notifications as read
+      markAllNotificationsAsRead: async () => {
+        try {
+          const response = await fetchWithCSRF('/api/notifications', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ markAll: true }),
+          })
+          if (!response.ok) {
+            console.error('[Store] Failed to mark all notifications as read:', response.status)
+            return
+          }
+          // Update local state immediately for responsiveness
+          set(state => ({
+            notifications: state.notifications.map(n => ({ ...n, is_read: true })),
+            unreadCount: 0
+          }))
+        } catch (error) {
+          console.error('[Store] Error marking all notifications as read:', error)
+        }
+      },
+      
       // Refresh user profile from Supabase (for updating after profile changes)
       refreshUserProfile: async () => {
         try {
@@ -945,6 +1013,8 @@ export const useStore = create<AppState>()(
           subscription: initialSubscription,
           invoices: [],
           notificationPreferences: initialNotificationPreferences,
+          notifications: [],
+          unreadCount: 0,
         })
       },
     }),

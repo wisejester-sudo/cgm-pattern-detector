@@ -74,6 +74,20 @@ export interface SmsLog {
   parent_message_id?: string | null
 }
 
+export interface Notification {
+  id: string
+  user_id: string
+  type: 'sms_received' | 'status_change' | 'note_added' | 'tech_assigned' | 'job_created' | 'job_completed'
+  title: string
+  message: string
+  job_id?: string | null
+  job_number?: string | null
+  customer_name?: string | null
+  is_read: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface SmsTemplate {
   id: string
   name: string
