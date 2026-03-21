@@ -60,13 +60,13 @@ export function JobTimeline({ jobId }: JobTimelineProps) {
 
       // Fetch job updates
       const { data: updatesData, error: updatesError } = await supabase
-        .from("updates")
+        .from("job_updates")
         .select(`
           id,
           created_at,
           status,
           notes,
-          technicians:technician_id (name)
+          created_by_tech_id
         `)
         .eq("job_id", jobId)
         .order("created_at", { ascending: false })
