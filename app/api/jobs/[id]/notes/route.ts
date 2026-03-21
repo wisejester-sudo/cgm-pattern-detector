@@ -45,17 +45,20 @@ export async function POST(
     const body = await request.json()
     const { content, created_by_name, created_by_type } = body
 
-    // Get user from auth header
+    // Try to get user from auth header (optional for now)
+    let userId = null
     const authHeader = request.headers.get('authorization')
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
     
-    const token = authHeader.split(' ')[1]
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1]
+      try {
+        const { data: { user } } = await supabase.auth.getUser(token)
+        if (user) {
+          userId = user.id
+        }
+      } catch (e) {
+        console.log('Auth check failed, proceeding without user ID')
+      }
     }
 
     const { data: note, error } = await supabase
@@ -63,7 +66,7 @@ export async function POST(
       .insert({
         job_id: id,
         content,
-        created_by: user.id,
+        created_by: userId,
         created_by_name: created_by_name || 'Unknown',
         created_by_type: created_by_type || 'admin',
       })

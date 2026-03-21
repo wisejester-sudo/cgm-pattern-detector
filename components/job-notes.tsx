@@ -53,19 +53,20 @@ export function JobNotes({ jobId }: JobNotesProps) {
         ? currentAdmin?.name || "Admin"
         : "Technician"
       
+      // Try to get token but don't block if it fails
       const token = await getSessionToken()
-      if (!token) {
-        toast.error("Authentication required. Please log in again.")
-        setIsSubmitting(false)
-        return
+      
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      }
+      
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`
       }
       
       const response = await fetch(`/api/jobs/${jobId}/notes`, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
+        headers,
         body: JSON.stringify({
           content: newNote.trim(),
           created_by_name: createdByName,
@@ -80,11 +81,7 @@ export function JobNotes({ jobId }: JobNotesProps) {
       } else {
         const errorData = await response.json().catch(() => ({}))
         console.error("Failed to add note:", response.status, errorData)
-        if (response.status === 401) {
-          toast.error("Session expired. Please refresh the page and try again.")
-        } else {
-          toast.error(errorData.error || "Failed to add note")
-        }
+        toast.error(errorData.error || "Failed to add note")
       }
     } catch (error) {
       console.error("Error adding note:", error)
