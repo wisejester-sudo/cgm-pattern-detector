@@ -394,6 +394,10 @@ export const useStore = create<AppState>()(
       invoices: [],
       notificationPreferences: initialNotificationPreferences,
       
+      // Notifications
+      notifications: [],
+      unreadCount: 0,
+      
       // Role checks
       isAdmin: () => get().isAdminAuthenticated && get().currentAdmin !== null,
       isTechnician: () => get().currentTechId !== null,
@@ -1013,8 +1017,6 @@ export const useStore = create<AppState>()(
           subscription: initialSubscription,
           invoices: [],
           notificationPreferences: initialNotificationPreferences,
-          notifications: [],
-          unreadCount: 0,
         })
       },
     }),
