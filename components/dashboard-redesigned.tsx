@@ -88,14 +88,20 @@ export function DashboardRedesigned() {
 
   // Jobs needing attention (on hold, unassigned, overdue)
   const attentionJobs = useMemo(() => {
-    return jobs.filter(
-      (j) =>
-        j.status === "on_hold" ||
-        (j.status === "scheduled" && !j.assigned_tech_ids?.length) ||
-        (new Date(j.scheduled_time) < new Date() &&
-          j.status !== "complete" &&
-          j.status !== "on_hold")
-    )
+    return jobs.filter((j) => {
+      // On hold jobs need attention
+      if (j.status === "on_hold") return true
+      
+      // Scheduled but unassigned
+      if (j.status === "scheduled" && !j.assigned_tech_ids?.length) return true
+      
+      // Overdue jobs (not complete)
+      if (new Date(j.scheduled_time) < new Date() && j.status !== "complete") {
+        return true
+      }
+      
+      return false
+    })
   }, [jobs])
 
   // Recent notifications
