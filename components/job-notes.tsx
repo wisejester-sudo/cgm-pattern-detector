@@ -9,7 +9,6 @@ import { toast } from "sonner"
 import { Loader2, Plus, Trash2, User, Wrench, Bot } from "lucide-react"
 import { formatDistanceToNow, formatDate } from "@/lib/date-utils"
 import { useStore } from "@/lib/store"
-import { supabase } from "@/lib/supabase"
 import type { JobNote } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -53,20 +52,11 @@ export function JobNotes({ jobId }: JobNotesProps) {
         ? currentAdmin?.name || "Admin"
         : "Technician"
       
-      // Try to get token but don't block if it fails
-      const token = await getSessionToken()
-      
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      }
-      
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`
-      }
-      
       const response = await fetch(`/api/jobs/${jobId}/notes`, {
         method: "POST",
-        headers,
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           content: newNote.trim(),
           created_by_name: createdByName,
@@ -95,9 +85,6 @@ export function JobNotes({ jobId }: JobNotesProps) {
     try {
       const response = await fetch(`/api/jobs/${jobId}/notes?noteId=${noteId}`, {
         method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${await getSessionToken()}`
-        }
       })
 
       if (response.ok) {
@@ -111,42 +98,7 @@ export function JobNotes({ jobId }: JobNotesProps) {
     }
   }
 
-  const getSessionToken = async () => {
-    try {
-      // Try to get session from Supabase
-      const { data: { session }, error } = await supabase.auth.getSession()
-      
-      if (error) {
-        console.error("Error getting session:", error)
-      }
-      
-      if (session?.access_token) {
-        console.log("Got session token from Supabase")
-        return session.access_token
-      }
-      
-      // Fallback: Check if user is logged in via store
-      if (!currentAdmin && !currentTechId) {
-        console.error("No user logged in (store check)")
-        return ""
-      }
-      
-      // If we have a user in store but no session, try to refresh
-      console.log("User in store but no Supabase session, trying refresh...")
-      const { data: { session: refreshedSession }, error: refreshError } = 
-        await supabase.auth.refreshSession()
-      
-      if (refreshError) {
-        console.error("Session refresh failed:", refreshError)
-        return ""
-      }
-      
-      return refreshedSession?.access_token || ""
-    } catch (e) {
-      console.error("Exception getting session:", e)
-      return ""
-    }
-  }
+  // Auth completely disabled for now - notes work without login
 
   const getAuthorIcon = (type: string) => {
     switch (type) {

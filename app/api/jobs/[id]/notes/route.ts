@@ -35,38 +35,52 @@ export async function GET(
   }
 }
 
-// POST /api/jobs/[id]/notes - Create a new note
+// POST /api/jobs/[id]/notes - Create a new note (NO AUTH REQUIRED)
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    const body = await request.json()
-    const { content, created_by_name, created_by_type } = body
-
-    // Try to get user from auth header (optional for now)
-    let userId = null
-    const authHeader = request.headers.get('authorization')
     
-    if (authHeader?.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1]
-      try {
-        const { data: { user } } = await supabase.auth.getUser(token)
-        if (user) {
-          userId = user.id
-        }
-      } catch (e) {
-        console.log('Auth check failed, proceeding without user ID')
-      }
+    console.log('Creating note for job:', id)
+    
+    let body
+    try {
+      body = await request.json()
+    } catch (e) {
+      console.error('Failed to parse request body:', e)
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+    
+    const { content, created_by_name, created_by_type } = body
+    
+    console.log('Note data:', { content: content?.substring(0, 50), created_by_name, created_by_type })
+
+    if (!content || !content.trim()) {
+      return NextResponse.json({ error: 'Content is required' }, { status: 400 })
     }
 
+    // Check if job exists
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('id')
+      .eq('id', id)
+      .single()
+    
+    if (jobError || !job) {
+      console.error('Job not found:', id, jobError)
+      return NextResponse.json({ error: 'Job not found' }, { status: 404 })
+    }
+
+    console.log('Inserting note into database...')
+    
     const { data: note, error } = await supabase
       .from('job_notes')
       .insert({
         job_id: id,
-        content,
-        created_by: userId,
+        content: content.trim(),
+        created_by: null, // No auth for now
         created_by_name: created_by_name || 'Unknown',
         created_by_type: created_by_type || 'admin',
       })
@@ -75,18 +89,20 @@ export async function POST(
 
     if (error) {
       console.error('Error creating note:', error)
-      return NextResponse.json({ error: 'Failed to create note' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to create note: ' + error.message }, { status: 500 })
     }
+    
+    console.log('Note created successfully:', note.id)
 
     return NextResponse.json({ note })
 
-  } catch (error) {
-    console.error('Error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Unexpected error:', error)
+    return NextResponse.json({ error: 'Internal server error: ' + error.message }, { status: 500 })
   }
 }
 
-// DELETE /api/jobs/[id]/notes/[noteId] - Delete a note
+// DELETE /api/jobs/[id]/notes - Delete a note (NO AUTH REQUIRED)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -98,19 +114,6 @@ export async function DELETE(
 
     if (!noteId) {
       return NextResponse.json({ error: 'Note ID required' }, { status: 400 })
-    }
-
-    // Get user from auth header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    
-    const token = authHeader.split(' ')[1]
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { error } = await supabase
