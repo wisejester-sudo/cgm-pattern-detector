@@ -107,7 +107,8 @@ export function getErrorMessage(error: any, context: keyof typeof ErrorMessages 
   }
   
   // Return context-specific message or general error
-  return ErrorMessages[context]?.UNKNOWN_ERROR || ErrorMessages.GENERAL.UNKNOWN_ERROR
+  const contextMessages = ErrorMessages[context] as Record<string, string> | undefined
+  return contextMessages?.UNKNOWN_ERROR || ErrorMessages.GENERAL.UNKNOWN_ERROR
 }
 
 // Helper to get actionable next steps
