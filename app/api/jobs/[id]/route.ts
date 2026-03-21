@@ -55,8 +55,8 @@ const updateJobSchema = z.object({
   
   notes: z.string()
     .max(1000, "Notes must be 1000 characters or less")
-    .optional()
-    .transform(val => val?.trim() || null),
+    .nullable()
+    .optional(),
   
   assigned_tech_ids: z.array(z.string().uuid("Invalid technician ID"))
     .optional(),
@@ -65,6 +65,7 @@ const updateJobSchema = z.object({
   
   on_hold_reason: z.string()
     .max(500, "On-hold reason must be 500 characters or less")
+    .nullable()
     .optional(),
 })
 
