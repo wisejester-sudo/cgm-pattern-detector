@@ -54,6 +54,7 @@ import { statusConfig } from "@/components/job-card"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import { JobTimeline } from "@/components/job-timeline"
 import { SmsConversation } from "@/components/sms-conversation"
+import { CustomerLinkShare } from "@/components/customer-link-share"
 
 export default function JobDetailPage({
   params,
@@ -292,6 +293,13 @@ export default function JobDetailPage({
               </span>
               <span className="sm:hidden">Techs</span>
             </Button>
+
+            {/* Customer Link */}
+            <CustomerLinkShare 
+              jobId={id}
+              customerPhone={job.customer_phone}
+              customerName={job.customer_name}
+            />
 
             {/* Edit Job */}
             <Button 

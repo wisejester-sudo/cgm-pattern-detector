@@ -1,254 +1,292 @@
 "use client"
 
-import { useEffect, useState, use } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { use, useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { 
-  Clock, 
-  Truck, 
-  Wrench, 
-  CheckCircle, 
-  Loader2, 
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-  MessageSquare,
-  X
-} from "lucide-react"
+import { Phone, MapPin, Clock, User, Wrench, CheckCircle2, Truck, Calendar, Loader2, Image as ImageIcon } from "lucide-react"
+import { Logo } from "@/components/logo"
+import Image from "next/image"
 import type { JobStatus } from "@/lib/types"
 
-interface JobData {
-  id: string
-  job_type: string
-  status: JobStatus
-  technician_name: string | null
-  last_updated: string
+const statusConfig: Record<JobStatus, { label: string; className: string; icon: React.ElementType; description: string }> = {
+  available: {
+    label: "Confirmed",
+    className: "bg-blue-100 text-blue-800",
+    icon: Calendar,
+    description: "Your appointment is confirmed and waiting to be assigned.",
+  },
+  scheduled: {
+    label: "Scheduled",
+    className: "bg-status-scheduled text-foreground",
+    icon: Calendar,
+    description: "Your technician is assigned and will arrive at the scheduled time.",
+  },
+  en_route: {
+    label: "On the Way",
+    className: "bg-status-enroute text-primary-foreground",
+    icon: Truck,
+    description: "Your technician is on the way to your location.",
+  },
+  working: {
+    label: "In Progress",
+    className: "bg-status-working text-foreground",
+    icon: Wrench,
+    description: "Your technician has arrived and is working on the job.",
+  },
+  on_hold: {
+    label: "On Hold",
+    className: "bg-amber-100 text-amber-800",
+    icon: Clock,
+    description: "This job is temporarily on hold. We'll update you when work resumes.",
+  },
+  complete: {
+    label: "Completed",
+    className: "bg-status-complete text-primary-foreground",
+    icon: CheckCircle2,
+    description: "The job has been completed. Thank you for choosing us!",
+  },
 }
 
-interface PhotoData {
+const statusSteps: JobStatus[] = ["scheduled", "en_route", "working", "complete"]
+
+interface Job {
+  id: string
+  customer_name: string
+  customer_phone: string
+  customer_address: string
+  job_type: string
+  status: JobStatus
+  scheduled_time: string
+  assigned_tech_ids: string[] | null
+}
+
+interface Technician {
+  id: string
+  name: string
+  phone: string
+}
+
+interface Photo {
   id: string
   photo_url: string
-  thumbnail_url?: string
   caption: string | null
   uploaded_at: string
 }
 
-interface UpdateData {
-  id: string
-  status: string
-  notes: string | null
-  photos: string[]
-  created_at: string
-}
-
-interface CompanyData {
+interface Settings {
   company_name: string
-  logo_url: string | null
-  primary_color: string
-  tagline: string | null
+  company_phone: string
 }
 
-interface PublicJobData {
-  job: JobData
-  updates: UpdateData[]
-  photos: PhotoData[]
-  company: CompanyData
-}
-
-const statusConfig: Record<JobStatus, { label: string; icon: React.ElementType; className: string }> = {
-  available: { label: "Available", icon: Clock, className: "bg-slate-100 text-slate-800" },
-  scheduled: { label: "Scheduled", icon: Clock, className: "bg-blue-100 text-blue-800" },
-  en_route: { label: "On the Way", icon: Truck, className: "bg-yellow-100 text-yellow-800" },
-  working: { label: "In Progress", icon: Wrench, className: "bg-orange-100 text-orange-800" },
-  on_hold: { label: "On Hold", icon: Clock, className: "bg-amber-100 text-amber-800" },
-  complete: { label: "Completed", icon: CheckCircle, className: "bg-green-100 text-green-800" },
-}
-
-export default function PublicJobViewerPage({ params }: { params: Promise<{ token: string }> }) {
+export default function CustomerJobPage({
+  params,
+}: {
+  params: Promise<{ token: string }>
+}) {
   const { token } = use(params)
-  const [data, setData] = useState<PublicJobData | null>(null)
+  const [job, setJob] = useState<Job | null>(null)
+  const [technicians, setTechnicians] = useState<Technician[]>([])
+  const [photos, setPhotos] = useState<Photo[]>([])
+  const [settings, setSettings] = useState<Settings>({ company_name: "", company_phone: "" })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null)
 
   useEffect(() => {
     fetchJobData()
+    // Poll for updates every 30 seconds
+    const interval = setInterval(fetchJobData, 30000)
+    return () => clearInterval(interval)
   }, [token])
 
-  async function fetchJobData() {
+  const fetchJobData = async () => {
     try {
-      const res = await fetch(`/api/public/job/${token}`)
-      
-      if (!res.ok) {
-        const errorData = await res.json()
-        setError(errorData.error || "Failed to load job details")
-        setLoading(false)
-        return
+      const response = await fetch(`/api/public/jobs/by-token/${token}`)
+      if (!response.ok) {
+        if (response.status === 410) {
+          throw new Error("This link has expired. Please contact the company for a new link.")
+        }
+        throw new Error("Invalid or expired link")
       }
-
-      const jobData = await res.json()
-      setData(jobData)
-    } catch {
-      setError("Failed to load job details")
+      const data = await response.json()
+      setJob(data.job)
+      setTechnicians(data.technicians || [])
+      setPhotos(data.photos || [])
+      setSettings(data.settings || { company_name: "", company_phone: "" })
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load job details")
     } finally {
       setLoading(false)
     }
   }
 
-  function formatTime(dateString: string): string {
-    const date = new Date(dateString)
-    return date.toLocaleTimeString("en-US", { 
-      hour: "numeric", 
-      minute: "2-digit",
-      hour12: true 
-    })
-  }
-
-  function formatDate(dateString: string): string {
-    const date = new Date(dateString)
-    return date.toLocaleDateString("en-US", { 
-      month: "short", 
-      day: "numeric",
-      year: "numeric"
-    })
-  }
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Loading job details...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error || !data) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-lg font-semibold mb-2">Link Not Available</h2>
-            <p className="text-muted-foreground">{error || "This link is no longer valid."}</p>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="py-8">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading your job details...</p>
           </CardContent>
         </Card>
       </div>
     )
   }
 
-  const { job, updates, photos, company } = data
-  const StatusIcon = statusConfig[job.status].icon
+  if (error || !job) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="py-8">
+            <p className="text-destructive mb-2">{error || "Link expired"}</p>
+            <p className="text-sm text-muted-foreground">
+              This link may have expired or is invalid.
+            </p>
+            {settings.company_phone && (
+              <p className="text-sm text-muted-foreground mt-4">
+                Need help? Call: <a href={`tel:${settings.company_phone}`} className="text-primary">{settings.company_phone}</a>
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  const assignedTechnician = technicians[0]
+  const scheduledDate = new Date(job.scheduled_time)
+  const currentStatus = statusConfig[job.status]
+  const currentStepIndex = statusSteps.indexOf(job.status)
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header with company branding */}
-      <header 
-        className="p-4 text-white"
-        style={{ backgroundColor: company.primary_color }}
-      >
-        <div className="max-w-md mx-auto flex items-center gap-3">
-          {company.logo_url ? (
-            <img 
-              src={company.logo_url} 
-              alt={company.company_name}
-              className="h-10 w-10 rounded-lg object-contain bg-white p-1"
-            />
-          ) : (
-            <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center">
-              <Wrench className="h-5 w-5" />
-            </div>
-          )}
-          <div>
-            <h1 className="font-semibold">{company.company_name}</h1>
-            {company.tagline && (
-              <p className="text-sm opacity-80">{company.tagline}</p>
-            )}
+    <div className="min-h-screen bg-muted/30">
+      {/* Header */}
+      <header className="bg-sidebar text-sidebar-foreground py-6 px-4">
+        <div className="max-w-lg mx-auto text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Logo size="sm" variant="white" showText={false} />
+            <span className="font-semibold text-lg">{settings.company_name || "Dispatchly"}</span>
           </div>
+          <p className="text-sidebar-muted text-sm">Job Status</p>
         </div>
       </header>
 
-      <main className="max-w-md mx-auto p-4 space-y-4">
+      {/* Main Content */}
+      <main className="max-w-lg mx-auto p-4 -mt-4 space-y-4">
         {/* Status Card */}
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Service</p>
-                <p className="font-medium">{job.job_type}</p>
+            <div className="text-center mb-6">
+              <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-3 ${currentStatus.className}`}>
+                <currentStatus.icon className="h-8 w-8" />
               </div>
-              <Badge className={`${statusConfig[job.status].className} text-sm`}>
-                <StatusIcon className="h-4 w-4 mr-1" />
-                {statusConfig[job.status].label}
-              </Badge>
+              <h2 className="text-2xl font-bold mb-1">{currentStatus.label}</h2>
+              <p className="text-muted-foreground text-sm px-4">{currentStatus.description}</p>
             </div>
-            
-            {job.technician_name && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-primary font-medium">
-                    {job.technician_name.split(" ").map(n => n[0]).join("")}
-                  </span>
+
+            {/* Progress Steps */}
+            {job.status !== "available" && job.status !== "on_hold" && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  {statusSteps.map((step, index) => {
+                    const stepConfig = statusConfig[step]
+                    const isActive = index <= currentStepIndex
+                    const isCurrent = index === currentStepIndex
+
+                    return (
+                      <div key={step} className="flex flex-col items-center flex-1">
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium mb-1 ${
+                            isCurrent
+                              ? stepConfig.className
+                              : isActive
+                              ? "bg-primary/20 text-primary"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {index + 1}
+                        </div>
+                        <span className={`text-xs ${isCurrent ? "font-medium" : "text-muted-foreground"}`}>
+                          {stepConfig.label}
+                        </span>
+                      </div>
+                    )
+                  })}
                 </div>
-                <span>Technician: {job.technician_name}</span>
+                <div className="relative h-1 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="absolute h-full bg-primary rounded-full transition-all"
+                    style={{
+                      width: `${Math.max(0, (currentStepIndex / (statusSteps.length - 1)) * 100)}%`,
+                    }}
+                  />
+                </div>
               </div>
             )}
 
-            <p className="text-xs text-muted-foreground mt-4">
-              Last updated: {formatDate(job.last_updated)} at {formatTime(job.last_updated)}
-            </p>
+            {/* Job Details */}
+            <div className="space-y-3 pt-4 border-t">
+              <div className="flex items-start gap-3">
+                <User className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">{job.customer_name}</p>
+                  <p className="text-sm text-muted-foreground">{job.job_type}</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <p className="text-sm">{job.customer_address}</p>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Clock className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <p className="text-sm">
+                  {scheduledDate.toLocaleDateString()} at{" "}
+                  {scheduledDate.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                </p>
+              </div>
+
+              {assignedTechnician && (
+                <div className="flex items-start gap-3">
+                  <User className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium">{assignedTechnician.name}</p>
+                    {assignedTechnician.phone && (
+                      <a
+                        href={`tel:${assignedTechnician.phone}`}
+                        className="text-sm text-primary flex items-center gap-1"
+                      >
+                        <Phone className="h-3 w-3" />
+                        {assignedTechnician.phone}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
-        {/* Photos Gallery */}
+        {/* Photos Section */}
         {photos.length > 0 && (
           <Card>
-            <CardContent className="pt-6">
-              <h2 className="font-semibold mb-3">Photos</h2>
-              <div className="grid grid-cols-3 gap-2">
-                {photos.map((photo, index) => (
-                  <button
-                    key={photo.id}
-                    onClick={() => setSelectedPhotoIndex(index)}
-                    className="aspect-square rounded-lg overflow-hidden bg-muted hover:opacity-90 transition-opacity"
-                  >
-                    <img
-                      src={photo.thumbnail_url || photo.photo_url}
-                      alt={photo.caption || `Photo ${index + 1}`}
-                      className="w-full h-full object-cover"
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" />
+                Job Photos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-2">
+                {photos.map((photo) => (
+                  <div key={photo.id} className="relative aspect-square">
+                    <Image
+                      src={photo.photo_url}
+                      alt={photo.caption || "Job photo"}
+                      fill
+                      className="object-cover rounded-lg"
                     />
-                  </button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Updates Timeline */}
-        {updates.length > 0 && (
-          <Card>
-            <CardContent className="pt-6">
-              <h2 className="font-semibold mb-3">Updates</h2>
-              <div className="space-y-4">
-                {updates.map((update, index) => (
-                  <div 
-                    key={update.id} 
-                    className={`relative pl-6 ${index !== updates.length - 1 ? "pb-4 border-l-2 border-muted ml-2" : "ml-2"}`}
-                  >
-                    <div className="absolute left-0 top-0 -translate-x-1/2 w-4 h-4 rounded-full bg-primary" />
-                    <div>
-                      <p className="text-sm font-medium capitalize">
-                        {update.status.replace("_", " ")}
-                      </p>
-                      {update.notes && (
-                        <p className="text-sm text-muted-foreground mt-1">{update.notes}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {formatTime(update.created_at)}
-                      </p>
-                    </div>
                   </div>
                 ))}
               </div>
@@ -256,82 +294,35 @@ export default function PublicJobViewerPage({ params }: { params: Promise<{ toke
           </Card>
         )}
 
-        {/* Reply CTA */}
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="pt-6 text-center">
-            <MessageSquare className="h-8 w-8 mx-auto mb-2 text-primary" />
-            <p className="font-medium mb-1">Questions?</p>
-            <p className="text-sm text-muted-foreground mb-3">
-              Reply to the text message you received
-            </p>
-          </CardContent>
-        </Card>
+        {/* Contact Card */}
+        {settings.company_phone && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Need Help?</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-3">
+                Contact us if you have any questions about your appointment.
+              </p>
+              <a 
+                href={`tel:${settings.company_phone}`}
+                className="flex items-center justify-center gap-2 w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium"
+              >
+                <Phone className="h-4 w-4" />
+                Call {settings.company_name}
+              </a>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Footer */}
-        <footer className="text-center py-6 text-xs text-muted-foreground">
-          Powered by <span className="font-medium">Dispatchly</span>
-        </footer>
+        <p className="text-center text-xs text-muted-foreground">
+          This page updates automatically. Last updated: {new Date().toLocaleTimeString()}
+        </p>
+        <p className="text-center text-xs text-muted-foreground">
+          Powered by Dispatchly
+        </p>
       </main>
-
-      {/* Fullscreen Photo Viewer */}
-      {selectedPhotoIndex !== null && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col">
-          {/* Close button */}
-          <button
-            onClick={() => setSelectedPhotoIndex(null)}
-            className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
-          >
-            <X className="h-6 w-6" />
-          </button>
-
-          {/* Photo */}
-          <div className="flex-1 flex items-center justify-center p-4">
-            <img
-              src={photos[selectedPhotoIndex].photo_url}
-              alt={photos[selectedPhotoIndex].caption || `Photo ${selectedPhotoIndex + 1}`}
-              className="max-w-full max-h-full object-contain"
-            />
-          </div>
-
-          {/* Navigation */}
-          {photos.length > 1 && (
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-2 pointer-events-none">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="pointer-events-auto rounded-full bg-black/50 text-white hover:bg-black/70"
-                onClick={() => setSelectedPhotoIndex(prev => 
-                  prev !== null ? (prev - 1 + photos.length) % photos.length : 0
-                )}
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="pointer-events-auto rounded-full bg-black/50 text-white hover:bg-black/70"
-                onClick={() => setSelectedPhotoIndex(prev => 
-                  prev !== null ? (prev + 1) % photos.length : 0
-                )}
-              >
-                <ChevronRight className="h-6 w-6" />
-              </Button>
-            </div>
-          )}
-
-          {/* Photo info */}
-          <div className="p-4 bg-black/80 text-white text-center">
-            <p className="text-sm">
-              {selectedPhotoIndex + 1} of {photos.length}
-            </p>
-            {photos[selectedPhotoIndex].caption && (
-              <p className="text-sm text-white/70 mt-1">
-                {photos[selectedPhotoIndex].caption}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
