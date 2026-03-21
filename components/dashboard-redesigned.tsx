@@ -11,9 +11,8 @@ import { CommandPalette } from "./command-palette"
 import {
   EmptyJobs,
   EmptyNotifications,
-  SkeletonStats,
-  SkeletonList,
 } from "./empty-state"
+import { SkeletonStats, SkeletonList } from "./ui/skeleton-card"
 import { toast } from "sonner"
 import {
   Plus,
