@@ -88,6 +88,17 @@ export interface Notification {
   updated_at: string
 }
 
+export interface JobNote {
+  id: string
+  job_id: string
+  content: string
+  created_by?: string | null
+  created_by_name: string
+  created_by_type: 'admin' | 'technician' | 'system'
+  created_at: string
+  updated_at: string
+}
+
 export interface SmsTemplate {
   id: string
   name: string

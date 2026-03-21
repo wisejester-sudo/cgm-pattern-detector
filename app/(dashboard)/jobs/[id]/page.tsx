@@ -55,6 +55,7 @@ import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import { JobTimeline } from "@/components/job-timeline"
 import { SmsConversation } from "@/components/sms-conversation"
 import { CustomerLinkShare } from "@/components/customer-link-share"
+import { JobNotes } from "@/components/job-notes"
 
 export default function JobDetailPage({
   params,
@@ -429,50 +430,10 @@ export default function JobDetailPage({
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Notes</CardTitle>
-            {!editingNotes && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setEditingNotes(true)}
-              >
-                Edit
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent>
-            {editingNotes ? (
-              <FieldGroup>
-                <Field>
-                  <Textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={4}
-                    placeholder="Add notes about this job..."
-                  />
-                </Field>
-                <div className="flex gap-2">
-                  <Button onClick={handleSaveNotes}>Save Notes</Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setNotes(job.notes || "")
-                      setEditingNotes(false)
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </FieldGroup>
-            ) : (
-              <p className="text-muted-foreground">
-                {job.notes || "No notes added yet."}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+        {/* Job Notes with Traceability */}
+        <div className="md:col-span-2">
+          <JobNotes jobId={id} />
+        </div>
 
         <Card className="md:col-span-2">
           <CardHeader>
