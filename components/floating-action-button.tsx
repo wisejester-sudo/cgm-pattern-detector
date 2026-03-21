@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -29,51 +28,54 @@ export function FloatingActionButton({
 
   return (
     <div className={cn("fixed bottom-6 right-6 z-50", className)}>
-      <AnimatePresence>
-        {isOpen && (
-          <div className="absolute bottom-full right-0 mb-4 space-y-3">
-            {actions.map((action, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 20, scale: 0.8 }}
-                transition={{ delay: index * 0.05 }}
-                className="flex items-center justify-end gap-3"
-              >
-                <span className="bg-popover text-popover-foreground px-3 py-1.5 rounded-lg text-sm font-medium shadow-lg">
-                  {action.label}
-                </span>
-                <Button
-                  size="icon"
-                  className={cn(
-                    "h-14 w-14 rounded-full shadow-lg",
-                    action.color || "bg-primary text-primary-foreground"
-                  )}
-                  onClick={() => {
-                    action.onClick()
-                    setIsOpen(false)
-                  }}
-                >
-                  {action.icon}
-                </Button>
-              </motion.div>
-            ))}
+      {/* Action Buttons */}
+      <div className={cn(
+        "absolute bottom-full right-0 mb-4 space-y-3 transition-all duration-300",
+        isOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
+      )}>
+        {actions.map((action, index) => (
+          <div
+            key={index}
+            className="flex items-center justify-end gap-3"
+            style={{
+              transitionDelay: isOpen ? `${index * 50}ms` : '0ms',
+              opacity: isOpen ? 1 : 0,
+              transform: isOpen ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.8)',
+              transition: 'all 0.3s ease-out'
+            }}
+          >
+            <span className="bg-popover text-popover-foreground px-3 py-1.5 rounded-lg text-sm font-medium shadow-lg">
+              {action.label}
+            </span>
+            <Button
+              size="icon"
+              className={cn(
+                "h-14 w-14 rounded-full shadow-lg",
+                action.color || "bg-primary text-primary-foreground"
+              )}
+              onClick={() => {
+                action.onClick()
+                setIsOpen(false)
+              }}
+            >
+              {action.icon}
+            </Button>
           </div>
-        )}
-      </AnimatePresence>
+        ))}
+      </div>
 
+      {/* Main FAB Button */}
       <Button
         size="icon"
         className={cn(
           "h-16 w-16 rounded-full shadow-2xl transition-all duration-300",
-          isOpen ? "bg-destructive rotate-45" : "bg-primary"
+          isOpen ? "bg-destructive" : "bg-primary"
         )}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <motion.div
-          animate={{ rotate: isOpen ? 45 : 0 }}
-          transition={{ duration: 0.2 }}
+        <div
+          className="transition-transform duration-200"
+          style={{ transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}
         >
           {isOpen ? (
             <svg
@@ -94,7 +96,7 @@ export function FloatingActionButton({
           ) : (
             mainIcon
           )}
-        </motion.div>
+        </div>
       </Button>
     </div>
   )

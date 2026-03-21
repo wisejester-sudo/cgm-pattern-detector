@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -532,24 +531,23 @@ export function JobCreationWizard({
         <StepIndicator />
 
         <div className="min-h-[300px]">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold">{steps[currentStep].title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {steps[currentStep].description}
-                </p>
-              </div>
+          <div
+            key={currentStep}
+            className="transition-all duration-200 ease-out"
+            style={{
+              opacity: 1,
+              transform: 'translateX(0)'
+            }}
+          >
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold">{steps[currentStep].title}</h3>
+              <p className="text-sm text-muted-foreground">
+                {steps[currentStep].description}
+              </p>
+            </div>
 
-              <StepContent />
-            </motion.div>
-          </AnimatePresence>
+            <StepContent />
+          </div>
         </div>
 
         <div className="flex justify-between pt-4 border-t">
