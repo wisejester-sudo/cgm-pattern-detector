@@ -62,8 +62,16 @@ export interface SmsLog {
   recipient_phone: string
   message_body: string
   sent_at: string
-  status: 'sent' | 'failed' | 'pending'
+  status: 'sent' | 'failed' | 'pending' | 'delivered' | 'received'
   message_sid?: string | null
+  // Enhanced conversation fields
+  sender_name?: string
+  sender_type?: 'admin' | 'technician' | 'system' | 'customer'
+  sender_id?: string
+  direction: 'inbound' | 'outbound'
+  is_read?: boolean
+  twilio_status?: string
+  parent_message_id?: string | null
 }
 
 export interface SmsTemplate {
