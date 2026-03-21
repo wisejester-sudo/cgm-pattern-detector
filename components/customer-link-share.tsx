@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { supabase } from "@/lib/supabase"
 
 interface CustomerLinkShareProps {
   jobId: string
@@ -35,7 +36,12 @@ export function CustomerLinkShare({ jobId, customerPhone, customerName }: Custom
 
   const fetchExistingLink = async () => {
     try {
-      const response = await fetch(`/api/jobs/${jobId}/customer-link`)
+      const { data: { session } } = await supabase.auth.getSession()
+      const response = await fetch(`/api/jobs/${jobId}/customer-link`, {
+        headers: {
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        }
+      })
       if (response.ok) {
         const data = await response.json()
         if (data.url) {
@@ -51,8 +57,12 @@ export function CustomerLinkShare({ jobId, customerPhone, customerName }: Custom
   const generateLink = async () => {
     setLoading(true)
     try {
+      const { data: { session } } = await supabase.auth.getSession()
       const response = await fetch(`/api/jobs/${jobId}/customer-link`, {
         method: "POST",
+        headers: {
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        }
       })
       
       if (!response.ok) {
