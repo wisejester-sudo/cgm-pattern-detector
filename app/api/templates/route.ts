@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const { data: templates, error, count } = await supabase
       .from("sms_templates")
       .select("*", { count: "exact" })
-      .eq("admin_id", user.id)
+      .or(`admin_id.eq.${user.id},is_global.eq.true`)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1)
 
