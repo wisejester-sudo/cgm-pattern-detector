@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"
+import { ErrorMessages, getErrorMessage } from "@/lib/error-messages"
 
 // ============================================================================
 // VALIDATION SCHEMAS
