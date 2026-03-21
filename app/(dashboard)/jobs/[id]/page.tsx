@@ -544,6 +544,15 @@ export default function JobDetailPage({
               jobId={id}
               customerName={job.customer_name}
               customerPhone={job.customer_phone}
+              customerAddress={job.customer_address}
+              jobType={job.job_type}
+              scheduledTime={job.scheduled_time}
+              companyName={settings?.company_name || "Business"}
+              companyPhone={settings?.company_phone || ""}
+              assignedTechs={job.assigned_tech_ids?.map(techId => {
+                const tech = technicians.find(t => t.id === techId)
+                return tech?.name || 'Technician'
+              }) || []}
               messages={smsLogs.filter((log) => log.job_id === id)}
               currentUserName={settings?.company_name || "Business"}
               currentUserType="admin"

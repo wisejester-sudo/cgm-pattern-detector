@@ -21,6 +21,12 @@ interface SmsConversationProps {
   jobId: string
   customerName: string
   customerPhone: string
+  customerAddress?: string
+  jobType?: string
+  scheduledTime?: string
+  companyName?: string
+  companyPhone?: string
+  assignedTechs?: string[]
   messages: SmsLog[]
   currentUserName: string
   currentUserType: 'admin' | 'technician'
@@ -32,6 +38,12 @@ export function SmsConversation({
   jobId,
   customerName,
   customerPhone,
+  customerAddress = '',
+  jobType = '',
+  scheduledTime = '',
+  companyName = '',
+  companyPhone = '',
+  assignedTechs = [],
   messages,
   currentUserName,
   currentUserType,
@@ -62,10 +74,36 @@ export function SmsConversation({
     }
   }
 
+  // Populate template placeholders with actual data
+  const populateTemplate = (template: string): string => {
+    const techName = assignedTechs[0] || 'Technician'
+    const eta = '30 minutes' // Could calculate from scheduled time
+    const formattedTime = scheduledTime 
+      ? new Date(scheduledTime).toLocaleString('en-US', { 
+          month: 'short', 
+          day: 'numeric', 
+          hour: 'numeric', 
+          minute: '2-digit' 
+        })
+      : 'soon'
+    
+    return template
+      .replace(/\{customer_name\}/g, customerName)
+      .replace(/\{customer_phone\}/g, customerPhone)
+      .replace(/\{address\}/g, customerAddress)
+      .replace(/\{job_type\}/g, jobType)
+      .replace(/\{scheduled_time\}/g, formattedTime)
+      .replace(/\{company_name\}/g, companyName)
+      .replace(/\{company_phone\}/g, companyPhone)
+      .replace(/\{tech_name\}/g, techName)
+      .replace(/\{eta\}/g, eta)
+  }
+
   const insertTemplate = (templateBody: string) => {
+    const populatedTemplate = populateTemplate(templateBody)
     setNewMessage((prev) => {
       const separator = prev && !prev.endsWith(" ") ? " " : ""
-      return prev + separator + templateBody
+      return prev + separator + populatedTemplate
     })
   }
 
