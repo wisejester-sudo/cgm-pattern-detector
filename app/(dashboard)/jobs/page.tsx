@@ -1,12 +1,11 @@
 "use client"
 
-import { useEffect, useMemo, useCallback, useState } from "react"
+import { useEffect, useMemo, useCallback } from "react"
 import { toast } from "sonner"
 import { JobCard } from "@/components/job-card"
 import { CreateJobModal } from "@/components/create-job-modal"
-import { EditJobModal } from "@/components/edit-job-modal"
 import { useStore, getTechniciansByIds } from "@/lib/store"
-import type { JobStatus, Job } from "@/lib/types"
+import type { JobStatus } from "@/lib/types"
 
 const statusLabels: Record<JobStatus, string> = {
   available: "Available",
@@ -19,19 +18,11 @@ const statusLabels: Record<JobStatus, string> = {
 
 export default function JobsPage() {
   const { jobs, technicians, templates, settings, loadJobsFromSupabase } = useStore()
-  const [editingJob, setEditingJob] = useState<Job | null>(null)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   // Load jobs from Supabase on mount
   useEffect(() => {
     loadJobsFromSupabase()
   }, [loadJobsFromSupabase])
-
-  // Handle opening edit modal
-  const handleJobClick = useCallback((job: Job) => {
-    setEditingJob(job)
-    setIsEditModalOpen(true)
-  }, [])
 
   // Memoize handler to prevent unnecessary re-renders
   const handleStatusChange = useCallback(async (jobId: string, newStatus: JobStatus) => {
@@ -105,7 +96,6 @@ export default function JobsPage() {
             job={job}
             technicians={getTechniciansByIds(technicians, job.assigned_tech_ids)}
             onStatusChange={handleStatusChange}
-            onClick={handleJobClick}
           />
         ))}
       </div>
@@ -119,16 +109,6 @@ export default function JobsPage() {
         </div>
       )}
 
-      {/* Edit Job Modal */}
-      <EditJobModal
-        job={editingJob}
-        open={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
-        onJobUpdated={() => {
-          loadJobsFromSupabase()
-          setEditingJob(null)
-        }}
-      />
     </div>
   )
 }

@@ -47,6 +47,7 @@ import {
 import Link from "next/link"
 import Image from "next/image"
 import { useStore, getTechniciansByIds, getPhotosByJobId, renderTemplate } from "@/lib/store"
+import { EditJobModal } from "@/components/edit-job-modal"
 import type { JobStatus } from "@/lib/types"
 import { statusConfig } from "@/components/job-card"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
@@ -81,6 +82,7 @@ export default function JobDetailPage({
   const [notes, setNotes] = useState(job?.notes || "")
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   if (!job) {
     return (
@@ -213,11 +215,19 @@ export default function JobDetailPage({
             </h1>
             <p className="text-muted-foreground">Job #{id}</p>
           </div>
-          <Badge
-            className={`${statusConfig[job.status].className} text-sm px-3 py-1`}
-          >
-            {statusConfig[job.status].label}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsEditModalOpen(true)}
+            >
+              Edit Job
+            </Button>
+            <Badge
+              className={`${statusConfig[job.status].className} text-sm px-3 py-1`}
+            >
+              {statusConfig[job.status].label}
+            </Badge>
+          </div>
         </div>
       </div>
 
@@ -559,6 +569,16 @@ export default function JobDetailPage({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Job Modal */}
+      <EditJobModal
+        job={job}
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        onJobUpdated={() => {
+          // Job updated, refresh will happen automatically via store
+        }}
+      />
     </div>
   )
 }
