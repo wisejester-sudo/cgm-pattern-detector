@@ -53,11 +53,18 @@ export function JobNotes({ jobId }: JobNotesProps) {
         ? currentAdmin?.name || "Admin"
         : "Technician"
       
+      const token = await getSessionToken()
+      if (!token) {
+        toast.error("Authentication required. Please log in again.")
+        setIsSubmitting(false)
+        return
+      }
+      
       const response = await fetch(`/api/jobs/${jobId}/notes`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${await getSessionToken()}`
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
           content: newNote.trim(),
@@ -71,10 +78,17 @@ export function JobNotes({ jobId }: JobNotesProps) {
         loadNotes()
         toast.success("Note added")
       } else {
-        toast.error("Failed to add note")
+        const errorData = await response.json().catch(() => ({}))
+        console.error("Failed to add note:", response.status, errorData)
+        if (response.status === 401) {
+          toast.error("Session expired. Please refresh the page and try again.")
+        } else {
+          toast.error(errorData.error || "Failed to add note")
+        }
       }
     } catch (error) {
-      toast.error("Failed to add note")
+      console.error("Error adding note:", error)
+      toast.error("Network error. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
@@ -101,8 +115,21 @@ export function JobNotes({ jobId }: JobNotesProps) {
   }
 
   const getSessionToken = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    return session?.access_token || ""
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession()
+      if (error) {
+        console.error("Error getting session:", error)
+        return ""
+      }
+      if (!session) {
+        console.error("No session available")
+        return ""
+      }
+      return session.access_token
+    } catch (e) {
+      console.error("Exception getting session:", e)
+      return ""
+    }
   }
 
   const getAuthorIcon = (type: string) => {
