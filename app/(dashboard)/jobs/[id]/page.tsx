@@ -87,6 +87,7 @@ export default function JobDetailPage({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'overview' | 'activity' | 'messages' | 'photos' | 'notes'>('overview')
 
   // Load SMS logs when job loads
   useEffect(() => {
@@ -314,11 +315,41 @@ export default function JobDetailPage({
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Contact Information</CardTitle>
-          </CardHeader>
+      {/* Tab Navigation */}
+      <div className="border-b">
+        <div className="flex gap-1 overflow-x-auto">
+          {[
+            { id: 'overview', label: 'Overview', icon: '👤' },
+            { id: 'activity', label: 'Activity', icon: '📋' },
+            { id: 'messages', label: 'Messages', icon: '💬' },
+            { id: 'photos', label: 'Photos', icon: '📷' },
+            { id: 'notes', label: 'Notes', icon: '📝' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <span className="mr-2">{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div className="mt-4">
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Contact Information</CardTitle>
+              </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-muted">
@@ -498,26 +529,98 @@ export default function JobDetailPage({
             </div>
           </div>
         )}
+          </div>
+        )}
+
+        {/* Activity Tab */}
+        {activeTab === 'activity' && (
+          <div className="space-y-6">
+            <JobTimeline jobId={id} />
+          </div>
+        )}
+
+        {/* Messages Tab */}
+        {activeTab === 'messages' && (
+          <div className="max-w-2xl mx-auto">
+            <SmsConversation
+              jobId={id}
+              customerName={job.customer_name}
+              customerPhone={job.customer_phone}
+              messages={smsLogs.filter((log) => log.job_id === id)}
+              currentUserName={settings?.company_name || "Business"}
+              currentUserType="admin"
+              onSendMessage={handleSendMessage}
+              templates={templates}
+            />
+          </div>
+        )}
+
+        {/* Photos Tab */}
+        {activeTab === 'photos' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Job Photos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-4">
+                {jobPhotos.length === 0 && (
+                  <p className="text-muted-foreground">No photos yet.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Notes Tab */}
+        {activeTab === 'notes' && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Notes</CardTitle>
+              {!editingNotes && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEditingNotes(true)}
+                >
+                  Edit
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent>
+              {editingNotes ? (
+                <FieldGroup>
+                  <Field>
+                    <Textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows={4}
+                      placeholder="Add notes about this job..."
+                    />
+                  </Field>
+                  <div className="flex gap-2">
+                    <Button onClick={handleSaveNotes}>Save Notes</Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setNotes(job.notes || "")
+                        setEditingNotes(false)
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </FieldGroup>
+              ) : (
+                <p className="text-muted-foreground">
+                  {job.notes || "No notes added yet."}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      {/* Job Timeline */}
-      <JobTimeline jobId={id} />
-
-      {/* SMS Conversation Thread */}
-      <div className="mt-6">
-        <h2 className="text-lg font-semibold mb-4">Messages</h2>
-        <SmsConversation
-          jobId={id}
-          customerName={job.customer_name}
-          customerPhone={job.customer_phone}
-          messages={smsLogs.filter((log) => log.job_id === id)}
-          currentUserName={settings?.company_name || "Business"}
-          currentUserType="admin"
-          onSendMessage={handleSendMessage}
-          templates={templates}
-        />
-      </div>
-
+      {/* Dialogs */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
