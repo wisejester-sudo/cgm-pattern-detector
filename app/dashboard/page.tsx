@@ -9,7 +9,7 @@ import { Button, BrandButton } from "@/components/ui/button"
 import { useStore, getTechnicianById } from "@/lib/store"
 import { CreateJobModal } from "@/components/create-job-modal"
 import { NotificationsSection } from "@/components/notifications-section"
-import { isSameDayLocal, getTodayLocal } from "@/lib/date-utils"
+import { isSameDayLocal, getTodayLocal, isSameDayUTC, getTodayUTC } from "@/lib/date-utils"
 import type { JobStatus } from "@/lib/types"
 
 const statusConfig: Record<JobStatus, { label: string; className: string }> = {
@@ -47,6 +47,7 @@ export default function DashboardPage() {
 
   // Use local date comparison for "today's jobs" (what the user expects)
   const todayLocal = getTodayLocal()
+  const todayUTC = getTodayUTC()
   
   // Today's jobs - compare using local dates (user's timezone)
   const todaysJobs = jobs.filter((job) => {
