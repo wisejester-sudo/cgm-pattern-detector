@@ -262,7 +262,7 @@ export default function JobDetailPage({
               value={job.status}
               onValueChange={(v) => handleStatusChange(v as JobStatus)}
             >
-              <SelectTrigger className={`w-[140px] border-0 font-medium ${statusConfig[job.status].className}`}>
+              <SelectTrigger className={`w-[180px] border-0 font-medium ${statusConfig[job.status].className}`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
