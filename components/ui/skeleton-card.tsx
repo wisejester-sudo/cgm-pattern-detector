@@ -37,7 +37,7 @@ export function SkeletonCard({ className, header = true, lines = 3 }: SkeletonCa
 export function SkeletonStats() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {Array.from({ length: 4 }).map((i) => (
+      {Array.from({ length: 4 }).map((_, i) => (
         <Card key={i} className="animate-pulse">
           <CardHeader className="pb-2">
             <div className="h-4 w-24 bg-muted rounded" />
@@ -55,7 +55,7 @@ export function SkeletonStats() {
 export function SkeletonList({ count = 3 }: { count?: number }) {
   return (
     <div className="space-y-3">
-      {Array.from({ length: count }).map((i) => (
+      {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
           className="flex items-center gap-4 p-4 rounded-lg border animate-pulse"
