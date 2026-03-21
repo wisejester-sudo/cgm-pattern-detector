@@ -26,40 +26,44 @@ import {
   Cell,
   LineChart,
   Line,
-  AreaChart,
-  Area,
 } from "recharts"
 import {
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
+  Briefcase,
   Users,
   CheckCircle,
   Clock,
   Calendar,
   Wrench,
-  Target,
-  ArrowUpRight,
-  ArrowDownRight,
+  TrendingUp,
+  TrendingDown,
   Download,
-  Filter,
+  MessageSquare,
+  Timer,
+  Target,
 } from "lucide-react"
-import { format, subDays, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns"
+import { format, subDays, eachDayOfInterval, differenceInHours, parseISO } from "date-fns"
 
 const COLORS = {
-  primary: "#2563eb",
-  success: "#10b981",
-  warning: "#f59e0b",
-  danger: "#ef4444",
-  purple: "#8b5cf6",
-  gray: "#6b7280",
+  scheduled: "#3b82f6",
+  working: "#f59e0b",
+  complete: "#10b981",
+  enroute: "#8b5cf6",
+  onhold: "#ef4444",
+  available: "#6b7280",
 }
 
-const JOB_TYPE_COLORS = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"]
+const STATUS_COLORS = [
+  "#3b82f6", // scheduled - blue
+  "#8b5cf6", // en_route - purple
+  "#f59e0b", // working - amber
+  "#10b981", // complete - green
+  "#ef4444", // on_hold - red
+  "#6b7280", // available - gray
+]
 
 export default function AnalyticsPage() {
-  const { jobs, technicians, settings } = useStore()
-  const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d" | "ytd">("30d")
+  const { jobs, technicians, smsLogs } = useStore()
+  const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d" | "all">("30d")
   const [activeTab, setActiveTab] = useState("overview")
 
   // Calculate date range
@@ -72,7 +76,7 @@ export default function AnalyticsPage() {
         ? subDays(end, 30)
         : timeRange === "90d"
         ? subDays(end, 90)
-        : new Date(end.getFullYear(), 0, 1)
+        : new Date(0) // All time
     return { start, end }
   }, [timeRange])
 
@@ -84,72 +88,23 @@ export default function AnalyticsPage() {
     })
   }, [jobs, dateRange])
 
-  // ===== FINANCIAL METRICS =====
-  
-  // Total revenue (mock calculation based on job types)
-  const revenueMetrics = useMemo(() => {
-    const jobTypeValues: Record<string, number> = {
-      "Service Call": 150,
-      "Repair": 350,
-      "Installation": 2500,
-      "Maintenance": 120,
-      "Inspection": 89,
-      "Emergency": 450,
-    }
-
-    const totalRevenue = filteredJobs.reduce((sum, job) => {
-      return sum + (jobTypeValues[job.job_type] || 200)
-    }, 0)
-
-    const completedRevenue = filteredJobs
-      .filter((j) => j.status === "complete")
-      .reduce((sum, job) => sum + (jobTypeValues[job.job_type] || 200), 0)
-
-    const avgJobValue = filteredJobs.length > 0 ? totalRevenue / filteredJobs.length : 0
-
-    return {
-      totalRevenue,
-      completedRevenue,
-      avgJobValue,
-      outstandingRevenue: totalRevenue - completedRevenue,
-    }
-  }, [filteredJobs])
-
-  // Revenue by job type
-  const revenueByJobType = useMemo(() => {
-    const jobTypeValues: Record<string, number> = {
-      "Service Call": 150,
-      "Repair": 350,
-      "Installation": 2500,
-      "Maintenance": 120,
-      "Inspection": 89,
-      "Emergency": 450,
-    }
-
-    const data: Record<string, { revenue: number; count: number }> = {}
-    
-    filteredJobs.forEach((job) => {
-      if (!data[job.job_type]) {
-        data[job.job_type] = { revenue: 0, count: 0 }
-      }
-      data[job.job_type].revenue += jobTypeValues[job.job_type] || 200
-      data[job.job_type].count += 1
-    })
-
-    return Object.entries(data)
-      .map(([name, { revenue, count }]) => ({
-        name,
-        revenue,
-        count,
-        avgValue: Math.round(revenue / count),
-      }))
-      .sort((a, b) => b.revenue - a.revenue)
-  }, [filteredJobs])
-
   // ===== OPERATIONAL METRICS =====
 
-  // Job completion stats
-  const completionStats = useMemo(() => {
+  // Job status breakdown
+  const statusBreakdown = useMemo(() => {
+    const counts: Record<string, number> = {}
+    filteredJobs.forEach((job) => {
+      counts[job.status] = (counts[job.status] || 0) + 1
+    })
+    return Object.entries(counts).map(([status, count]) => ({
+      name: status.replace("_", " "),
+      count,
+      percentage: Math.round((count / filteredJobs.length) * 100),
+    }))
+  }, [filteredJobs])
+
+  // Completion metrics
+  const completionMetrics = useMemo(() => {
     const total = filteredJobs.length
     const completed = filteredJobs.filter((j) => j.status === "complete").length
     const inProgress = filteredJobs.filter(
@@ -167,7 +122,39 @@ export default function AnalyticsPage() {
     }
   }, [filteredJobs])
 
-  // Technician performance
+  // Average time to complete (for completed jobs)
+  const avgCompletionTime = useMemo(() => {
+    const completedJobs = filteredJobs.filter((j) => j.status === "complete")
+    
+    if (completedJobs.length === 0) return null
+
+    const totalHours = completedJobs.reduce((sum, job) => {
+      const created = parseISO(job.created_at)
+      const scheduled = parseISO(job.scheduled_time)
+      // Use scheduled time as proxy for completion (or updated_at if available)
+      const hours = differenceInHours(scheduled, created)
+      return sum + Math.abs(hours)
+    }, 0)
+
+    const avg = totalHours / completedJobs.length
+    return {
+      hours: Math.round(avg),
+      days: Math.round(avg / 24 * 10) / 10,
+    }
+  }, [filteredJobs])
+
+  // Jobs by type
+  const jobsByType = useMemo(() => {
+    const counts: Record<string, number> = {}
+    filteredJobs.forEach((job) => {
+      counts[job.job_type] = (counts[job.job_type] || 0) + 1
+    })
+    return Object.entries(counts)
+      .map(([type, count]) => ({ type, count }))
+      .sort((a, b) => b.count - a.count)
+  }, [filteredJobs])
+
+  // Technician performance (job counts only)
   const techPerformance = useMemo(() => {
     return technicians
       .filter((t) => t.is_active)
@@ -175,80 +162,99 @@ export default function AnalyticsPage() {
         const techJobs = filteredJobs.filter((j) =>
           j.assigned_tech_ids?.includes(tech.id)
         )
-        const completed = techJobs.filter((j) => j.status === "complete")
-        const totalRevenue = completed.reduce((sum, job) => {
-          const jobValue =
-            {
-              "Service Call": 150,
-              Repair: 350,
-              Installation: 2500,
-              Maintenance: 120,
-              Inspection: 89,
-              Emergency: 450,
-            }[job.job_type] || 200
-          return sum + jobValue
-        }, 0)
+        const completed = techJobs.filter((j) => j.status === "complete").length
+        const inProgress = techJobs.filter(
+          (j) => j.status === "working" || j.status === "en_route"
+        ).length
 
         return {
           name: tech.name,
           totalJobs: techJobs.length,
-          completedJobs: completed.length,
+          completed,
+          inProgress,
           completionRate:
             techJobs.length > 0
-              ? Math.round((completed.length / techJobs.length) * 100)
+              ? Math.round((completed / techJobs.length) * 100)
               : 0,
-          revenue: totalRevenue,
-          avgJobValue: completed.length > 0 ? Math.round(totalRevenue / completed.length) : 0,
         }
       })
-      .sort((a, b) => b.revenue - a.revenue)
+      .sort((a, b) => b.totalJobs - a.totalJobs)
   }, [filteredJobs, technicians])
 
   // Daily job trend
   const dailyTrend = useMemo(() => {
+    if (timeRange === "all") {
+      // Group by month for all time view
+      const months: Record<string, { jobs: number; completed: number }> = {}
+      
+      filteredJobs.forEach((job) => {
+        const month = format(parseISO(job.created_at), "MMM yyyy")
+        if (!months[month]) {
+          months[month] = { jobs: 0, completed: 0 }
+        }
+        months[month].jobs += 1
+        if (job.status === "complete") {
+          months[month].completed += 1
+        }
+      })
+
+      return Object.entries(months).map(([date, data]) => ({
+        date,
+        ...data,
+      }))
+    }
+
+    // Daily view for shorter ranges
     const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end })
     
     return days.map((day) => {
       const dayStr = format(day, "MMM dd")
       const dayJobs = filteredJobs.filter(
-        (j) => format(new Date(j.created_at), "yyyy-MM-dd") === format(day, "yyyy-MM-dd")
+        (j) => format(parseISO(j.created_at), "yyyy-MM-dd") === format(day, "yyyy-MM-dd")
       )
       
       return {
         date: dayStr,
-        total: dayJobs.length,
+        jobs: dayJobs.length,
         completed: dayJobs.filter((j) => j.status === "complete").length,
-        revenue: dayJobs.reduce((sum, job) => {
-          const values: Record<string, number> = {
-            "Service Call": 150,
-            Repair: 350,
-            Installation: 2500,
-            Maintenance: 120,
-            Inspection: 89,
-            Emergency: 450,
-          }
-          return sum + (values[job.job_type] || 200)
-        }, 0),
       }
     })
-  }, [filteredJobs, dateRange])
+  }, [filteredJobs, dateRange, timeRange])
 
   // Customer metrics
   const customerMetrics = useMemo(() => {
     const uniqueCustomers = new Set(filteredJobs.map((j) => j.customer_phone)).size
-    const repeatCustomers = filteredJobs.filter((job, index, self) => {
-      return self.findIndex((j) => j.customer_phone === job.customer_phone) !== index
-    }).length
+    
+    // Find repeat customers (customers with multiple jobs)
+    const customerJobs: Record<string, number> = {}
+    filteredJobs.forEach((job) => {
+      customerJobs[job.customer_phone] = (customerJobs[job.customer_phone] || 0) + 1
+    })
+    const repeatCustomers = Object.values(customerJobs).filter((count) => count > 1).length
 
     return {
       uniqueCustomers,
       repeatCustomers,
-      repeatRate:
-        uniqueCustomers > 0
-          ? Math.round((repeatCustomers / uniqueCustomers) * 100)
-          : 0,
+      repeatRate: uniqueCustomers > 0 ? Math.round((repeatCustomers / uniqueCustomers) * 100) : 0,
+      avgJobsPerCustomer: uniqueCustomers > 0 
+        ? Math.round((filteredJobs.length / uniqueCustomers) * 10) / 10 
+        : 0,
     }
   }, [filteredJobs])
+
+  // Communication metrics
+  const communicationMetrics = useMemo(() => {
+    const filteredSms = smsLogs.filter((sms) => {
+      const smsDate = new Date(sms.sent_at)
+      return smsDate >= dateRange.start && smsDate <= dateRange.end
+    })
+
+    return {
+      totalMessages: filteredSms.length,
+      inbound: filteredSms.filter((s) => s.direction === "inbound").length,
+      outbound: filteredSms.filter((s) => s.direction === "outbound").length,
+    }
+  }, [smsLogs, dateRange])
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -257,19 +263,19 @@ export default function AnalyticsPage() {
         <div>
           <h1 className="text-2xl font-bold">Business Analytics</h1>
           <p className="text-muted-foreground">
-            Track revenue, performance, and growth metrics
+            Track job performance, technician productivity, and customer metrics
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={timeRange} onValueChange={(v) => setTimeRange(v as any)}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-[150px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="7d">Last 7 days</SelectItem>
               <SelectItem value="30d">Last 30 days</SelectItem>
               <SelectItem value="90d">Last 90 days</SelectItem>
-              <SelectItem value="ytd">Year to date</SelectItem>
+              <SelectItem value="all">All time</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" size="icon">
@@ -282,7 +288,7 @@ export default function AnalyticsPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4 lg:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="revenue">Revenue</TabsTrigger>
+          <TabsTrigger value="jobs">Jobs</TabsTrigger>
           <TabsTrigger value="technicians">Technicians</TabsTrigger>
           <TabsTrigger value="customers">Customers</TabsTrigger>
         </TabsList>
@@ -292,117 +298,74 @@ export default function AnalyticsPage() {
           {/* KPI Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <KpiCard
-              title="Total Revenue"
-              value={`$${revenueMetrics.totalRevenue.toLocaleString()}`}
-              subtitle={`${completionStats.completed} jobs completed`}
-              icon={DollarSign}
-              trend="up"
-              color="green"
-            />
-            <KpiCard
-              title="Avg Job Value"
-              value={`$${Math.round(revenueMetrics.avgJobValue)}`}
-              subtitle="Per completed job"
-              icon={Target}
-              trend="neutral"
+              title="Total Jobs"
+              value={completionMetrics.total.toString()}
+              subtitle={`${completionMetrics.completed} completed`}
+              icon={Briefcase}
+              trend={completionMetrics.total > 10 ? "up" : "neutral"}
             />
             <KpiCard
               title="Completion Rate"
-              value={`${completionStats.completionRate}%`}
-              subtitle={`${completionStats.completed} of ${completionStats.total} jobs`}
+              value={`${completionMetrics.completionRate}%`}
+              subtitle={`${completionMetrics.completed} of ${completionMetrics.total} jobs`}
               icon={CheckCircle}
-              trend={completionStats.completionRate > 80 ? "up" : "down"}
-              color={completionStats.completionRate > 80 ? "green" : "amber"}
+              trend={completionMetrics.completionRate > 75 ? "up" : "down"}
+              color={completionMetrics.completionRate > 75 ? "green" : "amber"}
             />
             <KpiCard
-              title="Active Customers"
+              title="Active Technicians"
+              value={technicians.filter((t) => t.is_active).length.toString()}
+              subtitle="Available for work"
+              icon={Wrench}
+            />
+            <KpiCard
+              title="Unique Customers"
               value={customerMetrics.uniqueCustomers.toString()}
-              subtitle={`${customerMetrics.repeatRate}% repeat customers`}
+              subtitle={`${customerMetrics.repeatRate}% repeat rate`}
               icon={Users}
-              trend="up"
+              trend={customerMetrics.repeatRate > 30 ? "up" : "neutral"}
             />
           </div>
 
-          {/* Daily Trend Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Daily Performance</CardTitle>
-              <CardDescription>Revenue and jobs by day</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={dailyTrend}>
-                  <defs>
-                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" />
-                  <Tooltip />
-                  <Area
-                    yAxisId="left"
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke={COLORS.primary}
-                    fillOpacity={1}
-                    fill="url(#colorRevenue)"
-                    name="Revenue ($)"
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="total"
-                    stroke={COLORS.success}
-                    strokeWidth={2}
-                    name="Jobs"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Job Type Breakdown */}
+          {/* Job Status Distribution */}
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Revenue by Job Type</CardTitle>
+                <CardTitle>Job Status Breakdown</CardTitle>
+                <CardDescription>Current status of all jobs</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
-                      data={revenueByJobType}
+                      data={statusBreakdown}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
                       outerRadius={80}
                       paddingAngle={5}
-                      dataKey="revenue"
+                      dataKey="count"
                     >
-                      {revenueByJobType.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={JOB_TYPE_COLORS[index % JOB_TYPE_COLORS.length]} />
+                      {statusBreakdown.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={STATUS_COLORS[index % STATUS_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
+                    <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="mt-4 space-y-2">
-                  {revenueByJobType.slice(0, 5).map((type, index) => (
-                    <div key={type.name} className="flex items-center justify-between text-sm">
+                  {statusBreakdown.map((status, index) => (
+                    <div key={status.name} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
                         <div
                           className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: JOB_TYPE_COLORS[index % JOB_TYPE_COLORS.length] }}
+                          style={{ backgroundColor: STATUS_COLORS[index % STATUS_COLORS.length] }}
                         />
-                        <span>{type.name}</span>
+                        <span className="capitalize">{status.name}</span>
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className="text-muted-foreground">{type.count} jobs</span>
-                        <span className="font-medium">${type.revenue.toLocaleString()}</span>
+                        <Badge variant="secondary">{status.count}</Badge>
+                        <span className="text-muted-foreground w-12 text-right">{status.percentage}%</span>
                       </div>
                     </div>
                   ))}
@@ -412,7 +375,8 @@ export default function AnalyticsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Top Performing Technicians</CardTitle>
+                <CardTitle>Top Technicians</CardTitle>
+                <CardDescription>By jobs completed</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -425,17 +389,16 @@ export default function AnalyticsPage() {
                         <div>
                           <p className="font-medium">{tech.name}</p>
                           <p className="text-sm text-muted-foreground">
-                            {tech.completedJobs} jobs completed
+                            {tech.totalJobs} jobs assigned
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">${tech.revenue.toLocaleString()}</p>
                         <Badge
                           variant={tech.completionRate > 90 ? "default" : "secondary"}
                           className="text-xs"
                         >
-                          {tech.completionRate}% completion
+                          {tech.completed} completed
                         </Badge>
                       </div>
                     </div>
@@ -444,42 +407,98 @@ export default function AnalyticsPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Daily Trend */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Job Volume Trend</CardTitle>
+              <CardDescription>Jobs created over time</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={dailyTrend}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="jobs"
+                    stroke={COLORS.scheduled}
+                    strokeWidth={2}
+                    name="Total Jobs"
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="completed"
+                    stroke={COLORS.complete}
+                    strokeWidth={2}
+                    name="Completed"
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        {/* REVENUE TAB */}
-        <TabsContent value="revenue" className="space-y-6">
+        {/* JOBS TAB */}
+        <TabsContent value="jobs" className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-3">
             <KpiCard
-              title="Total Revenue"
-              value={`$${revenueMetrics.totalRevenue.toLocaleString()}`}
-              icon={DollarSign}
+              title="Total Jobs"
+              value={completionMetrics.total.toString()}
+              icon={Briefcase}
+            />
+            <KpiCard
+              title="Completed"
+              value={completionMetrics.completed.toString()}
+              icon={CheckCircle}
               color="green"
             />
             <KpiCard
-              title="Outstanding"
-              value={`$${revenueMetrics.outstandingRevenue.toLocaleString()}`}
+              title="In Progress"
+              value={completionMetrics.inProgress.toString()}
               icon={Clock}
               color="amber"
             />
-            <KpiCard
-              title="Avg Job Value"
-              value={`$${Math.round(revenueMetrics.avgJobValue)}`}
-              icon={Target}
-            />
           </div>
+
+          {avgCompletionTime && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Average Completion Time</CardTitle>
+                <CardDescription>Time from creation to scheduled completion</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-8">
+                  <div className="text-center">
+                    <p className="text-4xl font-bold">{avgCompletionTime.hours}</p>
+                    <p className="text-muted-foreground">hours</p>
+                  </div>
+                  <div className="text-2xl text-muted-foreground">or</div>
+                  <div className="text-center">
+                    <p className="text-4xl font-bold">{avgCompletionTime.days}</p>
+                    <p className="text-muted-foreground">days</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>
-              <CardTitle>Revenue by Job Type</CardTitle>
+              <CardTitle>Jobs by Type</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={revenueByJobType} layout="vertical">
+                <BarChart data={jobsByType} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
-                  <YAxis dataKey="name" type="category" width={100} />
-                  <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
-                  <Bar dataKey="revenue" fill={COLORS.primary} radius={[0, 4, 4, 0]} />
+                  <YAxis dataKey="type" type="category" width={120} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill={COLORS.scheduled} radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -490,8 +509,8 @@ export default function AnalyticsPage() {
         <TabsContent value="technicians" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Technician Performance Leaderboard</CardTitle>
-              <CardDescription>Ranked by revenue generated</CardDescription>
+              <CardTitle>Technician Performance</CardTitle>
+              <CardDescription>Jobs assigned and completed by technician</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -517,21 +536,19 @@ export default function AnalyticsPage() {
                       <div>
                         <p className="font-semibold text-lg">{tech.name}</p>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>{tech.totalJobs} total jobs</span>
-                          <span>{tech.completedJobs} completed</span>
+                          <span>{tech.totalJobs} assigned</span>
+                          <span>{tech.completed} completed</span>
+                          <span>{tech.inProgress} in progress</span>
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold">${tech.revenue.toLocaleString()}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant={tech.completionRate > 90 ? "default" : "secondary"}>
-                          {tech.completionRate}% completion
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          ${tech.avgJobValue} avg
-                        </span>
-                      </div>
+                      <Badge
+                        variant={tech.completionRate > 90 ? "default" : "secondary"}
+                        className="text-sm"
+                      >
+                        {tech.completionRate}% completion
+                      </Badge>
                     </div>
                   </div>
                 ))}
@@ -542,41 +559,48 @@ export default function AnalyticsPage() {
 
         {/* CUSTOMERS TAB */}
         <TabsContent value="customers" className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <KpiCard
               title="Unique Customers"
               value={customerMetrics.uniqueCustomers.toString()}
               icon={Users}
             />
             <KpiCard
-              title="Repeat Customer Rate"
+              title="Repeat Customers"
+              value={customerMetrics.repeatCustomers.toString()}
+              icon={Target}
+            />
+            <KpiCard
+              title="Repeat Rate"
               value={`${customerMetrics.repeatRate}%`}
               icon={TrendingUp}
               trend={customerMetrics.repeatRate > 30 ? "up" : "neutral"}
+            />
+            <KpiCard
+              title="Avg Jobs/Customer"
+              value={customerMetrics.avgJobsPerCustomer.toString()}
+              icon={Briefcase}
             />
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Customer Insights</CardTitle>
+              <CardTitle>Communication Activity</CardTitle>
+              <CardDescription>SMS messages sent and received</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="p-4 rounded-lg bg-muted/50 text-center">
-                  <p className="text-3xl font-bold">{customerMetrics.uniqueCustomers}</p>
-                  <p className="text-sm text-muted-foreground">Unique Customers</p>
+                  <p className="text-3xl font-bold">{communicationMetrics.totalMessages}</p>
+                  <p className="text-sm text-muted-foreground">Total Messages</p>
                 </div>
-                <div className="p-4 rounded-lg bg-muted/50 text-center">
-                  <p className="text-3xl font-bold">{customerMetrics.repeatCustomers}</p>
-                  <p className="text-sm text-muted-foreground">Repeat Customers</p>
+                <div className="p-4 rounded-lg bg-blue-50 text-center">
+                  <p className="text-3xl font-bold text-blue-600">{communicationMetrics.outbound}</p>
+                  <p className="text-sm text-muted-foreground">Sent</p>
                 </div>
-                <div className="p-4 rounded-lg bg-muted/50 text-center">
-                  <p className="text-3xl font-bold">
-                    {filteredJobs.length > 0
-                      ? Math.round(filteredJobs.length / customerMetrics.uniqueCustomers)
-                      : 0}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Jobs per Customer</p>
+                <div className="p-4 rounded-lg bg-green-50 text-center">
+                  <p className="text-3xl font-bold text-green-600">{communicationMetrics.inbound}</p>
+                  <p className="text-sm text-muted-foreground">Received</p>
                 </div>
               </div>
             </CardContent>
@@ -610,13 +634,18 @@ function KpiCard({
     red: "text-red-600",
   }
 
+  const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : null
+
   return (
     <Card>
       <CardContent className="pt-6">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className={`text-3xl font-bold mt-2 ${colorClasses[color]}`}>{value}</p>
+            <div className="flex items-center gap-2 mt-2">
+              <p className={`text-3xl font-bold ${colorClasses[color]}`}>{value}</p>
+              {TrendIcon && <TrendIcon className={`h-5 w-5 ${colorClasses[color]}`} />}
+            </div>
             {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
           </div>
           <div className="p-3 rounded-lg bg-muted">
