@@ -12,7 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Send, ChevronDown, Smile, Paperclip, MessageSquare } from "lucide-react"
+import { Send, ChevronDown, Smile, Paperclip, MessageSquare, Mic, Image, MapPin } from "lucide-react"
+import { RichSmsComposer } from "./rich-sms-composer"
 import { formatDistanceToNow } from "date-fns"
 import type { SmsLog } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -274,6 +275,44 @@ export function SmsConversation({
               </DropdownMenu>
             </div>
           )}
+
+          {/* Rich Media Attachments */}
+          <div className="flex items-center gap-1 pb-2">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              id="image-attachment"
+              onChange={(e) => {
+                if (e.target.files?.[0]) {
+                  setNewMessage(prev => prev + ` [Image: ${e.target.files![0].name}]`)
+                }
+              }}
+            />
+            <label htmlFor="image-attachment">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>
+                <span><Image className="h-4 w-4 text-muted-foreground" /></span>
+              </Button>
+            </label>
+            
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0"
+              onClick={() => setNewMessage(prev => prev + " [Location: Current Location]")}
+            >
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0"
+              onClick={() => setNewMessage(prev => prev + " [Voice Memo]")}
+            >
+              <Mic className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </div>
 
           {/* Message Input */}
           <div className="flex gap-2">
