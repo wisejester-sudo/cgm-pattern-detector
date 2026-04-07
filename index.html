@@ -251,6 +251,14 @@
         <div id="errorContainer"></div>
         
         <div class="results" id="results">
+            <div style="margin-bottom: 30px; padding: 20px; background: rgba(239, 68, 68, 0.1); border: 2px solid var(--danger); border-radius: 8px;">
+                <h4 style="color: var(--danger); margin-bottom: 10px;">⚠️ Medical Disclaimer</h4>
+                <p style="color: var(--text); font-size: 0.9rem; margin: 0;">
+                    <strong>This is NOT medical advice.</strong> This tool provides pattern analysis only. 
+                    Always consult your healthcare provider before making changes to your diabetes management. 
+                    Do not adjust insulin or medication based solely on this analysis.
+                </p>
+            </div>
             <div class="insight-card">
                 <h3>📈 Summary Statistics</h3>
                 <div class="stat-grid" id="summaryStats"></div>
@@ -469,17 +477,18 @@
         function detectPatterns(data) {
             const patterns = [];
             
-            // 1. DAWN PHENOMENON vs SOMOGYI EFFECT
+            // 1. DAWN PHENOMENON vs SOMOGYI EFFECT - Conservative thresholds
             const overnightLows = data.filter(r => r.hour >= 0 && r.hour <= 4 && r.glucose < 70);
-            const morningHighs = data.filter(r => r.hour >= 5 && r.hour <= 8 && r.glucose > 150);
+            const morningHighs = data.filter(r => r.hour >= 5 && r.hour <= 8 && r.glucose > 160);
             
-            if (overnightLows.length > 0 && morningHighs.length > 0) {
+            // Only report if multiple readings confirm pattern (avoid false positives)
+            if (overnightLows.length >= 2 && morningHighs.length >= 3) {
                 patterns.push({
                     time: 'Morning (5-8 AM)',
-                    desc: `Somogyi effect: Rebound high (${Math.round(morningHighs.reduce((a,b)=>a+b.glucose,0)/morningHighs.length)} mg/dL) after overnight low`,
+                    desc: `Somogyi effect: Rebound high (${Math.round(morningHighs.reduce((a,b)=>a+b.glucose,0)/morningHighs.length)} mg/dL) after ${overnightLows.length} overnight lows`,
                     type: 'warning'
                 });
-            } else if (morningHighs.length > 0) {
+            } else if (morningHighs.length >= 3 && overnightLows.length === 0) {
                 patterns.push({
                     time: 'Morning (5-8 AM)',
                     desc: `Dawn phenomenon: Natural cortisol spike to ${Math.round(morningHighs.reduce((a,b)=>a+b.glucose,0)/morningHighs.length)} mg/dL`,
@@ -675,25 +684,30 @@
             `;
             }).join('');
             
-            // Add recommendations section
+            // Add recommendations section - SAFER VERSION
             let recommendationsHtml = '';
             if (insights.patterns.length > 0) {
                 recommendationsHtml = '<div style="margin-top: 20px; padding: 15px; background: rgba(0, 212, 170, 0.1); border-left: 4px solid var(--primary); border-radius: 8px;">';
-                recommendationsHtml += '<h4 style="color: var(--primary); margin-bottom: 10px;">💡 Recommendations</h4><ul style="padding-left: 20px;">';
+                recommendationsHtml += '<h4 style="color: var(--primary); margin-bottom: 10px;">💡 Pattern Insights (Not Medical Advice)</h4><ul style="padding-left: 20px;">';
                 
                 insights.patterns.forEach(p => {
-                    if (p.type === 'low' || p.desc.includes('low')) {
-                        recommendationsHtml += '<li style="margin-bottom: 8px;">Consider reducing overnight basal insulin or having a small snack before bed</li>';
-                    }
-                    if (p.type === 'spike' && p.desc.includes('morning')) {
-                        recommendationsHtml += '<li style="margin-bottom: 8px;">Adjust morning basal insulin or consider pre-dosing</li>';
+                    if (p.desc.includes('low') && p.time.includes('Overnight')) {
+                        recommendationsHtml += '<li style="margin-bottom: 8px;"><strong>Pattern identified:</strong> Overnight lows detected. Consider discussing with your doctor. <em>Keep fast-acting glucose nearby at night.</em></li>';
                     }
                     if (p.desc.includes('Somogyi')) {
-                        recommendationsHtml += '<li style="margin-bottom: 8px;"><strong>Somogyi effect:</strong> Reduce evening insulin to prevent overnight lows</li>';
+                        recommendationsHtml += '<li style="margin-bottom: 8px;"><strong>Somogyi effect suspected:</strong> Low followed by rebound high. <em>Ask your provider about overnight insulin adjustment.</em></li>';
+                    }
+                    if (p.desc.includes('Dawn phenomenon')) {
+                        recommendationsHtml += '<li style="margin-bottom: 8px;"><strong>Dawn phenomenon detected:</strong> Natural morning rise. <em>Discuss morning basal timing with your doctor.</em></li>';
+                    }
+                    if (p.type === 'spike' && p.time.includes('Next')) {
+                        recommendationsHtml += '<li style="margin-bottom: 8px;"><strong>Trend alert:</strong> Rapid glucose change predicted. <em>Monitor closely and keep glucose tablets handy.</em></li>';
                     }
                 });
                 
-                recommendationsHtml += '</ul></div>';
+                recommendationsHtml += '</ul>';
+                recommendationsHtml += '<p style="margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(0,212,170,0.3); font-size: 0.85rem; color: var(--text-muted);"><strong>⚠️ Important:</strong> These are pattern observations only. Always consult your healthcare provider before making changes to insulin, medications, or treatment plans.</p>';
+                recommendationsHtml += '</div>';
             }
             
             document.getElementById('patternsList').innerHTML = patternsHtml + recommendationsHtml || '<p style="color: var(--text-muted);">No significant patterns detected</p>';
