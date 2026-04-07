@@ -79,29 +79,134 @@ open index.html
 3. Click "Analyze Patterns"
 4. Review comprehensive report
 
-## 📋 Example Output
+## 📋 What You'll See
+
+After uploading your CGM data, you'll get a comprehensive dashboard like this:
+
+---
+
+### 📊 Your CGM Analysis Results
+
+<div align="center">
+
+#### ⏱️ Time in Range
+```
+┌─────────────────────────────────────┐
+│                                     │
+│           67%  🎯                   │
+│      ████████████████░░░░░░         │
+│                                     │
+│   67% in range  •  23% high  •  10% low  │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+</div>
+
+#### 📈 Key Statistics
+
+| Metric | Value | Status |
+|--------|-------|--------|
+| **Average Glucose** | 124 mg/dL | ✅ Good |
+| **GMI** | 6.8% | ✅ Target |
+| **Std Deviation** | 42 | ⚠️ Variable |
+| **CV** | 34% | ⚠️ Moderate |
+
+---
+
+### 🔍 Pattern Detection
+
+<div style="background: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #ef4444;">
+
+⚠️ **Somogyi Effect Detected**  
+Rebound high (175 mg/dL) after overnight low (62 mg/dL)
+
+⚠️ **Morning Spikes**  
+73% of mornings show glucose >160 mg/dL (Dawn phenomenon)
+
+⚠️ **Overnight Lows**  
+4 episodes <70 mg/dL detected between 2-4 AM
+
+</div>
+
+---
+
+### 🍽️ Meal Impact Analysis
+
+<div align="center" style="background: rgba(0, 212, 170, 0.1); padding: 20px; border-radius: 8px;">
+
+### Your Personal Carb Ratio
+
+## **2.3 mg/dL**
+### rise per gram of carbs
+
+*Based on 12 logged meals with CGM correlation*
+
+</div>
+
+<br>
+
+#### 🚨 Foods That Spike You
 
 ```
-Your Personal Carb Ratio: 2.3 mg/dL per gram
-
-🚨 Foods That Spike You:
-- Pizza: 4.2 mg/dL/g (+85 mg/dL avg)
-- Orange juice: 3.8 mg/dL/g (+57 mg/dL avg)
-
-✅ Foods With Minimal Impact:
-- Greek yogurt: 1.2 mg/dL/g (+15 mg/dL avg)
-- Nuts: 0.9 mg/dL/g (+12 mg/dL avg)
-
-💡 Personalized Recommendations:
-- Pre-bolus 20 minutes before high-spike foods
-- Consider smaller pizza portions (cut carbs by 30%)
-- Good breakfast option: Greek yogurt with nuts
-
-Pattern Detection:
-- ⚠️ Somogyi effect detected (rebound highs)
-- ⚠️ 73% of mornings show spike >160 mg/dL
-- ⚠️ 4 overnight lows detected (<70 mg/dL)
+┌────────────────────────────────────────────────────┐
+│ 🍕 Pizza          4.2 mg/dL/g    +85 mg/dL avg     │
+│ 🧃 Orange Juice   3.8 mg/dL/g    +57 mg/dL avg     │
+│ 🍚 White Rice     3.1 mg/dL/g    +47 mg/dL avg     │
+└────────────────────────────────────────────────────┘
 ```
+
+#### ✅ Foods With Minimal Impact
+
+```
+┌────────────────────────────────────────────────────┐
+│ 🥛 Greek Yogurt   1.2 mg/dL/g    +15 mg/dL avg     │
+│ 🥜 Mixed Nuts     0.9 mg/dL/g    +12 mg/dL avg     │
+│ 🥑 Avocado        0.6 mg/dL/g    +8 mg/dL avg      │
+└────────────────────────────────────────────────────┘
+```
+
+---
+
+### 💡 Personalized Recommendations
+
+- **Pre-bolus timing:** Take insulin 15-20 minutes before high-spike foods
+- **Pizza strategy:** Consider cauliflower crust or smaller portions
+- **Breakfast swap:** Try Greek yogurt with nuts instead of cereal
+- **Overnight fix:** Discuss basal adjustments with your endo
+
+---
+
+### 📉 Visual Chart
+
+```
+Glucose (mg/dL)
+│
+200 ┤                              ╭─╮
+    │                         ╭────╯ ╰── Meal spike
+180 ┤                    ╭────╯
+    │               ╭────╯
+160 ┤          ╭────╯               Dawn
+    │     ╭────╯                    phenomenon
+140 ┤────╯                    ╭────╮
+    │                    ╭────╯    ╰──
+120 ┤               ╭────╯
+    │          ╭────╯
+100 ┤     ╭────╯                        Overnight
+    │────╯                              lows here
+ 80 ┤
+    │
+ 60 ┤────┬────┬────┬────┬────┬────┬────┬────
+    00   04   08   12   16   20   24
+                 Hours
+
+     🍽️    🍽️         🛏️
+    Lunch Dinner      Sleep
+```
+
+---
+
+## 📋 Example Output Summary
 
 ## 🧪 Testing
 
