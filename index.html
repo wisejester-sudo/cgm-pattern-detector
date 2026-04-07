@@ -314,11 +314,34 @@
         document.getElementById('cgmType').addEventListener('change', checkInputs);
         document.getElementById('csvFile').addEventListener('change', checkInputs);
         
+        // Also check on click in case change event doesn't fire
+        document.getElementById('csvFile').addEventListener('click', () => {
+            setTimeout(checkInputs, 100); // Delay to let file populate
+        });
+        
         function checkInputs() {
             const cgmType = document.getElementById('cgmType').value;
-            const file = document.getElementById('csvFile').files[0];
-            document.getElementById('analyzeBtn').disabled = !cgmType || !file;
+            const fileInput = document.getElementById('csvFile');
+            const hasFile = fileInput.files && fileInput.files.length > 0;
+            
+            console.log('Checking inputs:', { cgmType, hasFile, fileName: hasFile ? fileInput.files[0].name : 'none' });
+            
+            const btn = document.getElementById('analyzeBtn');
+            const shouldEnable = cgmType && hasFile;
+            
+            btn.disabled = !shouldEnable;
+            
+            if (shouldEnable) {
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
         }
+        
+        // Check on page load
+        checkInputs();
         
         // Drag and drop
         const dropZone = document.getElementById('dropZone');
