@@ -414,11 +414,16 @@
                             console.log('Auto-detected CGM type:', cgmType);
                         }
                         
-                        const data = parseCGMData(results.data, cgmType);
-                        window.cgmData = data;
-                        window.rawCGMData = results.data; // Store raw for meal parsing
-                        const insights = analyzePatterns(data);
-                        displayResults(insights, results.data, cgmType);
+                        const parsedData = parseCGMData(results.data, cgmType);
+                        const { readings, treatments } = parsedData;
+                        
+                        window.cgmData = readings;
+                        window.rawCGMData = results.data;
+                        window.cgmTreatments = treatments; // Store treatments globally
+                        
+                        const dailyAverages = calculateDailyAverages(readings);
+                        const insights = analyzePatterns(readings, treatments, dailyAverages);
+                        displayResults(insights, results.data, cgmType, treatments, dailyAverages);
                     } catch (error) {
                         showError('Error analyzing data: ' + error.message);
                     } finally {
@@ -449,6 +454,7 @@
         
         function parseCGMData(rawData, cgmType) {
             const readings = [];
+            const treatments = []; // Store meals/insulin events
             
             for (const row of rawData) {
                 let timestamp, glucose;
@@ -458,12 +464,31 @@
                     // Get Event Type with trimming
                     const eventType = (row['Event Type'] || '').trim();
                     
-                    // Skip patient info rows and non-EGV events
-                    // Only process EGV (Estimated Glucose Value) events
-                    if (!eventType || eventType !== 'EGV') continue;
+                    // Skip patient info rows
+                    if (!eventType) continue;
                     
                     // Handle Dexcom Clarity column names with trimming
                     const timestampCol = (row['Timestamp (YYYY-MM-DDThh:mm:ss)'] || row['Timestamp'] || '').trim();
+                    
+                    // Extract treatment data (Carbs, Insulin)
+                    if (eventType === 'Carbs' || eventType === 'Insulin') {
+                        const carbValue = parseFloat((row['Carb Value (grams)'] || row['Carb Value'] || '0').trim());
+                        const insulinValue = parseFloat((row['Insulin Value (u)'] || row['Insulin Value'] || '0').trim());
+                        
+                        if ((carbValue > 0 || insulinValue > 0) && timestampCol) {
+                            treatments.push({
+                                timestamp: new Date(timestampCol),
+                                type: eventType.toLowerCase(),
+                                carbs: carbValue,
+                                insulin: insulinValue
+                            });
+                        }
+                        continue;
+                    }
+                    
+                    // Only process EGV (Estimated Glucose Value) events for glucose readings
+                    if (eventType !== 'EGV') continue;
+                    
                     const glucoseCol = (row['Glucose Value (mg/dL)'] || row['Glucose Value'] || '').trim();
                     
                     if (!timestampCol || !glucoseCol) continue;
@@ -491,14 +516,45 @@
                 }
             }
             
-            return readings.sort((a, b) => a.timestamp - b.timestamp);
+            return {
+                readings: readings.sort((a, b) => a.timestamp - b.timestamp),
+                treatments: treatments.sort((a, b) => a.timestamp - b.timestamp)
+            };
         }
         
-        function analyzePatterns(data) {
-            if (data.length === 0) throw new Error('No valid glucose readings found');
+        function calculateDailyAverages(readings) {
+            const dailyData = {};
+            
+            for (const reading of readings) {
+                const dateStr = reading.timestamp.toISOString().split('T')[0]; // YYYY-MM-DD
+                
+                if (!dailyData[dateStr]) {
+                    dailyData[dateStr] = {
+                        readings: [],
+                        date: dateStr
+                    };
+                }
+                
+                dailyData[dateStr].readings.push(reading.glucose);
+            }
+            
+            // Calculate averages
+            const dailyAverages = Object.values(dailyData).map(day => ({
+                date: day.date,
+                avgGlucose: Math.round(day.readings.reduce((a, b) => a + b, 0) / day.readings.length),
+                minGlucose: Math.min(...day.readings),
+                maxGlucose: Math.max(...day.readings),
+                readingCount: day.readings.length
+            }));
+            
+            return dailyAverages.sort((a, b) => new Date(a.date) - new Date(b.date));
+        }
+        
+        function analyzePatterns(readings, treatments, dailyAverages) {
+            if (readings.length === 0) throw new Error('No valid glucose readings found');
             
             // Calculate statistics
-            const glucoseValues = data.map(d => d.glucose);
+            const glucoseValues = readings.map(d => d.glucose);
             const avg = glucoseValues.reduce((a, b) => a + b, 0) / glucoseValues.length;
             const min = Math.min(...glucoseValues);
             const max = Math.max(...glucoseValues);
@@ -508,20 +564,30 @@
             const tir = (inRange / glucoseValues.length * 100).toFixed(1);
             
             // Detect patterns
-            const patterns = detectPatterns(data);
+            const patterns = detectPatterns(readings);
             
             // Time-based analysis
-            const hourlyData = analyzeByHour(data);
+            const hourlyData = analyzeByHour(readings);
+            
+            // Treatment stats
+            const totalCarbs = treatments.filter(t => t.carbs > 0).reduce((sum, t) => sum + t.carbs, 0);
+            const totalInsulin = treatments.filter(t => t.insulin > 0).reduce((sum, t) => sum + t.insulin, 0);
+            const mealCount = treatments.filter(t => t.carbs > 0).length;
             
             return {
-                data,
+                data: readings,
+                treatments,
+                dailyAverages,
                 stats: {
                     avg: Math.round(avg),
                     min,
                     max,
                     tir,
-                    readings: data.length,
-                    days: Math.ceil((data[data.length - 1].timestamp - data[0].timestamp) / (1000 * 60 * 60 * 24))
+                    readings: readings.length,
+                    days: Math.ceil((readings[readings.length - 1].timestamp - readings[0].timestamp) / (1000 * 60 * 60 * 24)),
+                    totalCarbs,
+                    totalInsulin,
+                    mealCount
                 },
                 patterns,
                 hourlyData
