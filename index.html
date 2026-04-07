@@ -6,7 +6,6 @@
     <title>CGM Pattern Detector</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ml-regression@2.0.0/dist/ml-regression.min.js"></script>
     <style>
         :root {
             --bg: #0f0f23;
@@ -284,26 +283,20 @@
             </div>
             
             <div class="insight-card" id="mlSection" style="display: none;">
-                <h3>🧠 ML-Powered Insights</h3>
+                <h3>🧠 Pattern Analysis Complete</h3>
                 <div id="mlInsights"></div>
             </div>
             
             <div class="insight-card">
-                <h3>🍽️ Meal Impact Logger (Train the ML)</h3>
+                <h3>🍽️ About Meal Data</h3>
                 <p style="color: var(--text-muted); margin-bottom: 15px;">
-                    Log meals to teach the app your personal glucose response patterns
+                    Future versions will automatically detect meals from your CGM data.
+                    For now, focus on the patterns detected above.
                 </p>
-                <div id="mealLogger">
-                    <input type="datetime-local" id="mealTime" style="width: 200px; display: inline-block;">
-                    <input type="number" id="mealCarbs" placeholder="Carbs (g)" style="width: 120px; display: inline-block;">
-                    <select id="mealType" style="width: 150px; display: inline-block;">
-                        <option value="fast">Fast (juice/candy)</option>
-                        <option value="medium" selected>Medium (bread/rice)</option>
-                        <option value="slow">Slow (pizza/fat)</option>
-                    </select>
-                    <button onclick="logMeal()" style="margin-top: 0;">Log Meal</button>
-                </div>
-                <div id="mealHistory" style="margin-top: 15px;"></div>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                    <em>Note: Dexcom and Freestyle apps already track meals. This tool focuses on 
+                    analyzing the glucose patterns, not duplicating meal logging.</em>
+                </p>
             </div>
         </div>
         
@@ -801,11 +794,14 @@
             `;
         }
         
-        // ML-based Pattern Detection
-        let mlModel = null;
-        let trainingData = JSON.parse(localStorage.getItem('cgm_training') || '[]');
+        // Simplified pattern analysis (ML removed for MVP)
+        function initApp() {
+            checkInputs();
+            console.log('CGM Pattern Detector initialized');
+        }
         
-        function logMeal() {
+        // Initialize on load
+        initApp();
             const time = document.getElementById('mealTime').value;
             const carbs = parseInt(document.getElementById('mealCarbs').value);
             const type = document.getElementById('mealType').value;
