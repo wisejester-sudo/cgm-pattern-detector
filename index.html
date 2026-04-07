@@ -216,7 +216,12 @@
 <body>
     <div class="container">
         <header>
-            <h1>📊 CGM Pattern Detector</h1>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px;">
+                <h1>📊 CGM Pattern Detector</h1>
+                <a href="https://mieru.health" target="_blank" style="text-decoration: none; background: rgba(0, 212, 170, 0.15); padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; color: var(--primary); border: 1px solid rgba(0, 212, 170, 0.3); transition: all 0.2s;">
+                    🏥 Built by Mieru Health
+                </a>
+            </div>
             <p class="subtitle">Analyze your Dexcom or Freestyle Libre data for patterns and insights</p>
         </header>
         
@@ -993,5 +998,18 @@
         // Initialize on load
         initApp();
     </script>
+    
+    <footer style="text-align: center; padding: 30px 20px; margin-top: 40px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.9rem;">
+        <p style="margin-bottom: 10px;">
+            🏥 <strong style="color: var(--primary);">Built by <a href="https://mieru.health" target="_blank" style="color: var(--primary); text-decoration: none;">Mieru Health</a></strong>
+        </p>
+        <p style="font-size: 0.85rem;">
+            Making diabetes data actually useful through intelligent analysis
+        </p>
+        <p style="margin-top: 15px; font-size: 0.8rem;">
+            <a href="https://mieru.health" target="_blank" style="color: var(--text-muted); margin: 0 10px;">Visit Mieru Health</a> • 
+            <a href="https://github.com/wisejester-sudo/cgm-pattern-detector" target="_blank" style="color: var(--text-muted); margin: 0 10px;">GitHub</a>
+        </p>
+    </footer>
 </body>
 </html>
