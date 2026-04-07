@@ -446,34 +446,103 @@
         function detectPatterns(data) {
             const patterns = [];
             
-            // Morning spike detection (6-10 AM)
-            const morningReadings = data.filter(d => d.hour >= 6 && d.hour <= 10);
-            if (morningReadings.length > 0) {
-                const morningAvg = morningReadings.reduce((a, b) => a + b.glucose, 0) / morningReadings.length;
-                const overallAvg = data.reduce((a, b) => a + b.glucose, 0) / data.length;
-                if (morningAvg > overallAvg + 20) {
+            // 1. DAWN PHENOMENON vs SOMOGYI EFFECT
+            const overnightLows = data.filter(r => r.hour >= 0 && r.hour <= 4 && r.glucose < 70);
+            const morningHighs = data.filter(r => r.hour >= 5 && r.hour <= 8 && r.glucose > 150);
+            
+            if (overnightLows.length > 0 && morningHighs.length > 0) {
+                patterns.push({
+                    time: 'Morning (5-8 AM)',
+                    desc: `Somogyi effect: Rebound high (${Math.round(morningHighs.reduce((a,b)=>a+b.glucose,0)/morningHighs.length)} mg/dL) after overnight low`,
+                    type: 'warning'
+                });
+            } else if (morningHighs.length > 0) {
+                patterns.push({
+                    time: 'Morning (5-8 AM)',
+                    desc: `Dawn phenomenon: Natural cortisol spike to ${Math.round(morningHighs.reduce((a,b)=>a+b.glucose,0)/morningHighs.length)} mg/dL`,
+                    type: 'spike'
+                });
+            }
+            
+            // 2. DAY-OF-WEEK PATTERNS
+            const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const dayStats = {};
+            
+            for (let day = 0; day < 7; day++) {
+                const dayReadings = data.filter(r => r.dayOfWeek === day);
+                if (dayReadings.length > 0) {
+                    const avg = dayReadings.reduce((a, b) => a + b.glucose, 0) / dayReadings.length;
+                    const inRange = dayReadings.filter(r => r.glucose >= 70 && r.glucose <= 180).length;
+                    const tir = (inRange / dayReadings.length * 100).toFixed(1);
+                    dayStats[day] = { avg: Math.round(avg), tir, count: dayReadings.length };
+                }
+            }
+            
+            // Find worst day
+            let worstDay = null;
+            let lowestTIR = 100;
+            for (const [day, stats] of Object.entries(dayStats)) {
+                if (stats.tir < lowestTIR) {
+                    lowestTIR = stats.tir;
+                    worstDay = parseInt(day);
+                }
+            }
+            
+            if (worstDay !== null && lowestTIR < 70) {
+                patterns.push({
+                    time: daysOfWeek[worstDay],
+                    desc: `Lowest control: ${lowestTIR}% time in range (vs ${Object.values(dayStats).reduce((a,b)=>a+parseFloat(b.tir),0)/Object.keys(dayStats).length}% average)`,
+                    type: 'warning'
+                });
+            }
+            
+            // 3. TREND PREDICTION
+            if (data.length >= 3) {
+                const recent = data.slice(-3);
+                const rate = (recent[2].glucose - recent[0].glucose) / 10; // mg/dL per minute (assuming 5-min intervals)
+                const predictedIn30 = recent[2].glucose + (rate * 30);
+                
+                if (predictedIn30 < 70 && rate < -2) {
                     patterns.push({
-                        time: 'Morning (6-10 AM)',
-                        desc: `Average ${Math.round(morningAvg)} mg/dL - higher than your overall average`,
+                        time: 'Next 30 minutes',
+                        desc: `Trending to ${Math.round(predictedIn30)} mg/dL - low likely`,
+                        type: 'warning'
+                    });
+                } else if (predictedIn30 > 180 && rate > 2) {
+                    patterns.push({
+                        time: 'Next 30 minutes',
+                        desc: `Trending to ${Math.round(predictedIn30)} mg/dL - spike likely`,
                         type: 'spike'
                     });
                 }
             }
             
-            // Overnight low detection (12-6 AM)
+            // Original patterns
+            const morningReadings = data.filter(d => d.hour >= 6 && d.hour <= 10);
+            if (morningReadings.length > 0) {
+                const morningAvg = morningReadings.reduce((a, b) => a + b.glucose, 0) / morningReadings.length;
+                const overallAvg = data.reduce((a, b) => a + b.glucose, 0) / data.length;
+                if (morningAvg > overallAvg + 20 && !patterns.some(p => p.time.includes('Morning'))) {
+                    patterns.push({
+                        time: 'Morning (6-10 AM)',
+                        desc: `Average ${Math.round(morningAvg)} mg/dL - higher than overall`,
+                        type: 'spike'
+                    });
+                }
+            }
+            
             const overnightReadings = data.filter(d => d.hour >= 0 && d.hour <= 6);
             if (overnightReadings.length > 0) {
                 const lowCount = overnightReadings.filter(d => d.glucose < 70).length;
-                if (lowCount > 0) {
+                if (lowCount > 0 && !patterns.some(p => p.desc.includes('overnight'))) {
                     patterns.push({
                         time: 'Overnight (12-6 AM)',
-                        desc: `${lowCount} low glucose readings detected`,
+                        desc: `${lowCount} low readings`,
                         type: 'low'
                     });
                 }
             }
             
-            // Post-meal spike detection (simplified)
             for (let i = 1; i < data.length; i++) {
                 const rise = data[i].glucose - data[i-1].glucose;
                 if (rise > 50) {
@@ -486,7 +555,7 @@
                 }
             }
             
-            return patterns.slice(0, 5); // Top 5 patterns
+            return patterns.slice(0, 7);
         }
         
         function analyzeByHour(data) {
