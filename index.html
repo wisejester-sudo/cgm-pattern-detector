@@ -287,15 +287,23 @@
                 <div id="mlInsights"></div>
             </div>
             
+            <div class="insight-card" id="mealSection" style="display: none;">
+                <h3>🍽️ Meal Impact Analysis</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 15px;">
+                    Automatically detected meals from your CGM export:
+                </p>
+                <div id="mealAnalysis"></div>
+            </div>
+            
             <div class="insight-card">
-                <h3>🍽️ About Meal Data</h3>
+                <h3>📊 About Meal Data</h3>
                 <p style="color: var(--text-muted); margin-bottom: 15px;">
-                    Future versions will automatically detect meals from your CGM data.
-                    For now, focus on the patterns detected above.
+                    This tool automatically detects meals logged in your Dexcom or Freestyle app 
+                    and correlates them with your glucose response.
                 </p>
                 <p style="color: var(--text-muted); font-size: 0.9rem;">
-                    <em>Note: Dexcom and Freestyle apps already track meals. This tool focuses on 
-                    analyzing the glucose patterns, not duplicating meal logging.</em>
+                    <em>Make sure to log meals in your CGM app when you eat - this tool will 
+                    analyze how those meals affected your glucose.</em>
                 </p>
             </div>
         </div>
@@ -783,6 +791,9 @@
                     }
                 }
             });
+            
+            // Auto-detect meals from glucose patterns
+            displayMealAnalysis(insights.data);
             
             // Scroll to results
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
