@@ -792,8 +792,8 @@
                 }
             });
             
-            // Auto-detect meals from glucose patterns
-            displayMealAnalysis(insights.data);
+            // Comprehensive meal analysis with food correlation
+            displayMealAnalysis(insights.data, results.data, cgmType);
             
             // Scroll to results
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
