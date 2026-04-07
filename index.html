@@ -804,6 +804,186 @@
             `;
         }
         
+        // Parse meals from CGM data
+        function parseMeals(data, cgmType) {
+            const meals = [];
+            if (cgmType === 'dexcom') {
+                data.forEach(row => {
+                    if (row['Event Type'] === 'Food') {
+                        const carbs = parseInt(row['Carb Value']) || 0;
+                        if (carbs > 0) {
+                            meals.push({
+                                timestamp: new Date(row.Timestamp),
+                                carbs: carbs,
+                                foodName: row['Event Subtype'] || 'Meal',
+                                source: 'dexcom'
+                            });
+                        }
+                    }
+                });
+            }
+            return meals.sort((a, b) => a.timestamp - b.timestamp);
+        }
+        
+        // Correlate meals with glucose
+        function correlateMealsWithGlucose(meals, readings) {
+            return meals.map(meal => {
+                const beforeTime = new Date(meal.timestamp.getTime() - 30 * 60000);
+                const beforeReadings = readings.filter(r => 
+                    r.timestamp >= beforeTime && r.timestamp <= meal.timestamp
+                );
+                const glucoseBefore = beforeReadings.length > 0 
+                    ? beforeReadings[beforeReadings.length - 1].glucose : null;
+                
+                const peakTime = new Date(meal.timestamp.getTime() + 90 * 60000);
+                const afterReadings = readings.filter(r => 
+                    r.timestamp > meal.timestamp && r.timestamp <= peakTime
+                );
+                const glucosePeak = afterReadings.length > 0
+                    ? Math.max(...afterReadings.map(r => r.glucose)) : null;
+                
+                const rise = glucoseBefore && glucosePeak ? glucosePeak - glucoseBefore : null;
+                const mgPerGram = rise && meal.carbs > 0 ? (rise / meal.carbs) : null;
+                
+                return { ...meal, glucoseBefore, glucosePeak, rise, mgPerGram };
+            }).filter(m => m.glucoseBefore && m.glucosePeak);
+        }
+        
+        // Auto-detect meals from patterns
+        function autoDetectMeals(readings) {
+            const meals = [];
+            for (let i = 3; i < readings.length - 3; i++) {
+                const before = readings.slice(i-3, i);
+                const after = readings.slice(i, i+3);
+                const beforeAvg = before.reduce((a, b) => a + b.glucose, 0) / before.length;
+                const afterAvg = after.reduce((a, b) => a + b.glucose, 0) / after.length;
+                const rise = afterAvg - beforeAvg;
+                const peak = Math.max(...after.map(r => r.glucose));
+                
+                if (rise > 50 && peak > 140) {
+                    const postPeak = readings.slice(i+3, Math.min(i+8, readings.length));
+                    if (postPeak.length > 0) {
+                        const postAvg = postPeak.reduce((a, b) => a + b.glucose, 0) / postPeak.length;
+                        if (postAvg < peak - 20) {
+                            meals.push({
+                                time: readings[i].timestamp,
+                                estimatedCarbs: Math.round(rise / 3),
+                                glucoseRise: Math.round(rise),
+                                peakGlucose: Math.round(peak)
+                            });
+                        }
+                    }
+                }
+            }
+            return meals;
+        }
+        
+        // Generate food report
+        function generateFoodReport(correlatedMeals) {
+            if (correlatedMeals.length === 0) return null;
+            
+            const foodGroups = {};
+            correlatedMeals.forEach(meal => {
+                const key = meal.foodName.toLowerCase();
+                if (!foodGroups[key]) {
+                    foodGroups[key] = { name: meal.foodName, meals: [], avgRise: 0, avgMgPerGram: 0 };
+                }
+                foodGroups[key].meals.push(meal);
+            });
+            
+            Object.values(foodGroups).forEach(group => {
+                group.avgRise = group.meals.reduce((a, m) => a + m.rise, 0) / group.meals.length;
+                group.avgMgPerGram = group.meals.reduce((a, m) => a + (m.mgPerGram || 0), 0) / group.meals.length;
+            });
+            
+            const sortedFoods = Object.values(foodGroups).sort((a, b) => b.avgMgPerGram - a.avgMgPerGram);
+            
+            return {
+                foods: sortedFoods,
+                highSpikeFoods: sortedFoods.filter(f => f.avgMgPerGram > 3.0),
+                safeFoods: sortedFoods.filter(f => f.avgMgPerGram < 1.5),
+                personalRatio: correlatedMeals.reduce((a, m) => a + (m.mgPerGram || 0), 0) / correlatedMeals.length
+            };
+        }
+        
+        // Display meal analysis
+        function displayMealAnalysis(readings, rawData, cgmType) {
+            const meals = parseMeals(rawData, cgmType);
+            
+            if (meals.length === 0) {
+                const autoMeals = autoDetectMeals(readings);
+                if (autoMeals.length === 0) {
+                    document.getElementById('mealSection').style.display = 'none';
+                    return;
+                }
+                
+                document.getElementById('mealSection').style.display = 'block';
+                let html = '<p style="color: var(--text-muted); margin-bottom: 15px;">No logged meals found. Detected meals from glucose patterns:</p>';
+                html += '<div style="margin-top: 15px;">';
+                autoMeals.forEach((meal, i) => {
+                    html += `<div style="padding: 12px; background: rgba(0, 212, 170, 0.1); border-radius: 6px; margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <div><strong style="color: var(--primary);">Meal #${i + 1}</strong>
+                                <div style="color: var(--text-muted); font-size: 0.9rem;">${meal.time.toLocaleString()} • Est. ${meal.estimatedCarbs}g carbs</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: bold; color: var(--warning);">+${meal.glucoseRise} mg/dL</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Peak: ${meal.peakGlucose}</div>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                html += '</div>';
+                document.getElementById('mealAnalysis').innerHTML = html;
+                return;
+            }
+            
+            const correlatedMeals = correlateMealsWithGlucose(meals, readings);
+            const report = generateFoodReport(correlatedMeals);
+            
+            if (!report) {
+                document.getElementById('mealSection').style.display = 'none';
+                return;
+            }
+            
+            document.getElementById('mealSection').style.display = 'block';
+            let html = '<div style="margin-top: 15px;">';
+            
+            html += `<div style="padding: 15px; background: rgba(0, 212, 170, 0.1); border-radius: 8px; margin-bottom: 20px;">
+                <h4 style="color: var(--primary); margin-bottom: 10px;">Your Personal Carb Ratio</h4>
+                <div style="font-size: 2rem; font-weight: bold; color: var(--primary);">${report.personalRatio.toFixed(1)}</div>
+                <div style="color: var(--text-muted);">mg/dL rise per gram of carbs</div>
+                <div style="margin-top: 10px; font-size: 0.9rem; color: var(--text-muted);">Based on ${correlatedMeals.length} meals</div>
+            </div>`;
+            
+            if (report.highSpikeFoods.length > 0) {
+                html += '<h4 style="color: var(--danger); margin: 20px 0 10px;">🚨 Foods That Spike You</h4>';
+                report.highSpikeFoods.forEach(food => {
+                    html += `<div style="padding: 12px; background: rgba(239, 68, 68, 0.1); border-left: 4px solid var(--danger); border-radius: 6px; margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <div><strong>${food.name}</strong><div style="color: var(--text-muted); font-size: 0.85rem;">${food.meals.length} times</div></div>
+                            <div style="text-align: right;"><div style="font-weight: bold; color: var(--danger);">${food.avgMgPerGram.toFixed(1)} mg/dL/g</div></div>
+                        </div>
+                    </div>`;
+                });
+            }
+            
+            if (report.safeFoods.length > 0) {
+                html += '<h4 style="color: var(--success); margin: 20px 0 10px;">✅ Foods With Minimal Impact</h4>';
+                report.safeFoods.forEach(food => {
+                    html += `<div style="padding: 12px; background: rgba(16, 185, 129, 0.1); border-left: 4px solid var(--success); border-radius: 6px; margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <div><strong>${food.name}</strong><div style="color: var(--text-muted); font-size: 0.85rem;">${food.meals.length} times</div></div>
+                            <div style="text-align: right;"><div style="font-weight: bold; color: var(--success);">${food.avgMgPerGram.toFixed(1)} mg/dL/g</div></div>
+                        </div>
+                    </div>`;
+                });
+            }
+            
+            html += '</div>';
+            document.getElementById('mealAnalysis').innerHTML = html;
+        }
+        
         // Simplified pattern analysis (ML removed for MVP)
         function initApp() {
             checkInputs();
