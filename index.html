@@ -388,11 +388,10 @@
                 complete: function(results) {
                     try {
                         const data = parseCGMData(results.data, cgmType);
-                        window.cgmData = data; // Store globally for meal logger
+                        window.cgmData = data;
+                        window.rawCGMData = results.data; // Store raw for meal parsing
                         const insights = analyzePatterns(data);
-                        displayResults(insights);
-                        updateMealHistory();
-                        trainMLModel();
+                        displayResults(insights, results.data, cgmType);
                     } catch (error) {
                         showError('Error analyzing data: ' + error.message);
                     } finally {
@@ -613,7 +612,7 @@
             });
         }
         
-        function displayResults(insights) {
+        function displayResults(insights, rawData, cgmType) {
             // Show results section
             document.getElementById('results').classList.add('active');
             
@@ -793,7 +792,7 @@
             });
             
             // Comprehensive meal analysis with food correlation
-            displayMealAnalysis(insights.data, results.data, cgmType);
+            displayMealAnalysis(insights.data, rawData, cgmType);
             
             // Scroll to results
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
