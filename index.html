@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGM Pattern Detector</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f0f23;
+            --card-bg: #1a1a2e;
+            --text: #e0e0e0;
+            --text-muted: #888;
+            --primary: #00d4aa;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 40px 0;
+            border-bottom: 1px solid #2d2d44;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary), #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+        
+        .upload-section {
+            background: var(--card-bg);
+            border: 2px dashed #2d2d44;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: border-color 0.3s;
+        }
+        
+        .upload-section:hover {
+            border-color: var(--primary);
+        }
+        
+        .upload-section.dragover {
+            border-color: var(--primary);
+            background: rgba(0, 212, 170, 0.1);
+        }
+        
+        select, input[type="file"] {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px;
+            margin: 10px 0;
+            background: var(--bg);
+            border: 1px solid #2d2d44;
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 16px;
+        }
+        
+        button {
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .results {
+            display: none;
+        }
+        
+        .results.active {
+            display: block;
+        }
+        
+        .insight-card {
+            background: var(--card-bg);
+            border: 1px solid #2d2d44;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .insight-card h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat {
+            background: var(--bg);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .pattern-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        
+        .pattern-time {
+            font-weight: 600;
+        }
+        
+        .pattern-desc {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        
+        .privacy-notice {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 30px;
+            padding: 20px;
+            border-top: 1px solid #2d2d44;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 CGM Pattern Detector</h1>
+            <p class="subtitle">Analyze your Dexcom or Freestyle Libre data for patterns and insights</p>
+        </header>
+        
+        <div class="upload-section" id="dropZone">
+            <h2>Upload Your CGM Data</h2>
+            <p style="margin: 15px 0; color: var(--text-muted);">
+                Export from Dexcom Clarity or LibreView as CSV
+            </p>
+            
+            <select id="cgmType">
+                <option value="">Select your CGM...</option>
+                <option value="dexcom">Dexcom (G6/G7)</option>
+                <option value="libre">Freestyle Libre (2/3)</option>
+            </select>
+            
+            <br>
+            
+            <input type="file" id="csvFile" accept=".csv" />
+            
+            <br>
+            
+            <button onclick="analyzeData()" id="analyzeBtn" disabled>
+                🔍 Analyze Patterns
+            </button>
+            
+            <div class="loading" id="loading">
+                <p>Analyzing your glucose patterns...</p>
+            </div>
+        </div>
+        
+        <div id="errorContainer"></div>
+        
+        <div class="results" id="results">
+            <div class="insight-card">
+                <h3>📈 Summary Statistics</h3>
+                <div class="stat-grid" id="summaryStats"></div>
+            </div>
+            
+            <div class="insight-card">
+                <h3>📊 Glucose Over Time</h3>
+                <div class="chart-container">
+                    <canvas id="glucoseChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="insight-card">
+                <h3>🔍 Detected Patterns</h3>
+                <div id="patternsList"></div>
+            </div>
+            
+            <div class="insight-card">
+                <h3>⏰ Time-Based Analysis</h3>
+                <div class="chart-container">
+                    <canvas id="timeChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="privacy-notice">
+            🔒 <strong>Privacy First:</strong> Your data is processed entirely in your browser. 
+            Nothing is uploaded to any server. 
+            <a href="https://mieru.health" style="color: var(--primary);">Part of Mieru Health</a>
+        </div>
+    </div>
+
+    <script>
+        let chartInstance = null;
+        let timeChartInstance = null;
+        
+        // Enable/disable analyze button based on inputs
+        document.getElementById('cgmType').addEventListener('change', checkInputs);
+        document.getElementById('csvFile').addEventListener('change', checkInputs);
+        
+        function checkInputs() {
+            const cgmType = document.getElementById('cgmType').value;
+            const file = document.getElementById('csvFile').files[0];
+            document.getElementById('analyzeBtn').disabled = !cgmType || !file;
+        }
+        
+        // Drag and drop
+        const dropZone = document.getElementById('dropZone');
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('csvFile').files = files;
+                checkInputs();
+            }
+        });
+        
+        function analyzeData() {
+            const file = document.getElementById('csvFile').files[0];
+            const cgmType = document.getElementById('cgmType').value;
+            
+            if (!file || !cgmType) {
+                showError('Please select a CGM type and upload a CSV file');
+                return;
+            }
+            
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('errorContainer').innerHTML = '';
+            
+            Papa.parse(file, {
+                header: true,
+                complete: function(results) {
+                    try {
+                        const data = parseCGMData(results.data, cgmType);
+                        const insights = analyzePatterns(data);
+                        displayResults(insights);
+                    } catch (error) {
+                        showError('Error analyzing data: ' + error.message);
+                    } finally {
+                        document.getElementById('loading').classList.remove('active');
+                    }
+                },
+                error: function(error) {
+                    showError('Error parsing CSV: ' + error.message);
+                    document.getElementById('loading').classList.remove('active');
+                }
+            });
+        }
+        
+        function parseCGMData(rawData, cgmType) {
+            const readings = [];
+            
+            for (const row of rawData) {
+                let timestamp, glucose;
+                
+                if (cgmType === 'dexcom') {
+                    // Dexcom format
+                    if (row['Event Type'] !== 'EGV') continue; // Skip calibrations
+                    timestamp = new Date(row.Timestamp);
+                    glucose = parseInt(row['Glucose Value']);
+                } else {
+                    // Libre format
+                    const historic = row['Historic Glucose mmol/L'];
+                    const scan = row['Scan Glucose mmol/L'];
+                    const mmol = historic || scan;
+                    if (!mmol) continue;
+                    
+                    timestamp = new Date(row['Device Timestamp']);
+                    glucose = Math.round(parseFloat(mmol) * 18); // Convert to mg/dL
+                }
+                
+                if (!isNaN(glucose) && glucose > 0) {
+                    readings.push({
+                        timestamp,
+                        glucose,
+                        hour: timestamp.getHours(),
+                        dayOfWeek: timestamp.getDay()
+                    });
+                }
+            }
+            
+            return readings.sort((a, b) => a.timestamp - b.timestamp);
+        }
+        
+        function analyzePatterns(data) {
+            if (data.length === 0) throw new Error('No valid glucose readings found');
+            
+            // Calculate statistics
+            const glucoseValues = data.map(d => d.glucose);
+            const avg = glucoseValues.reduce((a, b) => a + b, 0) / glucoseValues.length;
+            const min = Math.min(...glucoseValues);
+            const max = Math.max(...glucoseValues);
+            
+            // Time in range (70-180 mg/dL)
+            const inRange = glucoseValues.filter(g => g >= 70 && g <= 180).length;
+            const tir = (inRange / glucoseValues.length * 100).toFixed(1);
+            
+            // Detect patterns
+            const patterns = detectPatterns(data);
+            
+            // Time-based analysis
+            const hourlyData = analyzeByHour(data);
+            
+            return {
+                data,
+                stats: {
+                    avg: Math.round(avg),
+                    min,
+                    max,
+                    tir,
+                    readings: data.length,
+                    days: Math.ceil((data[data.length - 1].timestamp - data[0].timestamp) / (1000 * 60 * 60 * 24))
+                },
+                patterns,
+                hourlyData
+            };
+        }
+        
+        function detectPatterns(data) {
+            const patterns = [];
+            
+            // Morning spike detection (6-10 AM)
+            const morningReadings = data.filter(d => d.hour >= 6 && d.hour <= 10);
+            if (morningReadings.length > 0) {
+                const morningAvg = morningReadings.reduce((a, b) => a + b.glucose, 0) / morningReadings.length;
+                const overallAvg = data.reduce((a, b) => a + b.glucose, 0) / data.length;
+                if (morningAvg > overallAvg + 20) {
+                    patterns.push({
+                        time: 'Morning (6-10 AM)',
+                        desc: `Average ${Math.round(morningAvg)} mg/dL - higher than your overall average`,
+                        type: 'spike'
+                    });
+                }
+            }
+            
+            // Overnight low detection (12-6 AM)
+            const overnightReadings = data.filter(d => d.hour >= 0 && d.hour <= 6);
+            if (overnightReadings.length > 0) {
+                const lowCount = overnightReadings.filter(d => d.glucose < 70).length;
+                if (lowCount > 0) {
+                    patterns.push({
+                        time: 'Overnight (12-6 AM)',
+                        desc: `${lowCount} low glucose readings detected`,
+                        type: 'low'
+                    });
+                }
+            }
+            
+            // Post-meal spike detection (simplified)
+            for (let i = 1; i < data.length; i++) {
+                const rise = data[i].glucose - data[i-1].glucose;
+                if (rise > 50) {
+                    const time = data[i].timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    patterns.push({
+                        time: time,
+                        desc: `Sharp rise of ${rise} mg/dL`,
+                        type: 'spike'
+                    });
+                }
+            }
+            
+            return patterns.slice(0, 5); // Top 5 patterns
+        }
+        
+        function analyzeByHour(data) {
+            const hourly = {};
+            for (let i = 0; i < 24; i++) {
+                hourly[i] = [];
+            }
+            
+            for (const d of data) {
+                hourly[d.hour].push(d.glucose);
+            }
+            
+            return Object.keys(hourly).map(hour => {
+                const values = hourly[hour];
+                const avg = values.length > 0 ? 
+                    values.reduce((a, b) => a + b, 0) / values.length : 0;
+                return {
+                    hour: parseInt(hour),
+                    avg: Math.round(avg),
+                    count: values.length
+                };
+            });
+        }
+        
+        function displayResults(insights) {
+            // Show results section
+            document.getElementById('results').classList.add('active');
+            
+            // Summary stats
+            const statsHtml = `
+                <div class="stat">
+                    <div class="stat-value">${insights.stats.tir}%</div>
+                    <div class="stat-label">Time in Range</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${insights.stats.avg}</div>
+                    <div class="stat-label">Average Glucose</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${insights.stats.readings}</div>
+                    <div class="stat-label">Readings</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${insights.stats.days}</div>
+                    <div class="stat-label">Days</div>
+                </div>
+            `;
+            document.getElementById('summaryStats').innerHTML = statsHtml;
+            
+            // Patterns
+            const patternsHtml = insights.patterns.map(p => `
+                <div class="pattern-item">
+                    <div>
+                        <div class="pattern-time">${p.time}</div>
+                        <div class="pattern-desc">${p.desc}</div>
+                    </div>
+                    <span style="color: ${p.type === 'spike' ? 'var(--warning)' : 'var(--danger)'};">
+                        ${p.type === 'spike' ? '⚠️' : '🔴'}
+                    </span>
+                </div>
+            `).join('');
+            document.getElementById('patternsList').innerHTML = patternsHtml || '<p style="color: var(--text-muted);">No significant patterns detected</p>';
+            
+            // Glucose chart
+            const ctx = document.getElementById('glucoseChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: insights.data.map(d => d.timestamp.toLocaleDateString()),
+                    datasets: [{
+                        label: 'Glucose (mg/dL)',
+                        data: insights.data.map(d => d.glucose),
+                        borderColor: '#00d4aa',
+                        backgroundColor: 'rgba(0, 212, 170, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            min: 40,
+                            max: 300,
+                            grid: { color: '#2d2d44' },
+                            ticks: { color: '#888' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#888' }
+                        }
+                    }
+                }
+            });
+            
+            // Time-based chart
+            const timeCtx = document.getElementById('timeChart').getContext('2d');
+            if (timeChartInstance) timeChartInstance.destroy();
+            
+            timeChartInstance = new Chart(timeCtx, {
+                type: 'bar',
+                data: {
+                    labels: insights.hourlyData.map(d => `${d.hour}:00`),
+                    datasets: [{
+                        label: 'Average Glucose',
+                        data: insights.hourlyData.map(d => d.avg),
+                        backgroundColor: insights.hourlyData.map(d => 
+                            d.avg > 180 ? 'rgba(239, 68, 68, 0.7)' :
+                            d.avg < 70 ? 'rgba(239, 68, 68, 0.7)' :
+                            'rgba(0, 212, 170, 0.7)'
+                        ),
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 300,
+                            grid: { color: '#2d2d44' },
+                            ticks: { color: '#888' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#888' }
+                        }
+                    }
+                }
+            });
+            
+            // Scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function showError(message) {
+            document.getElementById('errorContainer').innerHTML = `
+                <div class="error">❌ ${message}</div>
+            `;
+        }
+    </script>
+</body>
+</html>
