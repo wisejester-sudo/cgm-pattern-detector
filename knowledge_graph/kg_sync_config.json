@@ -1,0 +1,35 @@
+{
+  "silent_hours": {
+    "start": "22:00",
+    "end": "08:00"
+  },
+  "notification_policy": {
+    "on_success": false,
+    "on_failure": false,
+    "on_critical": true,
+    "on_significant_change": false,
+    "completely_silent": true
+  },
+  "console_output": false,
+  "sync_rules": {
+    "deduplicate": true,
+    "incremental_only": true,
+    "min_interval_minutes": 5,
+    "max_staleness_hours": 24
+  },
+  "sources": {
+    "cojma/data/knowledge_graph.json": {
+      "triggers": ["file_change", "market_open"],
+      "priority": "high"
+    },
+    "projects/dispatchly/knowledge_graph_entities.json": {
+      "triggers": ["file_change", "git_commit"],
+      "priority": "medium"
+    },
+    "memory/*.md": {
+      "triggers": ["file_change"],
+      "priority": "low",
+      "batch_window_minutes": 30
+    }
+  }
+}
