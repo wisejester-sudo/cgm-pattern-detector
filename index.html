@@ -6,6 +6,7 @@
     <title>CGM Pattern Detector</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ml-regression@2.0.0/dist/ml-regression.min.js"></script>
     <style>
         :root {
             --bg: #0f0f23;
@@ -273,6 +274,29 @@
                     <canvas id="timeChart"></canvas>
                 </div>
             </div>
+            
+            <div class="insight-card" id="mlSection" style="display: none;">
+                <h3>🧠 ML-Powered Insights</h3>
+                <div id="mlInsights"></div>
+            </div>
+            
+            <div class="insight-card">
+                <h3>🍽️ Meal Impact Logger (Train the ML)</h3>
+                <p style="color: var(--text-muted); margin-bottom: 15px;">
+                    Log meals to teach the app your personal glucose response patterns
+                </p>
+                <div id="mealLogger">
+                    <input type="datetime-local" id="mealTime" style="width: 200px; display: inline-block;">
+                    <input type="number" id="mealCarbs" placeholder="Carbs (g)" style="width: 120px; display: inline-block;">
+                    <select id="mealType" style="width: 150px; display: inline-block;">
+                        <option value="fast">Fast (juice/candy)</option>
+                        <option value="medium" selected>Medium (bread/rice)</option>
+                        <option value="slow">Slow (pizza/fat)</option>
+                    </select>
+                    <button onclick="logMeal()" style="margin-top: 0;">Log Meal</button>
+                </div>
+                <div id="mealHistory" style="margin-top: 15px;"></div>
+            </div>
         </div>
         
         <div class="privacy-notice">
@@ -332,8 +356,11 @@
                 complete: function(results) {
                     try {
                         const data = parseCGMData(results.data, cgmType);
+                        window.cgmData = data; // Store globally for meal logger
                         const insights = analyzePatterns(data);
                         displayResults(insights);
+                        updateMealHistory();
+                        trainMLModel();
                     } catch (error) {
                         showError('Error analyzing data: ' + error.message);
                     } finally {
@@ -610,6 +637,174 @@
             document.getElementById('errorContainer').innerHTML = `
                 <div class="error">❌ ${message}</div>
             `;
+        }
+        
+        // ML-based Pattern Detection
+        let mlModel = null;
+        let trainingData = JSON.parse(localStorage.getItem('cgm_training') || '[]');
+        
+        function logMeal() {
+            const time = document.getElementById('mealTime').value;
+            const carbs = parseInt(document.getElementById('mealCarbs').value);
+            const type = document.getElementById('mealType').value;
+            
+            if (!time || !carbs) {
+                alert('Please enter time and carbs');
+                return;
+            }
+            
+            // Find glucose readings around meal time
+            const mealTimestamp = new Date(time);
+            const beforeMeal = findClosestReading(mealTimestamp, -30); // 30 min before
+            const afterMeal = findClosestReading(mealTimestamp, 60);   // 60 min after
+            
+            if (!beforeMeal || !afterMeal) {
+                alert('No glucose data found around meal time');
+                return;
+            }
+            
+            const rise = afterMeal.glucose - beforeMeal.glucose;
+            
+            const training = {
+                timestamp: time,
+                carbs,
+                mealType: type,
+                rise,
+                glucoseBefore: beforeMeal.glucose,
+                hour: mealTimestamp.getHours()
+            };
+            
+            trainingData.push(training);
+            localStorage.setItem('cgm_training', JSON.stringify(trainingData));
+            
+            updateMealHistory();
+            trainMLModel();
+            
+            // Show success
+            alert(`Meal logged! Rise: ${rise} mg/dL for ${carbs}g ${type} carbs`);
+        }
+        
+        function findClosestReading(targetTime, offsetMinutes) {
+            const target = new Date(targetTime.getTime() + offsetMinutes * 60000);
+            let closest = null;
+            let minDiff = Infinity;
+            
+            for (const d of window.cgmData || []) {
+                const diff = Math.abs(d.timestamp - target);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closest = d;
+                }
+            }
+            
+            return minDiff < 15 * 60000 ? closest : null; // Within 15 min
+        }
+        
+        function updateMealHistory() {
+            const history = document.getElementById('mealHistory');
+            if (trainingData.length === 0) {
+                history.innerHTML = '<p style="color: var(--text-muted);">No meals logged yet</p>';
+                return;
+            }
+            
+            const recent = trainingData.slice(-5).reverse();
+            history.innerHTML = recent.map(t => `
+                <div style="padding: 8px; background: var(--bg); border-radius: 4px; margin-bottom: 5px;">
+                    ${new Date(t.timestamp).toLocaleString()} - ${t.carbs}g ${t.mealType} 
+                    → ${t.rise > 0 ? '+' : ''}${t.rise} mg/dL
+                </div>
+            `).join('');
+        }
+        
+        function trainMLModel() {
+            if (trainingData.length < 5) {
+                document.getElementById('mlSection').style.display = 'none';
+                return;
+            }
+            
+            // Train meal-type specific models
+            const types = ['fast', 'medium', 'slow'];
+            const models = {};
+            
+            for (const type of types) {
+                const typeData = trainingData.filter(t => t.mealType === type);
+                if (typeData.length < 3) continue;
+                
+                const x = typeData.map(t => t.carbs);
+                const y = typeData.map(t => t.rise);
+                
+                try {
+                    const regression = new MLRegression.SLR(x, y);
+                    
+                    // Calculate R²
+                    const yMean = y.reduce((a, b) => a + b, 0) / y.length;
+                    const ssTotal = y.reduce((sum, val) => sum + Math.pow(val - yMean, 2), 0);
+                    const predictions = x.map(val => regression.predict(val));
+                    const ssResidual = y.reduce((sum, val, i) => sum + Math.pow(val - predictions[i], 2), 0);
+                    const r2 = Math.max(0, 1 - (ssResidual / ssTotal));
+                    
+                    models[type] = {
+                        slope: regression.slope,
+                        intercept: regression.intercept,
+                        r2,
+                        count: typeData.length
+                    };
+                } catch (e) {
+                    console.error(`Failed to train ${type} model:`, e);
+                }
+            }
+            
+            mlModel = models;
+            displayMLInsights(models);
+        }
+        
+        function displayMLInsights(models) {
+            document.getElementById('mlSection').style.display = 'block';
+            
+            let html = '<div class="stat-grid">';
+            
+            for (const [type, model] of Object.entries(models)) {
+                if (!model) continue;
+                
+                const mgPerGram = model.slope.toFixed(1);
+                const confidence = Math.round(model.r2 * 100);
+                
+                html += `
+                    <div class="stat">
+                        <div class="stat-value">${mgPerGram}</div>
+                        <div class="stat-label">mg/dL per gram (${type})</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">
+                            ${model.count} meals • ${confidence}% confidence
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            
+            // Add prediction example
+            html += '<div style="margin-top: 20px; padding: 15px; background: var(--bg); border-radius: 8px;">';
+            html += '<h4 style="color: var(--primary); margin-bottom: 10px;">📊 Personalized Predictions</h4>';
+            html += '<p style="color: var(--text-muted); font-size: 0.9rem;">';
+            html += 'Based on your logged meals, here\'s what to expect:</p>';
+            html += '<ul style="margin-top: 10px; padding-left: 20px;">;
+            
+            for (const [type, model] of Object.entries(models)) {
+                if (!model) continue;
+                const exampleCarbs = type === 'fast' ? 15 : type === 'medium' ? 30 : 45;
+                const predictedRise = Math.round(model.slope * exampleCarbs + model.intercept);
+                html += `<li style="margin-bottom: 5px;">${type} meal (${exampleCarbs}g): ~${predictedRise} mg/dL rise</li>`;
+            }
+            
+            html += '</ul></div>';
+            
+            document.getElementById('mlInsights').innerHTML = html;
+        }
+        
+        // Initialize
+        updateMealHistory();
+        if (trainingData.length >= 5) {
+            trainMLModel();
         }
     </script>
 </body>
