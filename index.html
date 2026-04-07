@@ -378,10 +378,10 @@
         
         function analyzeData() {
             const file = document.getElementById('csvFile').files[0];
-            const cgmType = document.getElementById('cgmType').value;
+            let cgmType = document.getElementById('cgmType').value;
             
-            if (!file || !cgmType) {
-                showError('Please select a CGM type and upload a CSV file');
+            if (!file) {
+                showError('Please upload a CSV file');
                 return;
             }
             
@@ -392,6 +392,28 @@
                 header: true,
                 complete: function(results) {
                     try {
+                        // Check for empty CSV
+                        if (!results.data || results.data.length === 0) {
+                            throw new Error('CSV file is empty');
+                        }
+                        
+                        // Check if CSV has only headers (no data rows)
+                        const nonEmptyRows = results.data.filter(row => 
+                            Object.values(row).some(val => val && val.trim() !== '')
+                        );
+                        if (nonEmptyRows.length === 0) {
+                            throw new Error('CSV file contains no data (only headers)');
+                        }
+                        
+                        // Auto-detect CGM type if not selected
+                        if (!cgmType || cgmType === 'auto') {
+                            cgmType = detectCGMType(results.data);
+                            if (!cgmType) {
+                                throw new Error('Could not auto-detect CGM type. Please select Dexcom or Libre manually.');
+                            }
+                            console.log('Auto-detected CGM type:', cgmType);
+                        }
+                        
                         const data = parseCGMData(results.data, cgmType);
                         window.cgmData = data;
                         window.rawCGMData = results.data; // Store raw for meal parsing
@@ -410,6 +432,21 @@
             });
         }
         
+        function detectCGMType(data) {
+            // Check first few rows for column name patterns
+            for (const row of data.slice(0, 10)) {
+                // Dexcom Clarity has these specific columns
+                if (row['Event Type'] || row['Glucose Value (mg/dL)'] || row['Glucose Value']) {
+                    return 'dexcom';
+                }
+                // Libre has these columns
+                if (row['Historic Glucose mmol/L'] || row['Scan Glucose mmol/L'] || row['Device Timestamp']) {
+                    return 'libre';
+                }
+            }
+            return null;
+        }
+        
         function parseCGMData(rawData, cgmType) {
             const readings = [];
             
@@ -418,17 +455,21 @@
                 
                 if (cgmType === 'dexcom') {
                     // Dexcom Clarity format
-                    // Skip patient info rows and non-EGV events
-                    if (!row['Event Type'] || row['Event Type'] !== 'EGV') continue;
+                    // Get Event Type with trimming
+                    const eventType = (row['Event Type'] || '').trim();
                     
-                    // Handle Dexcom Clarity column names
-                    const timestampCol = row['Timestamp (YYYY-MM-DDThh:mm:ss)'] || row['Timestamp'];
-                    const glucoseCol = row['Glucose Value (mg/dL)'] || row['Glucose Value'];
+                    // Skip patient info rows and non-EGV events
+                    // Only process EGV (Estimated Glucose Value) events
+                    if (!eventType || eventType !== 'EGV') continue;
+                    
+                    // Handle Dexcom Clarity column names with trimming
+                    const timestampCol = (row['Timestamp (YYYY-MM-DDThh:mm:ss)'] || row['Timestamp'] || '').trim();
+                    const glucoseCol = (row['Glucose Value (mg/dL)'] || row['Glucose Value'] || '').trim();
                     
                     if (!timestampCol || !glucoseCol) continue;
                     
                     timestamp = new Date(timestampCol);
-                    glucose = parseInt(glucoseCol);
+                    glucose = parseInt(glucoseCol, 10);
                 } else {
                     // Libre format
                     const historic = row['Historic Glucose mmol/L'];
