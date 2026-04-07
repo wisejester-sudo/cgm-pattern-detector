@@ -607,40 +607,96 @@
             // Show results section
             document.getElementById('results').classList.add('active');
             
-            // Summary stats
+            // Summary stats with better formatting
             const statsHtml = `
-                <div class="stat">
-                    <div class="stat-value">${insights.stats.tir}%</div>
+                <div class="stat" style="border-left: 4px solid var(--primary);">
+                    <div class="stat-value" style="color: var(--primary);">${insights.stats.tir}%</div>
                     <div class="stat-label">Time in Range</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">Target: 70-180 mg/dL</div>
                 </div>
-                <div class="stat">
-                    <div class="stat-value">${insights.stats.avg}</div>
+                <div class="stat" style="border-left: 4px solid #6366f1;">
+                    <div class="stat-value" style="color: #6366f1;">${insights.stats.avg}</div>
                     <div class="stat-label">Average Glucose</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">mg/dL</div>
                 </div>
-                <div class="stat">
-                    <div class="stat-value">${insights.stats.readings}</div>
+                <div class="stat" style="border-left: 4px solid var(--warning);">
+                    <div class="stat-value" style="color: var(--warning);">${insights.stats.min}</div>
+                    <div class="stat-label">Lowest</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">mg/dL</div>
+                </div>
+                <div class="stat" style="border-left: 4px solid var(--danger);">
+                    <div class="stat-value" style="color: var(--danger);">${insights.stats.max}</div>
+                    <div class="stat-label">Highest</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">mg/dL</div>
+                </div>
+                <div class="stat" style="border-left: 4px solid #888;">
+                    <div class="stat-value" style="color: #888;">${insights.stats.readings}</div>
                     <div class="stat-label">Readings</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">Total data points</div>
                 </div>
-                <div class="stat">
-                    <div class="stat-value">${insights.stats.days}</div>
+                <div class="stat" style="border-left: 4px solid #888;">
+                    <div class="stat-value" style="color: #888;">${insights.stats.days}</div>
                     <div class="stat-label">Days</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">Time span</div>
                 </div>
             `;
             document.getElementById('summaryStats').innerHTML = statsHtml;
             
-            // Patterns
-            const patternsHtml = insights.patterns.map(p => `
-                <div class="pattern-item">
-                    <div>
-                        <div class="pattern-time">${p.time}</div>
-                        <div class="pattern-desc">${p.desc}</div>
-                    </div>
-                    <span style="color: ${p.type === 'spike' ? 'var(--warning)' : 'var(--danger)'};">
-                        ${p.type === 'spike' ? '⚠️' : '🔴'}
-                    </span>
+            // Add upload summary
+            const summaryDiv = document.createElement('div');
+            summaryDiv.innerHTML = `
+                <div style="margin-bottom: 30px; padding: 15px; background: var(--card-bg); border-radius: 8px; border-left: 4px solid var(--primary);">
+                    <h4 style="color: var(--primary); margin-bottom: 10px;">📊 Upload Summary</h4>
+                    <p style="color: var(--text); margin: 5px 0;"><strong>CGM Type:</strong> ${document.getElementById('cgmType').value === 'dexcom' ? 'Dexcom' : 'Freestyle Libre'}</p>
+                    <p style="color: var(--text); margin: 5px 0;"><strong>Readings:</strong> ${insights.stats.readings} glucose readings</p>
+                    <p style="color: var(--text); margin: 5px 0;"><strong>Time Span:</strong> ${insights.stats.days} days</p>
+                    <p style="color: var(--text-muted); margin: 5px 0; font-size: 0.9rem;">Analyzed: ${new Date().toLocaleString()}</p>
                 </div>
-            `).join('');
-            document.getElementById('patternsList').innerHTML = patternsHtml || '<p style="color: var(--text-muted);">No significant patterns detected</p>';
+            `;
+            
+            // Insert before the first insight card
+            const firstCard = document.querySelector('.insight-card');
+            firstCard.parentNode.insertBefore(summaryDiv.firstElementChild, firstCard);
+            
+            // Patterns with better formatting
+            const patternsHtml = insights.patterns.map(p => {
+                const icon = p.type === 'spike' ? '⚠️' : p.type === 'low' ? '🔴' : p.type === 'warning' ? '🚨' : '⚠️';
+                const color = p.type === 'spike' ? 'var(--warning)' : p.type === 'low' ? 'var(--danger)' : 'var(--warning)';
+                const bgColor = p.type === 'spike' ? 'rgba(245, 158, 11, 0.1)' : p.type === 'low' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)';
+                
+                return `
+                <div class="pattern-item" style="background: ${bgColor}; border-left: 4px solid ${color};">
+                    <div style="flex: 1;">
+                        <div class="pattern-time" style="color: var(--text); font-weight: 600;">${p.time}</div>
+                        <div class="pattern-desc" style="color: var(--text-muted); margin-top: 5px;">${p.desc}</div>
+                    </div>
+                    <span style="color: ${color}; font-size: 1.5rem; margin-left: 15px;">${icon}</span>
+                </div>
+            `;
+            }).join('');
+            
+            // Add recommendations section
+            let recommendationsHtml = '';
+            if (insights.patterns.length > 0) {
+                recommendationsHtml = '<div style="margin-top: 20px; padding: 15px; background: rgba(0, 212, 170, 0.1); border-left: 4px solid var(--primary); border-radius: 8px;">';
+                recommendationsHtml += '<h4 style="color: var(--primary); margin-bottom: 10px;">💡 Recommendations</h4><ul style="padding-left: 20px;">';
+                
+                insights.patterns.forEach(p => {
+                    if (p.type === 'low' || p.desc.includes('low')) {
+                        recommendationsHtml += '<li style="margin-bottom: 8px;">Consider reducing overnight basal insulin or having a small snack before bed</li>';
+                    }
+                    if (p.type === 'spike' && p.desc.includes('morning')) {
+                        recommendationsHtml += '<li style="margin-bottom: 8px;">Adjust morning basal insulin or consider pre-dosing</li>';
+                    }
+                    if (p.desc.includes('Somogyi')) {
+                        recommendationsHtml += '<li style="margin-bottom: 8px;"><strong>Somogyi effect:</strong> Reduce evening insulin to prevent overnight lows</li>';
+                    }
+                });
+                
+                recommendationsHtml += '</ul></div>';
+            }
+            
+            document.getElementById('patternsList').innerHTML = patternsHtml + recommendationsHtml || '<p style="color: var(--text-muted);">No significant patterns detected</p>';
             
             // Glucose chart
             const ctx = document.getElementById('glucoseChart').getContext('2d');
