@@ -2,6 +2,8 @@
 
 **Analyze your CGM data to discover patterns, trends, and personalized food insights.**
 
+[![Built by Mieru Health](https://img.shields.io/badge/Built%20by-Mieru%20Health-00D4AA?style=flat-square&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAyTDQuNSAyMC4yOWwuNzEuNzFMMTIgMTdsNi43OSA0bC43MS0uNzF6Ii8+PC9zdmc+&link=https://mieru.health)](https://mieru.health)
+
 🩺 **Medical Disclaimer:** *This is NOT medical advice. Always consult your healthcare provider before making diabetes management decisions.*
 
 ## 🌟 What Makes This Different
@@ -209,7 +211,17 @@ Device Timestamp,Record Type,Historic Glucose mmol/L,Scan Glucose mmol/L,Food Ca
 
 ## 🌐 Part of Mieru Health
 
-This tool is part of [Mieru Health](https://mieru.health) - making diabetes data actually useful through intelligent analysis and personalized insights.
+<div align="center">
+
+### 🏥 [Mieru Health](https://mieru.health)
+
+**Making diabetes data actually useful**
+
+This tool is part of the Mieru Health ecosystem - intelligent analysis and personalized insights for better diabetes management.
+
+[🌐 Visit Mieru Health](https://mieru.health) • [📧 Contact Us](https://mieru.health/contact) • [🐦 Twitter](https://twitter.com/mieruhealth)
+
+</div>
 
 ## 📄 License
 
