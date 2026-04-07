@@ -417,10 +417,18 @@
                 let timestamp, glucose;
                 
                 if (cgmType === 'dexcom') {
-                    // Dexcom format
-                    if (row['Event Type'] !== 'EGV') continue; // Skip calibrations
-                    timestamp = new Date(row.Timestamp);
-                    glucose = parseInt(row['Glucose Value']);
+                    // Dexcom Clarity format
+                    // Skip patient info rows and non-EGV events
+                    if (!row['Event Type'] || row['Event Type'] !== 'EGV') continue;
+                    
+                    // Handle Dexcom Clarity column names
+                    const timestampCol = row['Timestamp (YYYY-MM-DDThh:mm:ss)'] || row['Timestamp'];
+                    const glucoseCol = row['Glucose Value (mg/dL)'] || row['Glucose Value'];
+                    
+                    if (!timestampCol || !glucoseCol) continue;
+                    
+                    timestamp = new Date(timestampCol);
+                    glucose = parseInt(glucoseCol);
                 } else {
                     // Libre format
                     const historic = row['Historic Glucose mmol/L'];
