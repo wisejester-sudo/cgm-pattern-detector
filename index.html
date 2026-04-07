@@ -1036,13 +1036,13 @@
         function displayLoggedTreatments(treatments) {
             const section = document.getElementById('treatmentsSection');
             if (!section) {
-                // Create section if it doesn't exist
+                // Create section if it doesn't exist - append at bottom
                 const resultsDiv = document.getElementById('results');
                 const newSection = document.createElement('div');
                 newSection.id = 'treatmentsSection';
                 newSection.className = 'insight-card';
                 newSection.style.marginTop = '30px';
-                resultsDiv.insertBefore(newSection, resultsDiv.children[2]);
+                resultsDiv.appendChild(newSection);
             }
             
             const container = document.getElementById('treatmentsSection');
@@ -1117,7 +1117,7 @@
                 newSection.id = 'dailyAveragesSection';
                 newSection.className = 'insight-card';
                 newSection.style.marginTop = '30px';
-                resultsDiv.insertBefore(newSection, resultsDiv.children[3]);
+                resultsDiv.appendChild(newSection);
             }
             
             const container = document.getElementById('dailyAveragesSection');
