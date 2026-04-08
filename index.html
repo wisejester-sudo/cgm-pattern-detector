@@ -924,6 +924,21 @@
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
         }
         
+        // Global toggle function for collapsible sections
+        window.toggleTreatmentSection = function(id) {
+            const content = document.getElementById('treatments-' + id);
+            const arrow = document.getElementById('treatments-arrow-' + id);
+            if (content && arrow) {
+                if (content.style.display === 'none') {
+                    content.style.display = 'block';
+                    arrow.textContent = '▼';
+                } else {
+                    content.style.display = 'none';
+                    arrow.textContent = '▶';
+                }
+            }
+        };
+        
         function showError(message) {
             document.getElementById('errorContainer').innerHTML = `
                 <div class="error">❌ ${message}</div>
@@ -1080,29 +1095,113 @@
             </div>`;
             html += `</div>`;
             
-            // Recent treatments list
-            html += `<h4 style="margin: 20px 0 10px; color: var(--text);">Recent Entries</h4>`;
-            html += `<div style="max-height: 300px; overflow-y: auto;">`;
+            // Group treatments by date
+            const groupedTreatments = {};
+            const today = new Date().toISOString().split('T')[0];
+            const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
             
-            treatments.slice(0, 20).forEach(t => {
-                const time = t.timestamp.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                let details = '';
-                if (t.carbs > 0) details += `<span style="color: var(--warning);">🍞 ${t.carbs}g carbs</span>`;
-                if (t.insulin > 0) details += (details ? ' • ' : '') + `<span style="color: var(--danger);">💉 ${t.insulin}u insulin</span>`;
-                
-                html += `<div style="padding: 12px; background: var(--card-bg); border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <div style="color: var(--text-muted); font-size: 0.85rem;">${time}</div>
-                    </div>
-                    <div style="text-align: right;">${details}</div>
-                </div>`;
+            treatments.forEach(t => {
+                const dateKey = t.timestamp.toISOString().split('T')[0];
+                if (!groupedTreatments[dateKey]) {
+                    groupedTreatments[dateKey] = [];
+                }
+                groupedTreatments[dateKey].push(t);
             });
             
-            if (treatments.length > 20) {
-                html += `<p style="color: var(--text-muted); text-align: center; margin-top: 10px;">... and ${treatments.length - 20} more entries</p>`;
+            // Sort dates descending
+            const sortedDates = Object.keys(groupedTreatments).sort((a, b) => new Date(b) - new Date(a));
+            
+            // Group into categories
+            const todayEntries = sortedDates.filter(d => d === today);
+            const yesterdayEntries = sortedDates.filter(d => d === yesterday);
+            const earlierEntries = sortedDates.filter(d => d !== today && d !== yesterday);
+            
+            // Generate collapsible sections
+            html += `<div style="margin-top: 20px;">`;
+            
+            // Today section
+            if (todayEntries.length > 0) {
+                html += `<div style="margin-bottom: 15px; border: 1px solid #333; border-radius: 8px; overflow: hidden;">`;
+                html += `<div onclick="toggleTreatmentSection('today')" style="padding: 15px; background: var(--card-bg); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">`;
+                html += `<div><span id="treatments-arrow-today" style="margin-right: 10px; color: var(--primary);">▼</span><strong>Today</strong></div>`;
+                html += `<span style="color: var(--text-muted); font-size: 0.9rem;">${groupedTreatments[todayEntries[0]].length} entries</span>`;
+                html += `</div>`;
+                html += `<div id="treatments-today" style="display: block; padding: 10px; background: rgba(0,0,0,0.2);">`;
+                
+                groupedTreatments[todayEntries[0]].forEach(t => {
+                    const time = t.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    let details = '';
+                    if (t.carbs > 0) details += `<span style="color: var(--warning);">🍞 ${t.carbs}g</span>`;
+                    if (t.insulin > 0) details += (details ? ' • ' : '') + `<span style="color: var(--danger);">💉 ${t.insulin}u</span>`;
+                    
+                    html += `<div style="padding: 8px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="color: var(--text-muted); font-size: 0.85rem;">${time}</div>
+                        <div>${details}</div>
+                    </div>`;
+                });
+                
+                html += `</div></div>`;
+            }
+            
+            // Yesterday section
+            if (yesterdayEntries.length > 0) {
+                html += `<div style="margin-bottom: 15px; border: 1px solid #333; border-radius: 8px; overflow: hidden;">`;
+                html += `<div onclick="toggleTreatmentSection('yesterday')" style="padding: 15px; background: var(--card-bg); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">`;
+                html += `<div><span id="treatments-arrow-yesterday" style="margin-right: 10px; color: var(--primary);">▶</span><strong>Yesterday</strong></div>`;
+                html += `<span style="color: var(--text-muted); font-size: 0.9rem;">${groupedTreatments[yesterdayEntries[0]].length} entries</span>`;
+                html += `</div>`;
+                html += `<div id="treatments-yesterday" style="display: none; padding: 10px; background: rgba(0,0,0,0.2);">`;
+                
+                groupedTreatments[yesterdayEntries[0]].forEach(t => {
+                    const time = t.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    let details = '';
+                    if (t.carbs > 0) details += `<span style="color: var(--warning);">🍞 ${t.carbs}g</span>`;
+                    if (t.insulin > 0) details += (details ? ' • ' : '') + `<span style="color: var(--danger);">💉 ${t.insulin}u</span>`;
+                    
+                    html += `<div style="padding: 8px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="color: var(--text-muted); font-size: 0.85rem;">${time}</div>
+                        <div>${details}</div>
+                    </div>`;
+                });
+                
+                html += `</div></div>`;
+            }
+            
+            // Earlier section
+            if (earlierEntries.length > 0) {
+                const totalEarlier = earlierEntries.reduce((sum, date) => sum + groupedTreatments[date].length, 0);
+                html += `<div style="margin-bottom: 15px; border: 1px solid #333; border-radius: 8px; overflow: hidden;">`;
+                html += `<div onclick="toggleTreatmentSection('earlier')" style="padding: 15px; background: var(--card-bg); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">`;
+                html += `<div><span id="treatments-arrow-earlier" style="margin-right: 10px; color: var(--primary);">▶</span><strong>Earlier</strong></div>`;
+                html += `<span style="color: var(--text-muted); font-size: 0.9rem;">${totalEarlier} entries</span>`;
+                html += `</div>`;
+                html += `<div id="treatments-earlier" style="display: none; padding: 10px; background: rgba(0,0,0,0.2);">`;
+                
+                earlierEntries.forEach(date => {
+                    const dateLabel = new Date(date).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+                    html += `<div style="margin-bottom: 10px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">`;
+                    html += `<div style="color: var(--primary); font-size: 0.85rem; margin-bottom: 8px; border-bottom: 1px solid #444; padding-bottom: 5px;">${dateLabel}</div>`;
+                    
+                    groupedTreatments[date].forEach(t => {
+                        const time = t.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        let details = '';
+                        if (t.carbs > 0) details += `<span style="color: var(--warning);">🍞 ${t.carbs}g</span>`;
+                        if (t.insulin > 0) details += (details ? ' • ' : '') + `<span style="color: var(--danger);">💉 ${t.insulin}u</span>`;
+                        
+                        html += `<div style="padding: 8px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <div style="color: var(--text-muted); font-size: 0.85rem;">${time}</div>
+                            <div>${details}</div>
+                        </div>`;
+                    });
+                    
+                    html += `</div>`;
+                });
+                
+                html += `</div></div>`;
             }
             
             html += `</div>`;
+            
             container.innerHTML = html;
             container.style.display = 'block';
         }
