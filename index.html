@@ -236,6 +236,7 @@
                 <option value="dexcom">Dexcom (G6/G7)</option>
                 <option value="libre">Freestyle Libre (2/3) - CSV</option>
                 <option value="libre-text">Freestyle Libre - Text Copy-Paste</option>
+                <option value="juggluco">Juggluco Export</option>
             </select>
             
             <br>
@@ -584,22 +585,161 @@ ABC123
             return readings.sort((a, b) => a.timestamp - b.timestamp);
         }
         
-        // Parse Libre timestamp format: "01-31-2026 03:25 PM"
-        function parseLibreTimestamp(str) {
+        // Parse Libre timestamp format with multiple format support
+        // Handles: MM-DD-YYYY, DD-MM-YYYY, YYYY-MM-DD, and ISO formats
+        function parseLibreTimestamp(str, format = 'auto') {
             try {
-                const match = str.match(/(\d{2})-(\d{2})-(\d{4})\s+(\d{1,2}):(\d{2})\s+(AM|PM)/i);
-                if (!match) return null;
+                str = str.trim();
                 
-                const [, month, day, year, hour, minute, ampm] = match;
-                let hour24 = parseInt(hour);
+                // Try ISO format first (YYYY-MM-DDTHH:MM:SS)
+                const isoMatch = str.match(/(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})/);
+                if (isoMatch) {
+                    const [, year, month, day, hour, minute] = isoMatch;
+                    return new Date(`${year}-${month}-${day}T${hour}:${minute}:00`);
+                }
                 
-                if (ampm.toUpperCase() === 'PM' && hour24 !== 12) hour24 += 12;
-                if (ampm.toUpperCase() === 'AM' && hour24 === 12) hour24 = 0;
+                // Try MM-DD-YYYY HH:MM AM/PM or DD-MM-YYYY HH:MM AM/PM
+                const usMatch = str.match(/(\d{2})-(\d{2})-(\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+                if (usMatch) {
+                    let [, part1, part2, year, hour, minute, ampm] = usMatch;
+                    let month, day;
+                    
+                    // Determine if it's MM-DD or DD-MM based on values
+                    const p1 = parseInt(part1);
+                    const p2 = parseInt(part2);
+                    
+                    if (format === 'european' || (format === 'auto' && p1 > 12)) {
+                        // European: DD-MM-YYYY
+                        day = part1;
+                        month = part2;
+                    } else {
+                        // US: MM-DD-YYYY
+                        month = part1;
+                        day = part2;
+                    }
+                    
+                    let hour24 = parseInt(hour);
+                    if (ampm) {
+                        if (ampm.toUpperCase() === 'PM' && hour24 !== 12) hour24 += 12;
+                        if (ampm.toUpperCase() === 'AM' && hour24 === 12) hour24 = 0;
+                    }
+                    
+                    return new Date(`${year}-${month}-${day}T${String(hour24).padStart(2, '0')}:${minute}:00`);
+                }
                 
-                return new Date(`${year}-${month}-${day}T${String(hour24).padStart(2, '0')}:${minute}:00`);
+                // Try DD/MM/YYYY or MM/DD/YYYY formats
+                const slashMatch = str.match(/(\d{2})\/(\d{2})\/(\d{4})[\s,]+(\d{1,2}):(\d{2})/);
+                if (slashMatch) {
+                    let [, part1, part2, year, hour, minute] = slashMatch;
+                    const p1 = parseInt(part1);
+                    const p2 = parseInt(part2);
+                    
+                    let month, day;
+                    if (format === 'european' || (format === 'auto' && p1 > 12)) {
+                        day = part1;
+                        month = part2;
+                    } else {
+                        month = part1;
+                        day = part2;
+                    }
+                    
+                    return new Date(`${year}-${month}-${day}T${hour.padStart(2, '0')}:${minute}:00`);
+                }
+                
+                return null;
             } catch (e) {
+                console.error('Timestamp parse error:', e);
                 return null;
             }
+        }
+        
+        // Detect if CSV uses semicolon delimiter (European format)
+        function detectDelimiter(csvText) {
+            const firstLine = csvText.split('\n')[0];
+            const semicolonCount = (firstLine.match(/;/g) || []).length;
+            const commaCount = (firstLine.match(/,/g) || []).length;
+            
+            return semicolonCount > commaCount ? ';' : ',';
+        }
+        
+        // Parse Juggluco export format
+        function parseJugglucoData(data) {
+            const readings = [];
+            
+            // Juggluco CSV typically has: Time,glucose,rate
+            // or: date,hour,minute,glucose
+            for (const row of data) {
+                let timestamp, glucose;
+                
+                // Try various Juggluco column names
+                const timeCol = row['Time'] || row['time'] || row['timestamp'] || row['Timestamp'];
+                const glucoseCol = row['glucose'] || row['Glucose'] || row['glucose (mg/dL)'] || row['mg/dL'];
+                
+                if (!timeCol || !glucoseCol) continue;
+                
+                // Parse timestamp (Juggluco uses various formats)
+                timestamp = parseJugglucoTimestamp(timeCol);
+                if (!timestamp) continue;
+                
+                // Parse glucose
+                glucose = parseInt(glucoseCol, 10);
+                if (isNaN(glucose) || glucose <= 0) continue;
+                
+                readings.push({
+                    timestamp,
+                    glucose,
+                    hour: timestamp.getHours(),
+                    dayOfWeek: timestamp.getDay()
+                });
+            }
+            
+            return readings.sort((a, b) => a.timestamp - b.timestamp);
+        }
+        
+        // Parse Juggluco timestamp (handles multiple formats)
+        function parseJugglucoTimestamp(str) {
+            // Try Unix timestamp (seconds)
+            if (/^\d{10}$/.test(str)) {
+                return new Date(parseInt(str) * 1000);
+            }
+            
+            // Try milliseconds timestamp
+            if (/^\d{13}$/.test(str)) {
+                return new Date(parseInt(str));
+            }
+            
+            // Try standard formats
+            return parseLibreTimestamp(str, 'auto');
+        }
+        
+        // Check if data is in European format (DD-MM-YYYY) from parsed data
+        function isEuropeanFormat(data) {
+            for (const row of data.slice(0, 10)) {
+                const timestamp = row['Device Timestamp'] || row['timestamp'] || row['Time'] || row['time'];
+                if (timestamp && typeof timestamp === 'string') {
+                    const match = timestamp.match(/(\d{2})[-\/](\d{2})[-\/]/);
+                    if (match) {
+                        const first = parseInt(match[1]);
+                        const second = parseInt(match[2]);
+                        // If first number > 12, it's likely a day (European)
+                        if (first > 12 && first <= 31) return true;
+                    }
+                }
+            }
+            return false;
+        }
+        
+        // Check European format from raw text
+        function isEuropeanFormatFromText(text) {
+            const lines = text.split('\n').slice(1, 10); // Check first few data lines
+            for (const line of lines) {
+                const match = line.match(/(\d{2})[-\/](\d{2})[-\/]\d{4}/);
+                if (match) {
+                    const first = parseInt(match[1]);
+                    if (first > 12 && first <= 31) return true;
+                }
+            }
+            return false;
         }
         
         // Drag and drop
@@ -655,53 +795,66 @@ ABC123
                     }
                     rawData = readings; // For text format, use readings as raw data
                 } else {
-                    // Handle CSV format
-                    Papa.parse(file, {
-                        header: true,
-                        complete: function(results) {
-                            try {
-                                // Check for empty CSV
-                                if (!results.data || results.data.length === 0) {
-                                    throw new Error('CSV file is empty');
-                                }
-                                
-                                // Check if CSV has only headers (no data rows)
-                                const nonEmptyRows = results.data.filter(row => 
-                                    Object.values(row).some(val => val && val.trim() !== '')
-                                );
-                                if (nonEmptyRows.length === 0) {
-                                    throw new Error('CSV file contains no data (only headers)');
-                                }
-                                
-                                // Auto-detect CGM type if not selected
-                                if (!cgmType || cgmType === 'auto') {
-                                    cgmType = detectCGMType(results.data);
-                                    if (!cgmType) {
-                                        throw new Error('Could not auto-detect CGM type. Please select Dexcom or Libre manually.');
+                    // Read file content first to detect delimiter
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const csvContent = e.target.result;
+                        const delimiter = detectDelimiter(csvContent);
+                        const isEuropean = isEuropeanFormatFromText(csvContent);
+                        
+                        // Handle CSV format with detected delimiter
+                        Papa.parse(file, {
+                            header: true,
+                            delimiter: delimiter,
+                            complete: function(results) {
+                                try {
+                                    // Check for empty CSV
+                                    if (!results.data || results.data.length === 0) {
+                                        throw new Error('CSV file is empty');
                                     }
-                                    console.log('Auto-detected CGM type:', cgmType);
+                                    
+                                    // Check if CSV has only headers (no data rows)
+                                    const nonEmptyRows = results.data.filter(row => 
+                                        Object.values(row).some(val => val && val.trim && val.trim() !== '')
+                                    );
+                                    if (nonEmptyRows.length === 0) {
+                                        throw new Error('CSV file contains no data (only headers)');
+                                    }
+                                    
+                                    // Auto-detect CGM type if not selected
+                                    if (!cgmType || cgmType === 'auto') {
+                                        cgmType = detectCGMType(results.data);
+                                        if (!cgmType) {
+                                            throw new Error('Could not auto-detect CGM type. Please select manually.');
+                                        }
+                                        console.log('Auto-detected CGM type:', cgmType);
+                                    }
+                                    
+                                    // Store format info for parsing
+                                    window.dateFormat = isEuropean ? 'european' : 'us';
+                                    
+                                    const parsedData = parseCGMData(results.data, cgmType, isEuropean);
+                                    readings = parsedData.readings;
+                                    treatments = parsedData.treatments;
+                                    rawData = results.data;
+                                    
+                                    if (readings.length === 0) {
+                                        throw new Error('No valid glucose readings found in CSV');
+                                    }
+                                    
+                                    processAnalysis(readings, treatments, rawData, cgmType);
+                                } catch (error) {
+                                    showError('Error analyzing data: ' + error.message);
+                                    document.getElementById('loading').classList.remove('active');
                                 }
-                                
-                                const parsedData = parseCGMData(results.data, cgmType);
-                                readings = parsedData.readings;
-                                treatments = parsedData.treatments;
-                                rawData = results.data;
-                                
-                                if (readings.length === 0) {
-                                    throw new Error('No valid glucose readings found in CSV');
-                                }
-                                
-                                processAnalysis(readings, treatments, rawData, cgmType);
-                            } catch (error) {
-                                showError('Error analyzing data: ' + error.message);
+                            },
+                            error: function(error) {
+                                showError('Error parsing CSV: ' + error.message);
                                 document.getElementById('loading').classList.remove('active');
                             }
-                        },
-                        error: function(error) {
-                            showError('Error parsing CSV: ' + error.message);
-                            document.getElementById('loading').classList.remove('active');
-                        }
-                    });
+                        });
+                    };
+                    reader.readAsText(file);
                     return; // Exit early for CSV (async parsing)
                 }
                 
@@ -735,6 +888,8 @@ ABC123
         function detectCGMType(data) {
             // Check first few rows for column name patterns
             for (const row of data.slice(0, 10)) {
+                const keys = Object.keys(row).join(' ').toLowerCase();
+                
                 // Dexcom Clarity has these specific columns
                 if (row['Event Type'] || row['Glucose Value (mg/dL)'] || row['Glucose Value']) {
                     return 'dexcom';
@@ -743,13 +898,30 @@ ABC123
                 if (row['Historic Glucose mmol/L'] || row['Scan Glucose mmol/L'] || row['Device Timestamp']) {
                     return 'libre';
                 }
+                // Juggluco detection
+                if (row['glucose'] && (row['Time'] || row['time'] || row['rate'] || row['date'])) {
+                    return 'juggluco';
+                }
+                // Check for Juggluco column headers
+                if (keys.includes('time') && keys.includes('glucose') && !keys.includes('device')) {
+                    return 'juggluco';
+                }
             }
             return null;
         }
         
-        function parseCGMData(rawData, cgmType) {
+        function parseCGMData(rawData, cgmType, isEuropean = false) {
+            // Handle Juggluco format
+            if (cgmType === 'juggluco') {
+                return {
+                    readings: parseJugglucoData(rawData),
+                    treatments: []
+                };
+            }
+            
             const readings = [];
             const treatments = []; // Store meals/insulin events
+            const dateFormat = isEuropean ? 'european' : 'us';
             
             for (const row of rawData) {
                 let timestamp, glucose;
