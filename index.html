@@ -231,15 +231,24 @@
                 Export from Dexcom Clarity or LibreView as CSV
             </p>
             
-            <select id="cgmType">
+            <select id="cgmType" onchange="handleCGMTypeChange()">
                 <option value="">Select your CGM...</option>
                 <option value="dexcom">Dexcom (G6/G7)</option>
-                <option value="libre">Freestyle Libre (2/3)</option>
+                <option value="libre">Freestyle Libre (2/3) - CSV</option>
+                <option value="libre-text">Freestyle Libre - Text Copy-Paste</option>
             </select>
             
             <br>
             
             <input type="file" id="csvFile" accept=".csv" />
+            
+            <textarea id="textData" placeholder="Paste your Libre data here...
+Example:
+FreeStyle Libre 2
+ABC123
+01-31-2026 03:25 PM
+0
+10.9" style="display: none; width: 100%; max-width: 600px; height: 200px; margin: 10px auto; padding: 12px; background: var(--bg); border: 1px solid #2d2d44; border-radius: 6px; color: var(--text); font-family: monospace; font-size: 14px; resize: vertical;"></textarea>
             
             <br>
             
@@ -336,12 +345,20 @@
         function checkInputs() {
             const cgmType = document.getElementById('cgmType').value;
             const fileInput = document.getElementById('csvFile');
+            const textArea = document.getElementById('textData');
             const hasFile = fileInput.files && fileInput.files.length > 0;
+            const hasText = textArea.value.trim().length > 0;
             
-            console.log('Checking inputs:', { cgmType, hasFile, fileName: hasFile ? fileInput.files[0].name : 'none' });
+            console.log('Checking inputs:', { cgmType, hasFile, hasText });
             
             const btn = document.getElementById('analyzeBtn');
-            const shouldEnable = cgmType && hasFile;
+            let shouldEnable = false;
+            
+            if (cgmType === 'libre-text') {
+                shouldEnable = hasText;
+            } else if (cgmType) {
+                shouldEnable = hasFile;
+            }
             
             btn.disabled = !shouldEnable;
             
@@ -354,8 +371,236 @@
             }
         }
         
+        // Add listener for text area
+        document.getElementById('textData').addEventListener('input', checkInputs);
+        
         // Check on page load
         checkInputs();
+        
+        // Handle CGM type change to show/hide appropriate input
+        function handleCGMTypeChange() {
+            const cgmType = document.getElementById('cgmType').value;
+            const fileInput = document.getElementById('csvFile');
+            const textArea = document.getElementById('textData');
+            
+            if (cgmType === 'libre-text') {
+                fileInput.style.display = 'none';
+                textArea.style.display = 'block';
+                fileInput.value = ''; // Clear file selection
+            } else {
+                fileInput.style.display = 'block';
+                textArea.style.display = 'none';
+                textArea.value = ''; // Clear text
+            }
+            checkInputs();
+        }
+        
+        // Parse Libre text format - handles multiple Excel copy-paste formats
+        function parseLibreText(text) {
+            const readings = [];
+            const lines = text.trim().split('\n');
+            
+            // Try to detect the format
+            const format = detectTextFormat(lines);
+            console.log('Detected format:', format);
+            
+            if (format === 'vertical') {
+                // Original vertical format (5 lines per reading)
+                return parseVerticalFormat(lines);
+            } else if (format === 'horizontal') {
+                // Excel row format (tab-separated columns)
+                return parseHorizontalFormat(lines);
+            } else if (format === 'csv-like') {
+                // CSV-like format with headers
+                return parseCSVLikeFormat(lines);
+            }
+            
+            return readings;
+        }
+        
+        // Detect text format based on content
+        function detectTextFormat(lines) {
+            // Check for vertical format indicators
+            let verticalCount = 0;
+            for (let i = 0; i < Math.min(lines.length, 20); i++) {
+                const line = lines[i].trim();
+                // Look for timestamp patterns in vertical format (every 3rd line)
+                if (/\d{2}-\d{2}-\d{4}\s+\d{1,2}:\d{2}\s+(AM|PM)/i.test(line)) {
+                    verticalCount++;
+                }
+            }
+            
+            // If we see timestamps every few lines, likely vertical
+            if (verticalCount >= 2) return 'vertical';
+            
+            // Check for tab-separated or CSV-like format
+            const firstDataLine = lines.find(l => l.includes('FreeStyle') || l.match(/\d{2}-\d{2}-\d{4}/));
+            if (firstDataLine) {
+                const tabCount = (firstDataLine.match(/\t/g) || []).length;
+                const commaCount = (firstDataLine.match(/,/g) || []).length;
+                
+                if (tabCount >= 3) return 'horizontal';
+                if (commaCount >= 3) return 'csv-like';
+            }
+            
+            // Default to vertical
+            return 'vertical';
+        }
+        
+        // Parse vertical format (5 lines per reading)
+        function parseVerticalFormat(lines) {
+            const readings = [];
+            
+            for (let i = 0; i < lines.length; i += 5) {
+                if (i + 4 >= lines.length) break;
+                
+                const device = lines[i].trim();
+                const serial = lines[i + 1].trim();
+                const timestampStr = lines[i + 2].trim();
+                const recordType = lines[i + 3].trim();
+                const glucoseStr = lines[i + 4].trim();
+                
+                // Skip if not a glucose reading
+                if (!device.includes('FreeStyle') || recordType !== '0') continue;
+                
+                // Parse timestamp (MM-DD-YYYY HH:MM AM/PM)
+                const timestamp = parseLibreTimestamp(timestampStr);
+                if (!timestamp) continue;
+                
+                // Parse glucose (mmol/L) and convert to mg/dL
+                const mmol = parseFloat(glucoseStr);
+                if (isNaN(mmol) || mmol <= 0) continue;
+                
+                const glucose = Math.round(mmol * 18); // Convert to mg/dL
+                
+                readings.push({
+                    timestamp,
+                    glucose,
+                    hour: timestamp.getHours(),
+                    dayOfWeek: timestamp.getDay()
+                });
+            }
+            
+            return readings.sort((a, b) => a.timestamp - b.timestamp);
+        }
+        
+        // Parse horizontal format (tab-separated Excel copy-paste)
+        function parseHorizontalFormat(lines) {
+            const readings = [];
+            
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('Row') || trimmed.startsWith('Glucose Data')) continue;
+                
+                // Split by tabs or multiple spaces
+                const parts = trimmed.split(/\t+|\s{2,}/);
+                
+                // Look for timestamp and glucose value
+                let timestampStr = '';
+                let glucoseStr = '';
+                let hasDevice = false;
+                
+                for (const part of parts) {
+                    if (part.includes('FreeStyle')) hasDevice = true;
+                    if (/\d{2}-\d{2}-\d{4}\s+\d{1,2}:\d{2}\s+(AM|PM)/i.test(part)) {
+                        timestampStr = part;
+                    }
+                    if (/^\d{1,2}\.\d$/.test(part) && parseFloat(part) > 0 && parseFloat(part) < 30) {
+                        // Likely mmol/L value (between 0-30)
+                        glucoseStr = part;
+                    }
+                }
+                
+                if (!timestampStr || !glucoseStr) continue;
+                
+                const timestamp = parseLibreTimestamp(timestampStr);
+                if (!timestamp) continue;
+                
+                const mmol = parseFloat(glucoseStr);
+                if (isNaN(mmol) || mmol <= 0) continue;
+                
+                const glucose = Math.round(mmol * 18);
+                
+                readings.push({
+                    timestamp,
+                    glucose,
+                    hour: timestamp.getHours(),
+                    dayOfWeek: timestamp.getDay()
+                });
+            }
+            
+            return readings.sort((a, b) => a.timestamp - b.timestamp);
+        }
+        
+        // Parse CSV-like format
+        function parseCSVLikeFormat(lines) {
+            const readings = [];
+            let isHeader = true;
+            
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+                
+                // Skip header rows
+                if (isHeader && (trimmed.includes('Device') || trimmed.includes('Row'))) {
+                    continue;
+                }
+                isHeader = false;
+                
+                const parts = trimmed.split(',');
+                
+                // Find timestamp and glucose in the parts
+                let timestampStr = '';
+                let glucoseStr = '';
+                
+                for (const part of parts) {
+                    const clean = part.trim();
+                    if (/\d{2}-\d{2}-\d{4}\s+\d{1,2}:\d{2}\s+(AM|PM)/i.test(clean)) {
+                        timestampStr = clean;
+                    }
+                    if (/^\d{1,2}\.\d$/.test(clean) && parseFloat(clean) > 0) {
+                        glucoseStr = clean;
+                    }
+                }
+                
+                if (!timestampStr || !glucoseStr) continue;
+                
+                const timestamp = parseLibreTimestamp(timestampStr);
+                if (!timestamp) continue;
+                
+                const mmol = parseFloat(glucoseStr);
+                if (isNaN(mmol) || mmol <= 0) continue;
+                
+                const glucose = Math.round(mmol * 18);
+                
+                readings.push({
+                    timestamp,
+                    glucose,
+                    hour: timestamp.getHours(),
+                    dayOfWeek: timestamp.getDay()
+                });
+            }
+            
+            return readings.sort((a, b) => a.timestamp - b.timestamp);
+        }
+        
+        // Parse Libre timestamp format: "01-31-2026 03:25 PM"
+        function parseLibreTimestamp(str) {
+            try {
+                const match = str.match(/(\d{2})-(\d{2})-(\d{4})\s+(\d{1,2}):(\d{2})\s+(AM|PM)/i);
+                if (!match) return null;
+                
+                const [, month, day, year, hour, minute, ampm] = match;
+                let hour24 = parseInt(hour);
+                
+                if (ampm.toUpperCase() === 'PM' && hour24 !== 12) hour24 += 12;
+                if (ampm.toUpperCase() === 'AM' && hour24 === 12) hour24 = 0;
+                
+                return new Date(`${year}-${month}-${day}T${String(hour24).padStart(2, '0')}:${minute}:00`);
+            } catch (e) {
+                return null;
+            }
+        }
         
         // Drag and drop
         const dropZone = document.getElementById('dropZone');
@@ -378,63 +623,113 @@
         
         function analyzeData() {
             const file = document.getElementById('csvFile').files[0];
+            const textData = document.getElementById('textData').value;
             let cgmType = document.getElementById('cgmType').value;
             
-            if (!file) {
-                showError('Please upload a CSV file');
-                return;
+            // Validate input based on CGM type
+            if (cgmType === 'libre-text') {
+                if (!textData.trim()) {
+                    showError('Please paste your Libre data in the text box');
+                    return;
+                }
+            } else {
+                if (!file) {
+                    showError('Please upload a CSV file');
+                    return;
+                }
             }
             
             document.getElementById('loading').classList.add('active');
             document.getElementById('errorContainer').innerHTML = '';
             
-            Papa.parse(file, {
-                header: true,
-                complete: function(results) {
-                    try {
-                        // Check for empty CSV
-                        if (!results.data || results.data.length === 0) {
-                            throw new Error('CSV file is empty');
-                        }
-                        
-                        // Check if CSV has only headers (no data rows)
-                        const nonEmptyRows = results.data.filter(row => 
-                            Object.values(row).some(val => val && val.trim() !== '')
-                        );
-                        if (nonEmptyRows.length === 0) {
-                            throw new Error('CSV file contains no data (only headers)');
-                        }
-                        
-                        // Auto-detect CGM type if not selected
-                        if (!cgmType || cgmType === 'auto') {
-                            cgmType = detectCGMType(results.data);
-                            if (!cgmType) {
-                                throw new Error('Could not auto-detect CGM type. Please select Dexcom or Libre manually.');
-                            }
-                            console.log('Auto-detected CGM type:', cgmType);
-                        }
-                        
-                        const parsedData = parseCGMData(results.data, cgmType);
-                        const { readings, treatments } = parsedData;
-                        
-                        window.cgmData = readings;
-                        window.rawCGMData = results.data;
-                        window.cgmTreatments = treatments; // Store treatments globally
-                        
-                        const dailyAverages = calculateDailyAverages(readings);
-                        const insights = analyzePatterns(readings, treatments, dailyAverages);
-                        displayResults(insights, results.data, cgmType, treatments, dailyAverages);
-                    } catch (error) {
-                        showError('Error analyzing data: ' + error.message);
-                    } finally {
-                        document.getElementById('loading').classList.remove('active');
+            try {
+                let readings = [];
+                let treatments = [];
+                let rawData = [];
+                
+                if (cgmType === 'libre-text') {
+                    // Handle text format
+                    readings = parseLibreText(textData);
+                    if (readings.length === 0) {
+                        throw new Error('No valid glucose readings found in text. Make sure your data is in the correct format with Device, Serial, Timestamp, Record Type, and Glucose value on separate lines.');
                     }
-                },
-                error: function(error) {
-                    showError('Error parsing CSV: ' + error.message);
-                    document.getElementById('loading').classList.remove('active');
+                    rawData = readings; // For text format, use readings as raw data
+                } else {
+                    // Handle CSV format
+                    Papa.parse(file, {
+                        header: true,
+                        complete: function(results) {
+                            try {
+                                // Check for empty CSV
+                                if (!results.data || results.data.length === 0) {
+                                    throw new Error('CSV file is empty');
+                                }
+                                
+                                // Check if CSV has only headers (no data rows)
+                                const nonEmptyRows = results.data.filter(row => 
+                                    Object.values(row).some(val => val && val.trim() !== '')
+                                );
+                                if (nonEmptyRows.length === 0) {
+                                    throw new Error('CSV file contains no data (only headers)');
+                                }
+                                
+                                // Auto-detect CGM type if not selected
+                                if (!cgmType || cgmType === 'auto') {
+                                    cgmType = detectCGMType(results.data);
+                                    if (!cgmType) {
+                                        throw new Error('Could not auto-detect CGM type. Please select Dexcom or Libre manually.');
+                                    }
+                                    console.log('Auto-detected CGM type:', cgmType);
+                                }
+                                
+                                const parsedData = parseCGMData(results.data, cgmType);
+                                readings = parsedData.readings;
+                                treatments = parsedData.treatments;
+                                rawData = results.data;
+                                
+                                if (readings.length === 0) {
+                                    throw new Error('No valid glucose readings found in CSV');
+                                }
+                                
+                                processAnalysis(readings, treatments, rawData, cgmType);
+                            } catch (error) {
+                                showError('Error analyzing data: ' + error.message);
+                                document.getElementById('loading').classList.remove('active');
+                            }
+                        },
+                        error: function(error) {
+                            showError('Error parsing CSV: ' + error.message);
+                            document.getElementById('loading').classList.remove('active');
+                        }
+                    });
+                    return; // Exit early for CSV (async parsing)
                 }
-            });
+                
+                // Process text format (synchronous)
+                if (cgmType === 'libre-text') {
+                    if (readings.length === 0) {
+                        throw new Error('No valid readings found');
+                    }
+                    processAnalysis(readings, [], rawData, cgmType);
+                }
+                
+            } catch (error) {
+                showError('Error: ' + error.message);
+                document.getElementById('loading').classList.remove('active');
+            }
+        }
+        
+        // Separate analysis processing to avoid code duplication
+        function processAnalysis(readings, treatments, rawData, cgmType) {
+            window.cgmData = readings;
+            window.rawCGMData = rawData;
+            window.cgmTreatments = treatments;
+            
+            const dailyAverages = calculateDailyAverages(readings);
+            const insights = analyzePatterns(readings, treatments, dailyAverages);
+            displayResults(insights, rawData, cgmType, treatments, dailyAverages);
+            
+            document.getElementById('loading').classList.remove('active');
         }
         
         function detectCGMType(data) {
