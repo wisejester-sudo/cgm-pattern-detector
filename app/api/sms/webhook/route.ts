@@ -4,6 +4,8 @@ import { validateTwilioSignature } from "@/lib/twilio"
 import { checkRateLimit, getClientIdentifier, rateLimitConfigs } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/sms/webhook - Twilio webhook for incoming SMS
 export async function GET(request: NextRequest) {
   return handleWebhook(request)

@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {

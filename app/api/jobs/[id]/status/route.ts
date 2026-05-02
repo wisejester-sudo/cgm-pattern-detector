@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { sendSMS, generatePhotoLink } from "@/lib/twilio"
 
+export const dynamic = 'force-dynamic'
+
 const VALID_STATUSES = ["available", "scheduled", "en_route", "working", "on_hold", "complete"]
 
 // PATCH /api/jobs/[id]/status - Update job status

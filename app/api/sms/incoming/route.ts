@@ -4,6 +4,8 @@ import { validateTwilioSignature } from "@/lib/twilio"
 import { checkRateLimit, getClientIdentifier, rateLimitConfigs } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 
+export const dynamic = 'force-dynamic'
+
 // Keyword mappings for status updates
 const STATUS_KEYWORDS: Record<string, string> = {
   // En Route

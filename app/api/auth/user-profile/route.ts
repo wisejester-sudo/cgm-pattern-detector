@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { ProfileUpdateData, UserProfileInsertData } from '@/lib/types'
 
+export const dynamic = 'force-dynamic'
+
 // Ultra-defensive wrapper - NEVER let this endpoint crash
 export async function GET(request: NextRequest) {
   console.log('[API] ========== GET /api/auth/user-profile START ==========')

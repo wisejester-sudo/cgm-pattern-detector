@@ -1,62 +1,128 @@
+/**
+ * POST /api/auth/login - Authenticate user with email and password
+ * 
+ * Features:
+ * - Zod validation for credentials
+ * - Rate limiting (5 attempts per minute per IP)
+ * - Session management with cookies
+ * - Comprehensive error handling
+ * - Request ID tracking
+ */
+
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
-import { checkRateLimit, getClientIdentifier, rateLimitConfigs } from "@/lib/rate-limit"
+import { z } from "zod"
+import { 
+  createErrorResponse, 
+  ValidationError, 
+  RateLimitError,
+  AuthenticationError,
+  ServiceUnavailableError,
+  createRequestContext
+} from "@/lib/errors"
 import { logger } from "@/lib/logger"
+import { checkRateLimit, getClientIdentifier, rateLimitConfigs } from "@/lib/rate-limit"
 
-// POST /api/auth/login - Login with email and password
+export const dynamic = 'force-dynamic'
+
+// ============================================================================
+// VALIDATION SCHEMAS
+// ============================================================================
+
+const loginSchema = z.object({
+  email: z.string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email address"),
+  password: z.string()
+    .min(1, "Password is required")
+    .max(100, "Password must be 100 characters or less"),
+})
+
+export type LoginRequest = z.infer<typeof loginSchema>
+
+export interface LoginResponse {
+  success: true
+  user: {
+    id: string
+    email: string
+    full_name?: string
+    company_name?: string
+    company_phone?: string
+  }
+  session?: {
+    expires_at: number
+  }
+}
+
+// ============================================================================
+// MAIN HANDLER
+// ============================================================================
+
 export async function POST(request: NextRequest) {
+  const context = createRequestContext(request)
+  
   try {
-    // Rate limiting: 5 attempts per minute per IP
+    logger.info(`[${context.requestId}] POST /api/auth/login - Starting login`, {
+      path: context.path,
+      method: context.method,
+    })
+
+    // Rate limiting: 5 login attempts per minute per IP
     const identifier = getClientIdentifier(request)
     const rateLimit = checkRateLimit(`login:${identifier}`, rateLimitConfigs.auth)
     
     if (!rateLimit.allowed) {
-      return NextResponse.json(
-        { 
-          error: "Too many login attempts. Please try again later.",
-          retryAfter: rateLimit.retryAfter 
-        },
-        { 
-          status: 429,
-          headers: {
-            'X-RateLimit-Limit': '5',
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': rateLimit.resetTime.toString(),
-            'Retry-After': rateLimit.retryAfter?.toString() || '60',
-          }
-        }
+      throw new RateLimitError(
+        'Too many login attempts. Please try again later.',
+        rateLimit.retryAfter
       )
     }
 
+    // Check environment configuration
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
     
-    // Check if Supabase is configured
     if (!supabaseUrl || !supabaseAnonKey) {
       if (demoMode) {
-        // Demo mode - accept any credentials
-        logger.warn('Running in DEMO MODE')
-        return NextResponse.json({ success: true, demo: true })
+        logger.warn(`[${context.requestId}] Running in DEMO MODE`)
+        return NextResponse.json({ 
+          success: true, 
+          demo: true,
+          user: {
+            id: 'demo-user',
+            email: 'demo@dispatchly.co',
+            full_name: 'Demo User',
+            company_name: 'Demo Company',
+          }
+        })
       }
-      // Production mode without config - reject
-      return NextResponse.json(
-        { error: 'Authentication service unavailable' },
-        { status: 503 }
-      )
+      throw new ServiceUnavailableError('Authentication service unavailable')
     }
 
-    const body = await request.json()
-    const { email, password } = body
-
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: "Email and password required" },
-        { status: 400 }
-      )
+    // Parse and validate request body
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      throw new ValidationError('Invalid JSON in request body')
     }
 
+    const parseResult = loginSchema.safeParse(body)
+    if (!parseResult.success) {
+      const errors: Record<string, string> = {}
+      parseResult.error.errors.forEach((err) => {
+        const field = err.path.join('.')
+        errors[field] = err.message
+      })
+      throw new ValidationError('Please fix the validation errors', errors)
+    }
+
+    const data = parseResult.data
+    logger.info(`[${context.requestId}] Login attempt for email: ${data.email}`)
+
+    // Create Supabase client
     const cookieStore = await cookies()
     const supabase = createServerClient(
       supabaseUrl,
@@ -72,7 +138,7 @@ export async function POST(request: NextRequest) {
                 cookieStore.set(name, value, options)
               )
             } catch {
-              // Ignore
+              // Ignore cookie errors
             }
           },
         },
@@ -80,41 +146,64 @@ export async function POST(request: NextRequest) {
     )
 
     // Sign in with email and password
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
     })
 
-    if (error) {
-      return NextResponse.json(
-        { error: error.message || "Invalid credentials" },
-        { status: 401 }
-      )
-    }
-
-    if (!data.user) {
-      return NextResponse.json(
-        { error: "Login failed" },
-        { status: 401 }
-      )
-    }
-
-    // Return user info with metadata
-    return NextResponse.json({ 
-      success: true, 
-      user: {
-        id: data.user.id,
-        email: data.user.email,
-        full_name: data.user.user_metadata?.full_name,
-        company_name: data.user.user_metadata?.company_name,
-        company_phone: data.user.user_metadata?.company_phone,
+    if (signInError) {
+      logger.warn(`[${context.requestId}] Login failed:`, { 
+        email: data.email, 
+        error: signInError.message 
+      })
+      
+      if (signInError.message?.includes('Invalid login credentials')) {
+        throw new AuthenticationError('Invalid email or password')
       }
-    })
+      
+      if (signInError.message?.includes('Email not confirmed')) {
+        throw new AuthenticationError('Please confirm your email before signing in')
+      }
+      
+      throw new AuthenticationError(signInError.message)
+    }
+
+    if (!authData.user) {
+      throw new AuthenticationError('Login failed')
+    }
+
+    logger.info(`[${context.requestId}] Login successful: ${authData.user.id}`)
+
+    // Prepare response
+    const response: LoginResponse = {
+      success: true,
+      user: {
+        id: authData.user.id,
+        email: authData.user.email!,
+        full_name: authData.user.user_metadata?.full_name,
+        company_name: authData.user.user_metadata?.company_name,
+        company_phone: authData.user.user_metadata?.company_phone,
+      },
+    }
+
+    // Include session info if available
+    if (authData.session) {
+      response.session = {
+        expires_at: authData.session.expires_at!,
+      }
+    }
+
+    return NextResponse.json(response)
+
   } catch (error) {
-    logger.error("Login error:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    if (error instanceof ValidationError || 
+        error instanceof RateLimitError ||
+        error instanceof AuthenticationError ||
+        error instanceof ServiceUnavailableError) {
+      return createErrorResponse(error)
+    }
+    
+    logger.error(`[${context.requestId}] Unexpected error during login:`, error)
+    return createErrorResponse(error as Error)
   }
 }

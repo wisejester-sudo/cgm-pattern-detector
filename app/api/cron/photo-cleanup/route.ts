@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cleanupOldPhotos } from "@/lib/photo-cleanup"
 
+export const dynamic = 'force-dynamic'
+
 /**
  * POST /api/cron/photo-cleanup
  * Trigger photo cleanup job - deletes photos older than 45 days

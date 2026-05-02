@@ -15,6 +15,8 @@ import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"
 import { ErrorMessages, getErrorMessage } from "@/lib/error-messages"
 
+export const dynamic = 'force-dynamic'
+
 // ============================================================================
 // VALIDATION SCHEMAS
 // ============================================================================

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { randomBytes, createHash } from "crypto"
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/auth/magic-link - Generate magic link for technician
 export async function POST(request: NextRequest) {
   try {

@@ -1,38 +1,98 @@
-import { NextResponse } from "next/server"
+/**
+ * POST /api/auth/logout - Sign out user and clear session
+ * 
+ * Features:
+ * - Clear Supabase session
+ * - Remove auth cookies
+ * - Request ID tracking
+ * - Comprehensive error handling
+ */
 
-export async function POST() {
+import { NextRequest, NextResponse } from "next/server"
+import { createServerClient } from "@supabase/ssr"
+import { cookies } from "next/headers"
+import { 
+  createErrorResponse,
+  ServiceUnavailableError,
+  createRequestContext
+} from "@/lib/errors"
+import { logger } from "@/lib/logger"
+
+export const dynamic = 'force-dynamic'
+
+export interface LogoutResponse {
+  success: true
+  message: string
+}
+
+export async function POST(request: NextRequest) {
+  const context = createRequestContext(request)
+  
   try {
-    // Check if Supabase is configured
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      return NextResponse.json({ success: true })
+    logger.info(`[${context.requestId}] POST /api/auth/logout - Starting logout`, {
+      path: context.path,
+      method: context.method,
+    })
+
+    // Check environment configuration
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new ServiceUnavailableError('Authentication service unavailable')
     }
 
-    // Dynamic import to avoid errors when env vars aren't set
-    const { createClient } = await import('@/lib/supabase/server')
-    const supabase = await createClient()
-
-    // Sign out from Supabase
-    if (supabase) {
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        console.error("[API] Error signing out:", error)
-        // Still return success - client-side logout should proceed
+    // Create Supabase client
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              )
+            } catch {
+              // Ignore cookie errors
+            }
+          },
+        },
       }
+    )
+
+    // Sign out
+    const { error } = await supabase.auth.signOut()
+
+    if (error) {
+      logger.error(`[${context.requestId}] Logout error:`, error)
+      // Continue anyway, we'll clear cookies client-side
     }
 
-    // SECURITY: Clear any session cookies (Next.js handles this, but we ensure success)
-    const response = NextResponse.json({ success: true })
-    
-    // Set cache control headers to prevent caching of logout
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
-    response.headers.set('Pragma', 'no-cache')
-    response.headers.set('Expires', '0')
-    
-    return response
+    logger.info(`[${context.requestId}] Logout successful`)
+
+    const response: LogoutResponse = {
+      success: true,
+      message: 'Logged out successfully',
+    }
+
+    return NextResponse.json(response)
+
   } catch (error) {
-    console.error("[API] Unexpected error during logout:", error)
-    // SECURITY: Return success even on error - user should be logged out client-side
-    // This prevents information leakage about the error
-    return NextResponse.json({ success: true })
+    if (error instanceof ServiceUnavailableError) {
+      return createErrorResponse(error)
+    }
+    
+    logger.error(`[${context.requestId}] Unexpected error during logout:`, error)
+    return createErrorResponse(error as Error)
   }
+}
+
+// Also support GET for convenience
+export async function GET(request: NextRequest) {
+  return POST(request)
 }

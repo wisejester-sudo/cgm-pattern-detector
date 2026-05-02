@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/auth/validate-token - Validate magic link token
 export async function POST(request: NextRequest) {
   try {

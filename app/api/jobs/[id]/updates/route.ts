@@ -4,6 +4,8 @@ import { sendSMS, generatePhotoLink } from "@/lib/twilio"
 import { renderSMSTemplate, getTemplateForStatus } from "@/lib/sms-templates"
 import { randomBytes } from "crypto"
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/jobs/[id]/updates - Create a job update and send SMS
 export async function POST(
   request: NextRequest,

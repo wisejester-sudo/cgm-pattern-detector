@@ -1,12 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: { autoRefreshToken: false, persistSession: false }
-})
+function createServiceClient() {
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  })
+}
 
 // GET /api/public/jobs/by-token/[token] - Get job by customer access token
 export async function GET(
@@ -14,6 +18,7 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    const supabase = createServiceClient()
     const { token } = await params
 
     if (!token) {

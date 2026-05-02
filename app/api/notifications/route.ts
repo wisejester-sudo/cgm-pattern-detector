@@ -1,16 +1,21 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: { autoRefreshToken: false, persistSession: false }
-})
+function createServiceClient() {
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  })
+}
 
 // GET /api/notifications - Get user's notifications
 export async function GET(request: NextRequest) {
   try {
+    const supabase = createServiceClient()
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '20')
     const unreadOnly = searchParams.get('unread') === 'true'
@@ -72,6 +77,7 @@ export async function GET(request: NextRequest) {
 // PATCH /api/notifications - Mark notifications as read
 export async function PATCH(request: NextRequest) {
   try {
+    const supabase = createServiceClient()
     const body = await request.json()
     const { notificationIds, markAll = false } = body
     
@@ -124,6 +130,7 @@ export async function PATCH(request: NextRequest) {
 // DELETE /api/notifications - Delete old notifications
 export async function DELETE(request: NextRequest) {
   try {
+    const supabase = createServiceClient()
     const { searchParams } = new URL(request.url)
     const daysOld = parseInt(searchParams.get('days') || '30')
     

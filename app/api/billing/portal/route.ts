@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import Stripe from "stripe"
 
+export const dynamic = 'force-dynamic'
+
 // Lazy initialization of Stripe - only create when needed
 let stripeInstance: Stripe | null = null
 function getStripe(): Stripe | null {

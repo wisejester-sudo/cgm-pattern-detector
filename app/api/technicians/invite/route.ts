@@ -13,6 +13,8 @@ import { sendSMS } from '@/lib/twilio'
 import { sendEmail, isEmailConfigured } from '@/lib/email'
 import crypto from 'crypto'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Generate the magic link message (same for SMS and Email)
  */

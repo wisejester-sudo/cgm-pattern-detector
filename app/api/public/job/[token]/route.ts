@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { checkRateLimit, getClientIdentifier } from "@/lib/rate-limit"
 
+export const dynamic = 'force-dynamic'
+
 // PUBLIC ENDPOINT: Rate limit to prevent brute force token guessing
 const PUBLIC_RATE_LIMIT = {
   maxRequests: 30, // 30 requests per minute

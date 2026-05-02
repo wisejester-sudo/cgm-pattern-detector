@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server"
 import { compressImage, generateThumbnail, validateImageFile } from "@/lib/image-processing"
 import { checkRateLimit, getClientIdentifier, rateLimitConfigs } from "@/lib/rate-limit"
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/upload - Upload and process an image
 export async function POST(request: NextRequest) {
   try {
